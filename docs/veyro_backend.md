@@ -305,6 +305,8 @@ These are naming examples, not a complete endpoint contract. Publish the final e
 
 ### 6.2 Standard success response
 
+Every successful API response returns `success: true`, a human-readable top-level `message`, the payload in `data`, and a mandatory `meta` object containing request tracing metadata (`requestId`).
+
 ```json
 {
   "success": true,
@@ -312,11 +314,16 @@ These are naming examples, not a complete endpoint contract. Publish the final e
   "data": {
     "id": "booking_id",
     "status": "CONFIRMED"
+  },
+  "meta": {
+    "requestId": "req_01HJXZ89ABCDEF0123456789"
   }
 }
 ```
 
 ### 6.3 Standard error response
+
+Every failed API response returns `success: false`, a safe top-level error `message`, an `error` object with a stable error `code` and an array of structured `details` (matching express-validator format), and the mandatory `meta` object containing `requestId`.
 
 ```json
 {
@@ -325,15 +332,32 @@ These are naming examples, not a complete endpoint contract. Publish the final e
   "error": {
     "code": "BOOKING_NOT_ACCESSIBLE",
     "details": []
+  },
+  "meta": {
+    "requestId": "req_01HJXZ89ABCDEF0123456789"
   }
 }
 ```
 
 Do not return stack traces, database internals, secrets, token contents or private provider errors to clients. `details` should contain safe field-level validation information only.
 
-### 6.4 Pagination
+### 6.4 Metadata and pagination
 
-For list endpoints that need pagination, return pagination information inside `data` or a documented `meta` object. Do not add empty pagination fields to every response.
+The `meta` object is always present in every API response to provide request tracing via `meta.requestId`. For list endpoints that support pagination, pagination metadata fields (`page`, `limit`, `total`, `totalPages`) are included inside `meta`. Do not add empty pagination fields to non-paginated responses.
+
+Example paginated response `meta`:
+
+```json
+{
+  "meta": {
+    "requestId": "req_01HJXZ89ABCDEF0123456789",
+    "page": 1,
+    "limit": 20,
+    "total": 45,
+    "totalPages": 3
+  }
+}
+```
 
 ### 6.5 HTTP status conventions
 

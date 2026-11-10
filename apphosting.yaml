@@ -1,0 +1,15 @@
+# Firebase App Hosting configuration for Next.js PWA
+# See: https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+  maxInstances: 2
+  minInstances: 0
+
+# Environment variables are managed in Firebase App Hosting console or Secret Manager
+env:
+  - variable: NODE_ENV
+    value: production
+

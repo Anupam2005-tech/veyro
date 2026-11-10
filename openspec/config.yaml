@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Project: Veyro — Release 1 (College Capstone)
+  Domain: Customer-owned vehicle chauffeur service. The customer provides the vehicle; the driver provides the driving service.
+  Frontend Stack: Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui, Radix UI, Motion for React, Lucide React
+  Backend Stack: Node.js, Express.js, TypeScript, Firebase Admin SDK, Cloud Firestore, Firebase Realtime Database, Cloud Storage for Firebase, Firebase Cloud Functions (2nd gen)
+  Design Themes:
+    - Veyro Night: Public landing (/) and authentication (/auth)
+    - Veyro Studio Light: All authenticated routes (/customer/*, /driver/*, /admin/*)
+  API Conventions:
+    - Prefix: /api/v1/
+    - Response Envelope: { success: boolean, message: string, data?: T, error?: { code: string, details?: [] }, meta: { requestId: string, ... } }
+    - Validation: express-validator
+    - Identity: Firebase Authentication (passwordless email-link, phone OTP, Google)
+    - Payments: Razorpay Test Mode
+    - Maps: Google Maps Platform (browser key restricted; server key in Secret Manager)
+
+rules:
+  proposal:
+    - Must preserve agreed product decisions DEC-01 through DEC-14
+    - Must clearly document affected frontend routes and backend domain modules
+    - Must include verification and test acceptance criteria
+  specs:
+    - Must use strict layered backend architecture (routes, controllers, services, repositories, models, validators)
+    - Must enforce server-side validation and authorization; never trust client-supplied roles or states
+  tasks:
+    - Must reference standardized task IDs (FND-*, FE-*, BE-*, INF-*)
+    - Must keep progress trackers synchronized

@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all client reads and writes by default.
+    // Privileged mutations must proceed through the backend Express API via Admin SDK.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

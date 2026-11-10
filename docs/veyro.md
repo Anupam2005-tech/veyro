@@ -1170,27 +1170,42 @@ All endpoints are under `/api/v1`. Route paths in the table below are relative t
 
 ### Common response contract
 
-Use a consistent shape:
+Use a consistent response shape across all endpoints:
+- `success: true` on success; `success: false` on failure.
+- `message` is a top-level human-readable string in both success and error responses.
+- `data` contains the response payload on success; omitted on error.
+- `error` contains `{ code, details }` on failure; omitted on success. `details` is an array of structured error details, consistent with express-validator.
+- `meta` is always present on every response and must include `requestId` for request tracing. Optional pagination metadata (`page`, `limit`, `total`, `totalPages`) is included in `meta` only when relevant.
+
+Success response:
 
 ```json
 {
-  "data": {},
-  "error": null,
-  "meta": { "requestId": "..." }
+  "success": true,
+  "message": "Booking retrieved successfully.",
+  "data": {
+    "id": "booking_id",
+    "status": "CONFIRMED"
+  },
+  "meta": {
+    "requestId": "req_01HJXZ89ABCDEF0123456789"
+  }
 }
 ```
 
-For errors:
+Error response:
 
 ```json
 {
-  "data": null,
+  "success": false,
+  "message": "No eligible drivers are available for this request.",
   "error": {
     "code": "BOOKING_NOT_ELIGIBLE",
-    "message": "No eligible drivers are available for this request.",
-    "details": {}
+    "details": []
   },
-  "meta": { "requestId": "..." }
+  "meta": {
+    "requestId": "req_01HJXZ89ABCDEF0123456789"
+  }
 }
 ```
 
