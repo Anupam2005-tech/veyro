@@ -1261,29 +1261,173 @@ Never change `CAPTURED` back to `PENDING` because an old webhook arrived late. E
 
 ---
 
-# 12. Five-person team responsibilities
+# 12. Three working pairs and project reporting
 
-Every feature needs one primary owner, one integration interface and a known reviewer. The following split balances vertical ownership without leaving one member responsible for every backend feature.
+Veyro's seven members work as **three teams of two**, with **Dip coordinating the project report**. Pair members plan, implement, test and integrate their work together. AI assistance does not replace their responsibility to understand and verify the work.
 
-| Person | Primary role | Owns | Must deliver |
-|---|---|---|---|
-| Member 1 | Design system, brand and frontend foundation | PROMPT 00/01, shared components, app shell, PWA shell and visual integration | Tokens, typography, reusable UI, landing page, responsive shell, accessibility review and component documentation |
-| Member 2 | Customer product flow | VIEW-03, VIEW-05 to VIEW-09; customer API integration and quote/booking screens | Customer onboarding/profile/vehicles, booking flow, trip cockpit UI, receipt, history and report submission |
-| Member 3 | Maps, routes and realtime location | Google Maps adapter, route preview, map UI integration, GPS endpoint/RTDB location path and stale-state logic | Map provider wrapper, route calculation, driver marker, location validation, realtime rules and real-device GPS test |
-| Member 4 | Driver experience | VIEW-04, VIEW-11 to VIEW-15; driver-domain API integration | Driver onboarding UI, application status, availability, offer cards, trip cockpit UI, rates and earnings screens |
-| Member 5 | Platform core, Admin and release integration | Firebase Auth middleware, Firestore schema, booking/trip/payment domain services, Admin, reports, security and CI/release | API contracts, shared state transitions, payment test integration, Admin portal, audit log, integration tests and deployment runbook |
+The areas below are **primary focus areas, not fixed or exclusive task assignments**. Teams may share or transfer tasks according to workload, dependencies and the next milestone. Each task must still identify a primary owner, reviewer, dependencies, allowed files and acceptance criteria. This allocation does not grant cloud permissions or authorize changes beyond an approved task.
 
-### Avoid Member 5 becoming the only backend developer
+## 12.1 Team overview
 
-Member 2 contributes the customer booking/vehicle API module. Member 3 owns the location API and RTDB rules. Member 4 contributes driver application/availability/offers API module. Member 5 owns shared architecture, reviews contracts and integrates the domain modules. Agree these module boundaries before parallel coding begins.
+- **Team 1 — Sid and Nishan:** all frontend screens and integration: public/auth, customer, driver, Admin, payments, safety and notifications, plus shared UI/PWA.
+- **Team 2 — Pritam and Anupam:** Firebase/identity/security foundations, booking, fare and trip engine, payments, Admin and safety backend (target: 60% of the combined Team 2/3 backend effort).
+- **Team 3 — Bipul and Pranesh:** Maps, GPS, realtime, driver presence/availability backend, notifications and trip-sharing backend (target: 40% of the combined Team 2/3 backend effort).
+- **Dip — Project report and documentation coordination:** compile the report, progress evidence, diagrams, testing results and demo documentation using verified input from all three teams.
 
-### Team-wide responsibilities
+**60:40 planning target:** estimate Team 2 and Team 3 work by complexity, implementation, integration and verification effort, not by task count. These percentages apply to their combined backend/integration workload; Team 1 frontend and Dip reporting are separate. Reassess estimates at each milestone rather than treating the ratio as a measured guarantee.
 
-- Everyone writes tests for the module they own.
-- Everyone reviews at least one other member's pull request.
-- One person must not merge their own unreviewed changes to `main`.
-- Do not edit the same shared component or API contract without agreeing who owns the file.
-- Use mock API responses only behind a typed adapter and replace them when the endpoint is ready.
+These replace the earlier M1–M7 allocation for this section. Existing task IDs may be retained for traceability; record the current named owner and team when assigning work.
+
+## 12.2 Team 1 — Sid and Nishan: all frontend and UI integration
+
+### Primary focus
+
+- Shared components in `packages/ui/`, visual tokens, frontend configuration, public landing page, application shells and navigation.
+- All responsive frontend screens: public/auth, customer and driver onboarding, profiles, dashboards, trips, Admin, payment/receipt, safety/reporting and notifications.
+- Frontend API integration and UI states across these journeys, using Team 2 core services and Team 3 Maps/GPS, availability, notification and sharing services.
+- Customer-owned vehicles, driver applications, capabilities, rates and availability journeys.
+- PWA foundations and frontend delivery preparation.
+
+### Typical tasks and deliverables
+
+- Establish one source for Veyro Night and Studio Light tokens, typography and component variants; provide a component gallery and usage documentation.
+- Build reusable buttons, badges, dialogs, loading/error/empty states, vehicle cards, fare displays, OTP presentation and map sheets.
+- Implement keyboard navigation, visible focus, reduced-motion behaviour and accessible forms.
+- Build customer profile/vehicle CRUD and driver profile/application/document flows; agree API ownership with Team 2 and include server-side ownership checks, private uploads, validation, resubmission and re-verification.
+- Integrate the adopted scoring workflow, thresholds and hard stops using approved verification mechanics; send manual decisions to Team 2's Admin workflow.
+- Integrate pickup/destination entry, driver comparison, quote display, booking submission and assignment/expiry/rejection/recovery states using Team 2's services and Team 3's location components.
+- Build driver status, online/offline, offers and trip-action screens; coordinate location freshness with Team 3 and reservations/conflicting bookings with Team 2.
+- Display authoritative trip status, OTPs, fares, earnings, receipts and history; integrate balance restrictions, reports and simulated SOS with Team 2.
+- Build share-link creation/revocation controls and authenticated recipient views; use Team 3's sharing services and RTDB access/revocation, following Team 2's shared identity/authorization contracts.
+- Prepare the manifest, icons, installation behaviour and service-worker caching boundaries; coordinate FCM service-worker integration with Team 3.
+- Own frontend lint/build/type-check and CI preparation within an approved change; coordinate backend gates with Team 2.
+
+**Integration boundary:** presentation consumes authoritative booking, fare, payment and safety services. Any supporting API work has one agreed owner and follows shared authorization contracts.
+
+**Verification:** component/accessibility states, responsive layouts, customer ownership, vehicle validation, private uploads, approval restrictions, complete customer/driver journeys, sharing restrictions, PWA behaviour and frontend build evidence.
+
+## 12.3 Team 2 — Pritam and Anupam: Firebase and core application services
+
+### Primary focus
+
+- Identity, Firebase security, shared backend infrastructure and deployment preparation.
+- Booking, fare and trip engine.
+- Payments, Admin and safety services.
+- Shared identity/authorization contracts and security review for Team 3 services; Team 3 implements its own domain checks and tests.
+
+### Typical tasks and deliverables
+
+- Establish central Firebase Admin initialization, backend configuration, authentication, role/resource authorization, App Check, shared request context, validation and safe errors.
+- Support Customer and Driver roles on one UID, controlled Admin grants, verified provider linking and secure conflict recovery; explicitly authorize privileged Admin SDK operations.
+- Coordinate Firestore access with feature owners, RTDB rules with Team 3 and private-document Storage rules with Team 1; review credential separation, logging redaction, secrets and App Check exceptions.
+- Coordinate runtime identities, deployment/rollback documentation, workspace/Functions packaging and shared CI with the other teams.
+- Implement quotes, bookings, offers, reservations and atomic assignment; use customer/vehicle, driver and location interfaces for eligibility.
+- Implement server-side hourly quotes/final fares and frozen rate/policy snapshots, preserving approved exclusions, disabled per-kilometre mode and zero platform fees.
+- Implement instant/scheduled offers, server deadlines, overlap protection, approved state transitions, arrival validation with Team 3, waiting/no-show facts, OTP verification and approved amendments.
+- Own booking broadcast selection, offer persistence, expiry handlers and retry-safe behaviour. Publish authoritative booking/trip events to Team 3's notification service; notification delivery must not control assignment or trip state. Coordinate OpenAPI/shared DTO changes with consumers.
+- Implement Razorpay Test Mode server-created orders, signature verification, raw-body webhook verification and deduplication.
+- Maintain authoritative balances, driver earnings and ledger effects from fare results; implement approved disputes and reasoned, audited adjustments.
+- Build Admin APIs, application decisions and private document review services; Team 1 owns the Admin screens and frontend integration.
+- Implement user safety/service reports, reporter privacy, investigation/resolution, qualifying incident records, suspension/restoration and audit using authoritative trip facts.
+- Implement truthful simulated SOS recording without claiming external dispatch.
+- Publish approved payment, Admin and safety events to Team 3's notification service; define allowed recipients and payloads without duplicating delivery infrastructure.
+
+**Workload target:** reflecting transaction, financial and security complexity. Team 3 owns notifications, presence/availability and sharing backend from the outset. Use Section 12.6 to rebalance additional bounded tasks if estimates or blockers threaten this target. Every implementing team contributes its own schemas, permission checks and tests.
+
+**Domain boundaries:** keep one authoritative booking/trip engine and one payment ledger. Browser amounts/callbacks are not financial authority; complaints alone do not trigger adjustments. No live payments, real emergency provider or invented evidence policy.
+
+**Access restriction:** the project lead alone retains Firebase/Google Cloud Owner access. Team membership does not grant Owner privileges. Use individual least-privilege accounts; no shared Owner credentials.
+
+**Verification:** authentication/authorization, private data access, fare boundaries, concurrent acceptance, reservation conflicts, OTP expiry/replay, state transitions, duplicate jobs/callbacks, ledger invariants, Admin access denial, report privacy, incident thresholds, audited restoration and correct domain events/recipients.
+
+## 12.4 Team 3 — Bipul and Pranesh: Maps, realtime and supporting backend services
+
+### Primary focus
+
+- Google Maps provider adapter and reusable route/location components.
+- Foreground GPS collection and server-side location validation.
+- RTDB presence/location access, freshness and cleanup.
+- Driver presence and availability backend, notification records/FCM delivery, and authenticated trip-sharing backend.
+
+### Typical tasks and deliverables
+
+- Implement address search, geocoding, road-route preview and navigation fallback through a shared adapter.
+- Support the approved discovery, pickup-coordination, active-trip and cleanup phases.
+- Validate coordinates, timestamps, accuracy and implausible movement before publishing location.
+- Implement driver online/offline presence and availability APIs, freshness and reconnect handling; enforce approval/account restrictions from Team 2. Team 2 retains final booking eligibility, reservation conflicts and atomic assignment. Team 1 owns availability screens.
+- Implement stale-location indicators, permission failures and reconnect behaviour with Team 1's UI.
+- Own scoped RTDB rules and emulator tests, reviewed with Team 2.
+- Implement trip-share link creation, secure token validation, authenticated recipient access, expiry/revocation and temporary-location cleanup. Apply Team 2 identity/authorization contracts and authoritative trip state; Team 1 owns sharing controls and recipient screens.
+- Document real-device GPS, network and Maps performance observations for Dip's report.
+- Own notification records, FCM token registration/refresh/cleanup, delivery handlers, deduplication, retries and in-app fallback. Consume Team 2 domain events and coordinate notification UI/service-worker integration with Team 1.
+- Implement and test domain-specific permissions for availability, notifications and sharing, with Team 2 security review.
+
+**Workload target:**  Notifications, availability and sharing are primary responsibilities, alongside Maps/GPS/realtime.
+
+**Boundary:** Team 2 remains authoritative for booking/trip state, financial rules and account restrictions. Notification delivery failure must not roll back a valid booking or payment; availability signals cannot bypass assignment checks. RTDB must not become a durable booking database or permanent GPS history. Do not promise continuous background tracking from the PWA.
+
+**Verification:** authorized reads/writes, stale samples, invalid coordinates, cleanup, sharing authentication/token expiry/revocation, availability restrictions, notification recipient privacy, duplicate events, delivery retries/fallback, reconnect behaviour and real-device observations.
+
+## 12.5 Dip — Project report and documentation coordination
+
+- Maintain the college/capstone project report: problem statement, objectives, scope, methodology, architecture, implementation overview, testing, results, limitations and future work.
+- Collect verified progress summaries, screenshots, diagrams, API/workflow descriptions and test evidence from all three teams.
+- Consolidate milestone summaries and cross-team blockers in `PROJECT_STATUS.md`; coordinate supporting documentation and demo/presentation material.
+- Keep terminology and diagrams aligned with the approved specification and implemented behaviour; ask the implementing team to review technical descriptions.
+- Record actual individual contributions, workload transfers, pending work and known limitations fairly.
+- Coordinate submission format, references and report deadlines with the team.
+
+**Responsibility boundary:** Dip owns report compilation and consistency. Each working pair supplies accurate technical notes, updates its own implementation trackers and verifies its evidence. User safety/service-report functionality remains part of Team 2's product scope.
+
+## 12.6 Workload balancing and task handoffs
+
+- Plan the combined Team 2/3 backlog toward 60%/40% using estimated effort and complexity, including tests and integration. Record estimates and revise them using actual progress.
+- Review capacity, blockers and milestone priorities at each planning check-in. Rebalance when a team's queue or dependency pressure threatens integration; do not wait until all its work is blocked.
+- Keep the named pairs as the default working groups. Within each pair, choose task leads and exchange implementation/review roles according to capacity; do not permanently divide the pair into isolated individual domains.
+- Move bounded tasks to a team with available capacity. For example, Team 1 can take on agreed profile/upload APIs alongside its frontend responsibilities; Team 3 can take on additional integration or emulator-test work beyond its notification, availability and sharing responsibilities; Team 2 supplies domain contracts and reviews sensitive business rules.
+- Before a handoff starts, record the new named primary owner, supporting team, reviewer, allowed paths, dependencies and acceptance criteria in the existing task/tracker. Tell affected consumers and Dip so integration and the contribution report stay accurate.
+- Transfer implementation responsibility clearly while retaining one authoritative service/contract for each domain. Avoid duplicate booking engines, fare calculators, ledgers or competing safety logic.
+- All three teams contribute tests, integration fixes and technical documentation. Dip's report role does not make Dip the default overflow developer.
+
+## 12.7 Shared contracts and review
+
+- Each interface has one primary owner and affected consumers who review changes.
+- Shared DTOs, OpenAPI, components and configuration must have an agreed editor during concurrent work.
+- Cross-domain changes require coordination rather than duplicate implementations.
+- Each implementing pair writes meaningful tests and reviews other contributors' work; Dip reviews report consistency with technical input from the teams.
+- Use a reviewer outside the implementing pair for shared contracts, security, financial rules and cross-team changes.
+- No member merges their own unreviewed changes to `main`.
+- Product, security, financial and architecture policy remains subject to project-owner decisions.
+
+## 12.8 AI-assisted execution and progress tracking
+Before implementation, give the AI:
+
+- Team, named task owner/domain and existing task IDs, including any agreed workload transfer.
+- Approved OpenSpec change and assigned checklist items.
+- Exact allowed paths.
+- Dependencies, acceptance criteria and reviewer.
+
+During work:
+
+- Read current specifications, contracts, implementation and tracker rows.
+- Stay inside the current agreed assignment; record cross-team blockers and arrange a Section 12.6 handoff before taking over another team's service.
+- Update only affected rows in `FRONTEND_PROGRESS.md` and/or `BACKEND_PROGRESS.md`.
+- Use `PROJECT_STATUS.md` for evidenced cross-domain blockers and milestone summaries.
+- Preserve other members’ edits and re-read shared trackers before patching.
+- Record files changed, actual checks/results, remaining work and reviewer handoff.
+- Supply verified milestone notes and evidence to Dip for the project report.
+- Use `REVIEW` when local implementation is ready; `DONE` requires applicable testing, independent review and merge.
+- Do not invent completion percentages or describe mocks as integrated functionality.
+- Update OpenSpec checkboxes only when their actual conditions are satisfied.
+
+## 12.9 Integration sequence and first milestone
+Follow the approved sequence: documentation reconciliation → OpenSpec review → authorized foundation repair → shared foundations → first end-to-end milestone.
+
+The first milestone is:
+
+**“An approved driver receives and accepts a customer’s instant booking.”**
+
+Team 1 integrates customer/driver screens, Team 2 supplies identity, approval and booking services, and Team 3 supplies Maps/location, presence/availability and offer-notification delivery. Dip records the demonstrated result and its evidence. Rebalance supporting tasks as needed to complete the milestone together.
 
 ---
 
