@@ -12,4 +12,4 @@ Use `pricing_mode` and the server-selected hourly rate. For final fare, consume 
 
 ## Risks / Trade-offs
 
-The floating-point calculation is suitable for estimates and base fare display. Payment amounts require the existing settlement integration to define authoritative minor-unit conversion. This module does not expose an HTTP or persistence contract.
+The floating-point calculation is suitable for estimates and base fare display. Payment amounts require the existing settlement integration to define authoritative minor-unit conversion. The in-memory snapshot uses an ISO timestamp and freezes its scalar inputs. It exposes no HTTP or storage schema.

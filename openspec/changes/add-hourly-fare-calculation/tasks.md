@@ -5,3 +5,4 @@
 - [ ] 1.3 Integrate BE-011 with verified identity, vehicle and driver eligibility, availability, and routing. Persist the agreed quote snapshot.
 - [ ] 1.4 Integrate BE-042 with the persisted snapshot, authoritative OTP timing and approved charge facts. Run quote and fare integration checks.
 - [ ] 1.5 Record Anupam's independent review and integration evidence.
+- [x] 1.6 Assemble and test an immutable in-memory quote snapshot from the selected rate, route estimates, versions, and timestamp.

@@ -69,7 +69,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate calculation verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
+| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate and immutable in-memory quote snapshot verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
 | BE-012 | Booking module — creation, state machine | `bookings/` | NOT_STARTED | Anupam | BE-011 | Atomic state transitions |
 | BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Firestore transaction |
 | BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Pickup-12h to pickup-2h |
@@ -149,5 +149,5 @@ These tasks add explicit tracking for requirements already in §12.3. `NOT_START
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | BE-041 | Provider linking, conflict recovery and controlled Admin grants | NOT_STARTED | Anupam | BE-001–004 | T2-A2; security review required |
-| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | BLOCKED | Pritam | BE-011; BE-016/017 for integration | T2-P2. Final hourly base fare from frozen rate and elapsed OTP time implemented. Five fare tests, API build/type-check and fresh health HTTP 200 passed. Await persisted snapshot and A5/A6 trip timing and charge facts. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
+| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | BLOCKED | Pritam | BE-011; BE-016/017 for integration | T2-P2. Final hourly base fare from frozen rate and elapsed OTP time implemented. Seven fare and quote snapshot tests plus API build/type-check passed. The initial fare slice passed health HTTP 200. Await persisted snapshot and A5/A6 trip timing and charge facts. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
 | BE-043 | Ledger, earnings, disputes and audited adjustments | NOT_STARTED | Pritam | BE-023, BE-042, BE-015/017 | T2-P4; ledger invariants and duplicate-event tests |
