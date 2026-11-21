@@ -1,10 +1,17 @@
 # Veyro — Project Status
 
-**Last updated:** 9 November 2026  
+**Last updated:** 21 November 2026
+
 **Release:** 1.0 (College Capstone)  
 **Spec versions:** Unified Specification v3.6 / Backend Technical Specification v1.3  
 
 ---
+
+## Team 2 execution plan
+
+Anupam owns backend foundations, identity and booking/trip lifecycle. Pritam owns Admin/audit, fare calculation, payments/ledger and safety. Follow [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for ordered features and handoff gates, and [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task status/evidence.
+
+Each person has one active feature slot, including review. Anupam starts with the backend foundation after the existing readiness reconciliation and foundation approval. Pritam starts Admin approval and audit once identity and the application/profile interfaces are ready. Verify the inherited milestone and foundation statuses before starting implementation.
 
 ## Current milestone
 
@@ -59,6 +66,7 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 
 | Blocker | Affects | Resolution |
 |---|---|---|
+| Readiness documentation awaits owner approval | Team 2 foundation work | Resolve [`reconcile-project-readiness`](../../openspec/changes/reconcile-project-readiness/tasks.md) before authorized foundation repair |
 | Monorepo scaffold incomplete | All feature development | M0 completion required before parallel coding |
 | Firebase project unprovisioned | Backend runtime, deployment | Firebase console setup and Blaze plan configuration |
 | Cancellation reason taxonomy | Cancellation UI, validation | Adopt standard preset reasons for demo |
@@ -75,12 +83,12 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 | FND-004 | Scaffold monorepo workspace (apps/web, apps/api, packages/, functions/) | IN_PROGRESS | Member 5 | FND-003 |
 | FND-005 | Create root and per-package `tsconfig.json` | IN_PROGRESS | Member 5 | FND-004 |
 | FND-006 | Create `apps/web/` Next.js App Router project | NOT_STARTED | Member 1 | FND-004 |
-| FND-007 | Create `apps/api/` Express + TypeScript project | NOT_STARTED | Member 5 | FND-004 |
-| FND-008 | Create `functions/` Cloud Functions project | NOT_STARTED | Member 5 | FND-004 |
-| FND-009 | Create `packages/contracts/` shared types | NOT_STARTED | Member 5 | FND-004 |
+| FND-007 | Create `apps/api/` Express + TypeScript project | NOT_STARTED | Anupam | FND-004 |
+| FND-008 | Create `functions/` Cloud Functions project | NOT_STARTED | Anupam | FND-004 |
+| FND-009 | Create `packages/contracts/` shared types | NOT_STARTED | Anupam | FND-004 |
 | FND-010 | Create `packages/ui/` shared components package | NOT_STARTED | Member 1 | FND-004 |
 | FND-011 | Create `packages/config/` shared lint/tsconfig/tailwind | NOT_STARTED | Member 1 | FND-004 |
-| FND-012 | Create `.env.example` (web + api) | NOT_STARTED | Member 5 | FND-004 |
+| FND-012 | Create `.env.example` (web + api) | NOT_STARTED | Anupam | FND-004 |
 | FND-013 | Create `infra/firebase/` with deny-by-default rules | NOT_STARTED | Member 5 | FND-004 |
 | FND-014 | Create `firebase.json`, `.firebaserc`, `apphosting.yaml` | NOT_STARTED | Member 5 | FND-013 |
 | FND-015 | Populate OpenSpec `config.yaml` with project context | NOT_STARTED | Member 5 | FND-003 |
