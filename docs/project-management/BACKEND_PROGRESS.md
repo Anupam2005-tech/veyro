@@ -109,9 +109,9 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | NOT_STARTED | Pritam | BE-008, BE-029 | Mandatory audit reason |
-| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | NOT_STARTED | Pritam | BE-007, BE-029 | Audited status changes |
-| BE-032 | Admin customer controls (view/restore) | `admin/` | NOT_STARTED | Pritam | BE-005, BE-029 | Restore endpoint |
+| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | BLOCKED | Pritam | BE-008, BE-029 | T2-P1. Manual decision rules and rejection tests passed. Await A2, Team 1 application/document interfaces (BE-008/009), and transactional audit. U04 blocks automatic scoring. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
+| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | BLOCKED | Pritam | BE-007, BE-029 | T2-P1. Driver approval transitions tested. Await A2, Team 1 driver profile, transactional audit and eligibility/presence integration. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
+| BE-032 | Admin customer controls (view/restore) | `admin/` | BLOCKED | Pritam | BE-005, BE-029 | T2-P1. Suspended-to-active transition tested. Await A2, Team 1 customer profile and status contract, and transactional audit. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
 | BE-033 | Admin report resolution | `admin/` | NOT_STARTED | Pritam | BE-025, BE-029 | Resolution note required |
 
 ---
