@@ -150,4 +150,4 @@ These tasks add explicit tracking for requirements already in §12.3. `NOT_START
 |---|---|---|---|---|---|
 | BE-041 | Provider linking, conflict recovery and controlled Admin grants | NOT_STARTED | Anupam | BE-001–004 | T2-A2; security review required |
 | BE-042 | Authoritative final fare service and frozen policy/rate snapshots | NOT_STARTED | Pritam | BE-011; BE-016/017 for integration | T2-P2; fixture tests do not prove trip integration |
-| BE-043 | Ledger, earnings, disputes and audited adjustments | NOT_STARTED | Pritam | BE-023, BE-042, BE-015/017 | T2-P4; ledger invariants and duplicate-event tests |
+| BE-043 | Ledger, earnings, disputes and audited adjustments | BLOCKED | Pritam | BE-023, BE-042, BE-015/017 | T2-P4. Completed-trip 48-hour timing rule and boundary tests pass. Await verified payments, trip/charge facts, shared transaction and report linkage; U05 settlement and no-trip timing remain open. [OpenSpec](../../openspec/changes/add-completed-trip-dispute-window/tasks.md) |
