@@ -96,7 +96,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-021 | Payment module — Razorpay order creation | `payments/` | NOT_STARTED | Pritam | BE-016, BE-042 | Test Mode only |
 | BE-022 | Payment signature + webhook verification | `payments/` | NOT_STARTED | Pritam | BE-021 | Raw body signature check |
 | BE-023 | Webhook deduplication + idempotent transitions | `payments/` | NOT_STARTED | Pritam | BE-022 | Stable event ID tracking |
-| BE-024 | Outstanding balance gate | `payments/` | NOT_STARTED | Pritam | BE-043, BE-012 | Block new booking on balance |
+| BE-024 | Outstanding balance gate | `payments/` | BLOCKED | Pritam | BE-043, BE-012 | T2-P5. Confirmed-unpaid and active-dispute exclusion tests pass. Await BE-043 customer-scoped ledger and Anupam's BE-012 booking transaction for atomic enforcement. [OpenSpec](../../openspec/changes/add-booking-balance-policy/tasks.md) |
 | BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
 | BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
 | BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
