@@ -11,7 +11,7 @@
 
 Anupam owns backend foundations, identity and booking/trip lifecycle. Pritam owns Admin/audit, fare calculation, payments/ledger and safety. Follow [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for ordered features and handoff gates, and [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task status/evidence.
 
-Each person has one active feature slot, including review. Anupam starts with the backend foundation after the existing readiness reconciliation and foundation approval. Pritam starts Admin approval and audit once identity and the application/profile interfaces are ready. Verify the inherited milestone and foundation statuses before starting implementation.
+Each person has one active feature slot, including review. Anupam started the requested backend scaffold task. BE-FND-001 is in review on `team-pritam_anupam`. The existing API project (FND-007) built and served local requests on 21 November. Pritam starts Admin approval and audit once identity and the application/profile interfaces are ready. Verify the inherited milestone and foundation statuses before starting implementation.
 
 ## Current milestone
 
@@ -83,7 +83,7 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 | FND-004 | Scaffold monorepo workspace (apps/web, apps/api, packages/, functions/) | IN_PROGRESS | Member 5 | FND-003 |
 | FND-005 | Create root and per-package `tsconfig.json` | IN_PROGRESS | Member 5 | FND-004 |
 | FND-006 | Create `apps/web/` Next.js App Router project | NOT_STARTED | Member 1 | FND-004 |
-| FND-007 | Create `apps/api/` Express + TypeScript project | NOT_STARTED | Anupam | FND-004 |
+| FND-007 | Create `apps/api/` Express + TypeScript project | REVIEW | Anupam | FND-004 |
 | FND-008 | Create `functions/` Cloud Functions project | NOT_STARTED | Anupam | FND-004 |
 | FND-009 | Create `packages/contracts/` shared types | NOT_STARTED | Anupam | FND-004 |
 | FND-010 | Create `packages/ui/` shared components package | NOT_STARTED | Member 1 | FND-004 |

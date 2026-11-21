@@ -15,7 +15,7 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 ## Current work slots
 
-- **Anupam** has an open slot. Start T2-A1 after the [readiness reconciliation and foundation approval](../../openspec/changes/reconcile-project-readiness/tasks.md).
+- **Anupam** has T2-A1 active. BE-FND-001 is in review on `team-pritam_anupam`. Anupam reviews the local change before pushing and Pritam is the independent reviewer. BE-FND-002 is queued for the next handoff.
 - **Pritam** has an open slot. Start T2-P1 when T2-A2 identity and the application/profile interfaces are ready. Until then, review Anupam’s work and prepare the Admin API contract and acceptance cases.
 - When implementation starts, record the active feature here and update the affected backend rows.
 
