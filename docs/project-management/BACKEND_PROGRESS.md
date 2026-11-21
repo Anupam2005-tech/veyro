@@ -97,9 +97,9 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-022 | Payment signature + webhook verification | `payments/` | NOT_STARTED | Pritam | BE-021 | Raw body signature check |
 | BE-023 | Webhook deduplication + idempotent transitions | `payments/` | NOT_STARTED | Pritam | BE-022 | Stable event ID tracking |
 | BE-024 | Outstanding balance gate | `payments/` | NOT_STARTED | Pritam | BE-043, BE-012 | Block new booking on balance |
-| BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
-| BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
-| BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
+| BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | BLOCKED | Pritam | BE-001 | T2-P6. Reporter/Admin-only read predicate tested. Await verified identity, trip ownership and report persistence. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
+| BE-026 | SOS module (event recording, demo mode) | `sos/` | BLOCKED | Pritam | BE-016 | T2-P6. Customer-scoped demo SOS preparation and no-external-delivery behavior tested. Await BE-016 trip access, approved Team 3 location input and event recipient handoff. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
+| BE-027 | 5th-incident suspension automation | `admin/` | BLOCKED | Pritam | BE-015, BE-017 | T2-P6. Distinct prequalified threshold tested. Await BE-015/017 (A6) incident facts, U05 window/evidence semantics, and atomic audit/suspension writes. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 | BE-028 | Notification module (Firestore records + FCM) | `notifications/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-001 | Push fallback to in-app |
 | BE-029 | Audit module (append-only Admin action log) | `audit/` | NOT_STARTED | Pritam | BE-001 | Immutable event log |
 
@@ -112,7 +112,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | NOT_STARTED | Pritam | BE-008, BE-029 | Mandatory audit reason |
 | BE-031 | Admin driver controls (deactivate/restore) | `admin/` | NOT_STARTED | Pritam | BE-007, BE-029 | Audited status changes |
 | BE-032 | Admin customer controls (view/restore) | `admin/` | NOT_STARTED | Pritam | BE-005, BE-029 | Restore endpoint |
-| BE-033 | Admin report resolution | `admin/` | NOT_STARTED | Pritam | BE-025, BE-029 | Resolution note required |
+| BE-033 | Admin report resolution | `admin/` | BLOCKED | Pritam | BE-025, BE-029 | T2-P6. Required resolution note and reporter-only recipient tested. Await persisted report state, transactional audit and Team 3 notification delivery. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 
 ---
 
