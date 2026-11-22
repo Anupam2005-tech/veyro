@@ -1,31 +1,30 @@
 import express from 'express';
 import cors from 'cors';
-import { sendSuccess, sendError } from './shared/http/response.js';
+import { loadConfig } from './config/env.js';
+import { getFirebaseAdminApp } from './config/firebase-admin.js';
+import { sendSuccess } from './shared/http/response.js';
+import { RouteNotFoundError } from './shared/http/app-error.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { createDocsRouter } from './middleware/api-docs.js';
+import { requestContext } from './middleware/request-context.js';
 
-export function createApp(): express.Application {
+export function createApp(config = loadConfig()): express.Application {
+  getFirebaseAdminApp();
   const app = express();
 
+  app.use(requestContext);
   app.use(cors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
+    // A list makes cors match the request origin before granting browser access.
+    origin: [config.frontendOrigin],
     credentials: true,
+    exposedHeaders: ['X-Request-Id'],
   }));
 
   app.use(express.json());
 
-  // Attach request tracing id
-  app.use((req, res, next) => {
-    const incomingId = req.headers['x-request-id'];
-    const requestId = typeof incomingId === 'string' && incomingId.length > 0
-      ? incomingId
-      : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    (req as { id?: string }).id = requestId;
-    res.setHeader('X-Request-Id', requestId);
-    next();
-  });
-
   // Health check endpoint
-  app.get('/api/v1/health', (_req, res) => {
+  app.get(`${config.apiBasePath}/health`, (_req, res) => {
+    res.set('Cache-Control', 'no-store');
     return sendSuccess(
       res,
       {
@@ -38,16 +37,12 @@ export function createApp(): express.Application {
     );
   });
 
-  // 404 Not Found handler
-  app.use((req, res) => {
-    return sendError(
-      res,
-      `Cannot ${req.method} ${req.originalUrl}`,
-      'ROUTE_NOT_FOUND',
-      404
-    );
-  });
+  if (process.env.ENABLE_API_DOCS === 'true' && process.env.NODE_ENV !== 'production') {
+    app.use(`${config.apiBasePath}/docs`, createDocsRouter());
+  }
+
+  app.use((_req, _res, next) => next(new RouteNotFoundError()));
+  app.use(errorHandler);
 
   return app;
 }
-
