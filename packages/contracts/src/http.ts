@@ -15,7 +15,6 @@ export interface ApiMeta {
 export interface ApiFieldError {
   field?: string;
   message: string;
-  value?: unknown;
 }
 
 export interface ApiSuccessResponse<T> {
@@ -27,7 +26,7 @@ export interface ApiSuccessResponse<T> {
 
 export interface ApiErrorPayload {
   code: string;
-  details?: ApiFieldError[];
+  details: ApiFieldError[];
 }
 
 export interface ApiErrorResponse {

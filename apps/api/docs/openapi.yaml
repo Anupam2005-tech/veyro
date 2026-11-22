@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Veyro API
+  version: 1.0.0
+  description: Implemented HTTP operations. Planned domain routes are listed separately for contract review.
+servers:
+  - url: ../../..
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Check API liveness
+      description: Public, read-only liveness probe. No roles, request body, filters or pagination. Does not check external services.
+      security: []
+      parameters:
+        - in: header
+          name: X-Request-Id
+          required: false
+          description: Optional caller-supplied correlation ID.
+          schema: {type: string, pattern: '^[A-Za-z0-9._-]{1,128}$'}
+          example: demo-health
+      responses:
+        '200':
+          description: API process is serving requests.
+          headers:
+            X-Request-Id: {schema: {type: string}, description: Correlation ID included in response metadata.}
+            Cache-Control: {schema: {type: string, enum: [no-store]}}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message, data, meta]
+                properties:
+                  success: {type: boolean, enum: [true]}
+                  message: {type: string}
+                  data:
+                    type: object
+                    required: [status, service, version, timestamp]
+                    properties:
+                      status: {type: string, enum: [UP]}
+                      service: {type: string, enum: [veyro-api]}
+                      version: {type: string}
+                      timestamp: {type: string, format: date-time}
+                  meta:
+                    type: object
+                    required: [requestId]
+                    properties:
+                      requestId: {type: string}
+              example:
+                success: true
+                message: Veyro API is healthy and operational
+                data: {status: UP, service: veyro-api, version: 1.0.0, timestamp: '2026-11-22T12:00:00.000Z'}
+                meta: {requestId: demo-health}
+        default:
+          description: Shared API errors include invalid JSON (400, INVALID_JSON), oversized input (413, PAYLOAD_TOO_LARGE), unsupported encoding (415, UNSUPPORTED_MEDIA_TYPE) and unexpected failures (500, INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      required: [success, message, error, meta]
+      properties:
+        success: {type: boolean, enum: [false]}
+        message: {type: string}
+        error:
+          type: object
+          required: [code, details]
+          properties:
+            code: {type: string}
+            details:
+              type: array
+              items:
+                type: object
+                required: [message]
+                properties:
+                  field: {type: string}
+                  message: {type: string}
+        meta:
+          type: object
+          required: [requestId]
+          properties:
+            requestId: {type: string}

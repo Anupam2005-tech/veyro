@@ -1,6 +1,6 @@
 # Veyro — Project Status
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 **Release:** 1.0 (College Capstone)  
 **Spec versions:** Unified Specification v3.6 / Backend Technical Specification v1.3  
@@ -9,11 +9,29 @@
 
 ## Team 2 execution plan
 
-Anupam owns backend foundations, identity and booking/trip lifecycle. Pritam owns Admin/audit, fare calculation, payments/ledger and safety. Follow [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for ordered features and handoff gates, and [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task status/evidence.
+| Person | Current feature | Status | Next action |
+|---|---|---|---|
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-008–010 and the OpenAPI contract |
+| Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
-Each person has one active feature slot, including review. Anupam started the requested backend scaffold task. BE-FND-001 is in review on `team-pritam_anupam`. The existing API project (FND-007) built and served local requests on 21 November. Pritam starts Admin approval and audit once identity and the application/profile interfaces are ready. Verify the inherited milestone and foundation statuses before starting implementation.
+Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
 
 ## Current milestone
+
+| Team 2 progress | Status | Evidence |
+|---|---|---|
+| BE-FND-001 API scaffold | REVIEW | Merged in PR #9. Independent review evidence pending |
+| BE-FND-002 API configuration | REVIEW | Build, type-check and configuration tests passed |
+| BE-FND-003 Firebase Admin initialization | REVIEW | API build, type-check and singleton tests passed |
+| BE-FND-004 Global error handling | REVIEW | Build and type-check passed. All 27 API tests passed with Firestore emulation. Pushed in 1aa7f33. |
+| BE-FND-005 Request context | REVIEW | Build, type-check and all 29 API tests passed with Firestore emulation. Pushed in 1e5e457. |
+| BE-FND-006 Response helpers | REVIEW | API build, type-check and all 30 API tests passed with Firestore emulation. Pushed in 4c6f49d. |
+| BE-FND-007 CORS configuration | REVIEW | Exact origin matching verified on actual and preflight requests. All 31 API tests passed. |
+| BE-FND-008 Public API liveness | REVIEW | Existing health payload preserved and cache prevention verified over HTTP. |
+| BE-FND-009 Request validation | REVIEW | Valid sanitized input and multiple invalid fields verified through a test route. |
+| BE-FND-010 Interactive API contract | REVIEW | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. |
+
+[Backend task evidence](BACKEND_PROGRESS.md)
 
 | Milestone | Status | Target |
 |---|---|---|

@@ -1,6 +1,6 @@
 # Veyro — Backend Progress Tracker
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 **Stack:** Node.js + Express.js + TypeScript, Firebase Admin SDK, Cloud Firestore, RTDB, Cloud Storage  
 **Spec reference:** `docs/veyro_backend.md` §2–17; `docs/veyro.md` §4–5, §6 (PROMPT 07)  
@@ -9,7 +9,13 @@
 
 ## Team 2 execution
 
-The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person to one active feature. Use this tracker for task status and evidence. Verify inherited statuses and the new BE-041–043 rows against the implementation before starting work. Confirm API ownership for Team 1 handoffs with Team 1 as specified in §12.2.
+| Team 2 rule | Current value |
+|---|---|
+| Feature execution | One active feature per person, including review |
+| Feature order and dependencies | [TEAM_2_PLAN.md](TEAM_2_PLAN.md) |
+| Task evidence | This tracker |
+| External ownership | Team 1 owns frontend, Team 3 owns Maps/GPS, presence, notifications and sharing |
+| Status note | Verify inherited statuses and BE-041–043 against implementation before starting work |
 
 ## Legend
 
@@ -28,16 +34,16 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Awaiting review and merge. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
-| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | NOT_STARTED | Anupam | BE-FND-001 | dotenv locally |
-| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | NOT_STARTED | Anupam | BE-FND-002 | Shared singleton instance |
-| BE-FND-004 | Global error middleware + AppError class hierarchy | NOT_STARTED | Anupam | BE-FND-001 | Safe client responses |
-| BE-FND-005 | Request context middleware (requestId tracking) | NOT_STARTED | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |
-| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | NOT_STARTED | Anupam | BE-FND-004 | Canonical envelope format |
-| BE-FND-007 | CORS configuration | NOT_STARTED | Anupam | BE-FND-001 | Whitelisted origins only |
-| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | NOT_STARTED | Anupam | BE-FND-001 | Non-sensitive status check |
-| BE-FND-009 | express-validator middleware setup | NOT_STARTED | Anupam | BE-FND-001 | Array details format |
-| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | NOT_STARTED | Anupam | BE-FND-001 | Interactive API documentation |
+| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Merged in PR #9; independent review evidence pending. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
+| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | REVIEW | Anupam | BE-FND-001 | 21 Nov. Standalone build, type-check and API configuration tests passed. [OpenSpec checklist](../../openspec/changes/validate-api-config/tasks.md). On team branch at 829c3f4, pending merge to main. |
+| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | REVIEW | Anupam | BE-FND-002 | 22 Nov. Default app reuse and managed configuration tested. API build and type-check passed. All 24 API tests passed with the Firestore emulator. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/initialize-firebase-admin/tasks.md) |
+| BE-FND-004 | Global error middleware + AppError class hierarchy | REVIEW | Anupam | BE-FND-001 | 22 Nov. Safe Express error responses, parser failures and missing routes verified. API build, type-check and all 27 emulator-backed suite tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/add-api-error-handler/tasks.md) |
+| BE-FND-005 | Request context middleware (requestId tracking) | REVIEW | Anupam | BE-FND-001 | Request, header and envelope IDs verified across health, parser errors, missing routes and preflight. Build, type-check and all 29 API tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/add-request-context/tasks.md) |
+| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | REVIEW | Anupam | BE-FND-004 | Verified success and error envelopes, field details, pagination and 204 over HTTP. All 30 API tests passed. Pritam reviews the API changes; shared contract review pending under §12.7. [OpenSpec checklist](../../openspec/changes/verify-api-response-helpers/tasks.md) |
+| BE-FND-007 | CORS configuration | REVIEW | Anupam | BE-FND-001 | Matching, mismatched and absent origins verified on GET and OPTIONS. API build, type-check and all 31 tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/enforce-api-cors/tasks.md) |
+| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | REVIEW | Anupam | BE-FND-001 | Existing health payload preserved and cache prevention verified over HTTP. [OpenSpec checklist](../../openspec/changes/verify-api-health/tasks.md) |
+| BE-FND-009 | express-validator middleware setup | REVIEW | Anupam | BE-FND-001 | Valid sanitized input and multiple invalid fields verified through a test route. [OpenSpec checklist](../../openspec/changes/add-api-request-validation/tasks.md) |
+| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | REVIEW | Anupam | BE-FND-001 | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. [OpenSpec checklist](../../openspec/changes/add-api-swagger-ui/tasks.md) |
 
 ---
 
@@ -69,7 +75,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | NOT_STARTED | Pritam | BE-006, BE-010 | Actual usage formula |
+| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate and immutable in-memory quote snapshot verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
 | BE-012 | Booking module — creation, state machine | `bookings/` | NOT_STARTED | Anupam | BE-011 | Atomic state transitions |
 | BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Firestore transaction |
 | BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Pickup-12h to pickup-2h |
@@ -93,15 +99,15 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-021 | Payment module — Razorpay order creation | `payments/` | NOT_STARTED | Pritam | BE-016, BE-042 | Test Mode only |
-| BE-022 | Payment signature + webhook verification | `payments/` | NOT_STARTED | Pritam | BE-021 | Raw body signature check |
-| BE-023 | Webhook deduplication + idempotent transitions | `payments/` | NOT_STARTED | Pritam | BE-022 | Stable event ID tracking |
+| BE-021 | Payment module — Razorpay order creation | `payments/` | BLOCKED | Pritam | BE-016, BE-042 | T2-P3. Await authoritative trip completion, payable fare and charge facts, stored attempt ownership and Test Mode order integration. |
+| BE-022 | Payment signature + webhook verification | `payments/` | BLOCKED | Pritam | BE-021 | T2-P3. Checkout and raw webhook signature checks implemented and three tests passed. Await stored payment attempts, raw-body HTTP wiring, and provider capture confirmation. [OpenSpec](../../openspec/changes/add-razorpay-signature-verification/tasks.md) |
+| BE-023 | Webhook deduplication + idempotent transitions | `payments/` | BLOCKED | Pritam | BE-022 | T2-P3. Await BE-021 stored attempts, BE-022 raw HTTP/capture wiring, and shared Firestore transactions for atomic provider-event deduplication. |
 | BE-024 | Outstanding balance gate | `payments/` | NOT_STARTED | Pritam | BE-043, BE-012 | Block new booking on balance |
 | BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | BLOCKED | Pritam | BE-001 | T2-P6. Reporter/Admin-only read predicate tested. Await verified identity, trip ownership and report persistence. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 | BE-026 | SOS module (event recording, demo mode) | `sos/` | BLOCKED | Pritam | BE-016 | T2-P6. Customer-scoped demo SOS preparation and no-external-delivery behavior tested. Await BE-016 trip access, approved Team 3 location input and event recipient handoff. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 | BE-027 | 5th-incident suspension automation | `admin/` | BLOCKED | Pritam | BE-015, BE-017 | T2-P6. Distinct prequalified threshold tested. Await BE-015/017 (A6) incident facts, U05 window/evidence semantics, and atomic audit/suspension writes. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 | BE-028 | Notification module (Firestore records + FCM) | `notifications/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-001 | Push fallback to in-app |
-| BE-029 | Audit module (append-only Admin action log) | `audit/` | NOT_STARTED | Pritam | BE-001 | Immutable event log |
+| BE-029 | Audit module (append-only Admin action log) | `audit/` | BLOCKED | Pritam | BE-001 | T2-P1, 21 Nov 2026. Internal service and create-only repository implemented, including rejection of profile/document objects as audit state. API build/type-check, fresh startup, health HTTP 200, strict OpenSpec validation, four unit tests and the Firestore emulator atomic append/duplicate-ID rollback test passed. [OpenSpec checklist](../../openspec/changes/add-admin-audit-log/tasks.md). Next: wire verified identity, Admin authorization and shared Firestore (BE-001, BE-002, BE-FND-003), then verify unauthorized HTTP requests do not write. Reviewer: Anupam. |
 
 ---
 
@@ -109,9 +115,9 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | NOT_STARTED | Pritam | BE-008, BE-029 | Mandatory audit reason |
-| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | NOT_STARTED | Pritam | BE-007, BE-029 | Audited status changes |
-| BE-032 | Admin customer controls (view/restore) | `admin/` | NOT_STARTED | Pritam | BE-005, BE-029 | Restore endpoint |
+| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | BLOCKED | Pritam | BE-008, BE-029 | T2-P1. Manual decision rules and rejection tests passed. Await A2, Team 1 application/document interfaces (BE-008/009), and transactional audit. U04 blocks automatic scoring. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
+| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | BLOCKED | Pritam | BE-007, BE-029 | T2-P1. Driver approval transitions tested. Await A2, Team 1 driver profile, transactional audit and eligibility/presence integration. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
+| BE-032 | Admin customer controls (view/restore) | `admin/` | BLOCKED | Pritam | BE-005, BE-029 | T2-P1. Suspended-to-active transition tested. Await A2, Team 1 customer profile and status contract, and transactional audit. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
 | BE-033 | Admin report resolution | `admin/` | BLOCKED | Pritam | BE-025, BE-029 | T2-P6. Required resolution note and reporter-only recipient tested. Await persisted report state, transactional audit and Team 3 notification delivery. [OpenSpec](../../openspec/changes/add-report-safety-rules/tasks.md) |
 
 ---
@@ -149,5 +155,5 @@ These tasks add explicit tracking for requirements already in §12.3. `NOT_START
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | BE-041 | Provider linking, conflict recovery and controlled Admin grants | NOT_STARTED | Anupam | BE-001–004 | T2-A2; security review required |
-| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | NOT_STARTED | Pritam | BE-011; BE-016/017 for integration | T2-P2; fixture tests do not prove trip integration |
+| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | BLOCKED | Pritam | BE-011; BE-016/017 for integration | T2-P2. Final hourly base fare from frozen rate and elapsed OTP time implemented. Seven fare and quote snapshot tests plus API build/type-check passed. The initial fare slice passed health HTTP 200. Await persisted snapshot and A5/A6 trip timing and charge facts. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
 | BE-043 | Ledger, earnings, disputes and audited adjustments | NOT_STARTED | Pritam | BE-023, BE-042, BE-015/017 | T2-P4; ledger invariants and duplicate-event tests |
