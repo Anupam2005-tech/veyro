@@ -10,7 +10,7 @@
 
 | Status | Meaning |
 |---|---|
-| NOT_STARTED | No code exists |
+| | No code exists |
 | IN_PROGRESS | Active development |
 | REVIEW | Code written, awaiting review |
 | DONE | Reviewed, tested, merged |
@@ -25,9 +25,9 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-001 | CSS variables and Tailwind theme (Night + Studio Light) | — | NOT_STARTED | Member 1 | FND-006 | Spec §2.2, §2.3 |
-| FE-002 | Typography setup (Syne, Inter, JetBrains Mono) | — | NOT_STARTED | Member 1 | FE-001 | |
-| FE-003 | AppShell, public header, authenticated nav, bottom nav | — | NOT_STARTED | Member 1 | FE-001 | |
+| FE-001 | CSS variables and Tailwind theme (Night + Studio Light) | — | | Member 1 | FND-006 | Spec §2.2, §2.3 |
+| FE-002 | Typography setup (Syne, Inter, JetBrains Mono) | — | | Member 1 | FE-001 | |
+| FE-003 | AppShell, public header, authenticated nav, bottom nav | — | | Member 1 | FE-001 | |
 | FE-004 | VeyroButton variants (lime, obsidian, secondary, destructive) | — | NOT_STARTED | Member 1 | FE-001 | |
 | FE-005 | StatusBadge, EmptyState, ErrorState, LoadingState | — | NOT_STARTED | Member 1 | FE-001 | |
 | FE-006 | HolographicVehiclePass | — | NOT_STARTED | Member 1 | FE-001 | |

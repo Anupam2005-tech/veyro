@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: Veyro API
+  version: 1.0.0
+  description: Canonical contract (Team 3 completion). Auth via Firebase Bearer + App Check.
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        '200':
+          description: API is up
+  /api/v1/drivers/availability:
+    patch:
+      summary: Go online/offline with eligibility validation
+      operationId: setAvailability
+      responses:
+        '200':
+          description: Availability updated
+        '401':
+          description: Missing/invalid auth
+        '422':
+          description: Not eligible
+  /api/v1/trips/{tripId}/location:
+    post:
+      summary: Validate and publish driver location to RTDB
+      operationId: postLocation
+      responses:
+        '200':
+          description: Location accepted
+  /api/v1/trips/{tripId}/share-links:
+    post:
+      summary: Create protected share link
+      operationId: createShareLink
+      responses:
+        '201':
+          description: Share link created
+  /api/v1/share/{token}:
+    get:
+      summary: Validate share token (authenticated)
+      operationId: getShare
+      responses:
+        '200':
+          description: Share link valid
+  /api/v1/notifications/tokens:
+    post:
+      summary: Register FCM token
+      operationId: registerToken
+      responses:
+        '201':
+          description: Token registered
