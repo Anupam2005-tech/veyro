@@ -1,6 +1,6 @@
 # Team 2 — Anupam and Pritam feature plan
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status and evidence in [Backend Progress](BACKEND_PROGRESS.md) and shared milestones and blockers in [Project Status](PROJECT_STATUS.md).
 
@@ -15,9 +15,29 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 ## Current work slots
 
-- **Anupam** has T2-A1 active. BE-FND-001 is in review on `team-pritam_anupam`. Anupam reviews the local change before pushing and Pritam is the independent reviewer. BE-FND-002 is queued for the next handoff.
-- **Pritam** has an open slot. Start T2-P1 when T2-A2 identity and the application/profile interfaces are ready. Until then, review Anupam’s work and prepare the Admin API contract and acceptance cases.
-- When implementation starts, record the active feature here and update the affected backend rows.
+| Person | Active feature | Status | Reviewer | Next action |
+|---|---|---|---|---|
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Pritam | Review BE-FND-008–010 and the OpenAPI contract |
+| Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Anupam | Prepare the Admin API contract while waiting for T2-A2 and Team 1 interfaces |
+
+When a feature starts, update this table and the corresponding rows in [Backend Progress](BACKEND_PROGRESS.md).
+
+## Progress dashboard
+
+| Feature | Owner | Status | Task IDs | Depends on | Handoff condition |
+|---|---|---|---|---|---|
+| T2-A1 — Foundation and local runtime | Anupam | REVIEW | BE-FND-001–010, INF-005, INF-007 | Readiness reconciliation and foundation approval | Build, type-check, local startup, emulator and shared-file evidence recorded |
+| T2-A2 — Identity and authorization | Anupam | NOT_STARTED | BE-001–004, BE-041, INF-001, INF-003 | T2-A1 | Auth/App Check, role checks and cross-user denial tests pass |
+| T2-A3 — Instant booking and assignment | Anupam | NOT_STARTED | BE-012–013 | T2-A2, T2-P2, Team 1 interfaces and Team 3 availability | Concurrent acceptance and reservation tests pass |
+| T2-A4 — Scheduled booking lifecycle | Anupam | NOT_STARTED | BE-014, BE-034–035 | T2-A3 | Timing, expiry and retry-safe job tests pass |
+| T2-A5 — Trip lifecycle and OTP | Anupam | NOT_STARTED | BE-016, BE-018 | T2-A3 and Team 3 location contract | Transition, OTP expiry and replay tests pass |
+| T2-A6 — Waiting, no-show and cancellation | Anupam | NOT_STARTED | BE-015, BE-017 | T2-A4 and T2-A5 | Policy boundaries and duplicate-safe incident facts pass |
+| T2-P1 — Admin approval and audit | Pritam | BLOCKED | BE-029–032 | T2-A2 and Team 1 application interfaces | Secure review, audit and control tests pass |
+| T2-P2 — Fare calculation | Pritam | BLOCKED | BE-011, BE-042 | T2-A2 and domain interfaces | Quote and final-fare boundary tests pass |
+| T2-P3 — Payment verification | Pritam | BLOCKED | BE-021–023 | T2-P2, T2-A5 and T2-A6 | Signature, duplicate and retry tests pass |
+| T2-P4 — Ledger and disputes | Pritam | NOT_STARTED | BE-043 | T2-P3 and T2-A6 | Ledger invariants and audited adjustments pass |
+| T2-P5 — Booking balance gate | Pritam | NOT_STARTED | BE-024 | T2-P4 and T2-A3 | Balance restriction and concurrency tests pass |
+| T2-P6 — Reports, safety and SOS | Pritam | NOT_STARTED | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |
 
 ## Anupam — ordered feature queue
 
