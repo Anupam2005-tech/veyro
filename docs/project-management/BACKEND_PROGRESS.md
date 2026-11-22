@@ -102,7 +102,7 @@
 | BE-021 | Payment module — Razorpay order creation | `payments/` | BLOCKED | Pritam | BE-016, BE-042 | T2-P3. Await authoritative trip completion, payable fare and charge facts, stored attempt ownership and Test Mode order integration. |
 | BE-022 | Payment signature + webhook verification | `payments/` | BLOCKED | Pritam | BE-021 | T2-P3. Checkout and raw webhook signature checks implemented and three tests passed. Await stored payment attempts, raw-body HTTP wiring, and provider capture confirmation. [OpenSpec](../../openspec/changes/add-razorpay-signature-verification/tasks.md) |
 | BE-023 | Webhook deduplication + idempotent transitions | `payments/` | BLOCKED | Pritam | BE-022 | T2-P3. Await BE-021 stored attempts, BE-022 raw HTTP/capture wiring, and shared Firestore transactions for atomic provider-event deduplication. |
-| BE-024 | Outstanding balance gate | `payments/` | NOT_STARTED | Pritam | BE-043, BE-012 | Block new booking on balance |
+| BE-024 | Outstanding balance gate | `payments/` | BLOCKED | Pritam | BE-043, BE-012 | T2-P5. Confirmed-unpaid and active-dispute exclusion tests pass. Await BE-043 customer-scoped ledger and Anupam's BE-012 booking transaction for atomic enforcement. [OpenSpec](../../openspec/changes/add-booking-balance-policy/tasks.md) |
 | BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
 | BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
 | BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
