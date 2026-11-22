@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Tests will run with Jest\""
+    "test": "tsc -b && node --test test/*.test.cjs"
   },
   "dependencies": {
     "@veyro/contracts": "workspace:*",

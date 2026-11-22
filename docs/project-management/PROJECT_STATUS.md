@@ -9,11 +9,22 @@
 
 ## Team 2 execution plan
 
-Anupam owns backend foundations, identity and booking/trip lifecycle. Pritam owns Admin/audit, fare calculation, payments/ledger and safety. Follow [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for ordered features and handoff gates, and [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task status/evidence.
+| Person | Current feature | Status | Next action |
+|---|---|---|---|
+| Anupam | T2-A1 — Backend foundation and local runtime | REVIEW | Review and merge BE-FND-002, then start BE-FND-003 |
+| Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
-Each person has one active feature slot, including review. Anupam started the requested backend scaffold task. BE-FND-001 is in review on `team-pritam_anupam`. The existing API project (FND-007) built and served local requests on 21 November. Pritam starts Admin approval and audit once identity and the application/profile interfaces are ready. Verify the inherited milestone and foundation statuses before starting implementation.
+Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
 
 ## Current milestone
+
+| Team 2 progress | Status | Evidence |
+|---|---|---|
+| BE-FND-001 API scaffold | REVIEW | Build and local health/404 smoke test passed |
+| BE-FND-002 API configuration | REVIEW | Build, type-check and configuration tests passed |
+| Next Anupam task | NOT_STARTED | BE-FND-003 Firebase Admin SDK initialization |
+
+[Backend task evidence](BACKEND_PROGRESS.md)
 
 | Milestone | Status | Target |
 |---|---|---|

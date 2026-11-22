@@ -9,7 +9,13 @@
 
 ## Team 2 execution
 
-The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person to one active feature. Use this tracker for task status and evidence. Verify inherited statuses and the new BE-041–043 rows against the implementation before starting work. Confirm API ownership for Team 1 handoffs with Team 1 as specified in §12.2.
+| Team 2 rule | Current value |
+|---|---|
+| Feature execution | One active feature per person, including review |
+| Feature order and dependencies | [TEAM_2_PLAN.md](TEAM_2_PLAN.md) |
+| Task evidence | This tracker |
+| External ownership | Team 1 owns frontend, Team 3 owns Maps/GPS, presence, notifications and sharing |
+| Status note | Verify inherited statuses and BE-041–043 against implementation before starting work |
 
 ## Legend
 
@@ -29,7 +35,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Awaiting review and merge. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
-| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | NOT_STARTED | Anupam | BE-FND-001 | dotenv locally |
+| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | REVIEW | Anupam | BE-FND-001 | 21 Nov. Standalone build, type-check and API configuration tests passed. [OpenSpec checklist](../../openspec/changes/validate-api-config/tasks.md). Pending review and merge. |
 | BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | NOT_STARTED | Anupam | BE-FND-002 | Shared singleton instance |
 | BE-FND-004 | Global error middleware + AppError class hierarchy | NOT_STARTED | Anupam | BE-FND-001 | Safe client responses |
 | BE-FND-005 | Request context middleware (requestId tracking) | NOT_STARTED | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |

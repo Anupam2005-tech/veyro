@@ -1,10 +1,9 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
+import { loadConfig } from './config/env.js';
 import { createApp } from './app.js';
 
-const port = Number(process.env.PORT) || 4000;
-const app = createApp();
+const config = loadConfig();
+const { port } = config;
+const app = createApp(config);
 
 app.listen(port, () => {
   console.log(`[Veyro API] Server listening on http://localhost:${port}`);

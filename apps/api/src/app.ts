@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
+import { loadConfig } from './config/env.js';
 import { sendSuccess, sendError } from './shared/http/response.js';
 
-export function createApp(): express.Application {
+export function createApp(config = loadConfig()): express.Application {
   const app = express();
 
   app.use(cors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
+    origin: config.frontendOrigin,
     credentials: true,
   }));
 
@@ -25,7 +26,7 @@ export function createApp(): express.Application {
   });
 
   // Health check endpoint
-  app.get('/api/v1/health', (_req, res) => {
+  app.get(`${config.apiBasePath}/health`, (_req, res) => {
     return sendSuccess(
       res,
       {
