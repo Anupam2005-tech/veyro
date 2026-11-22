@@ -1,6 +1,6 @@
 # Veyro — Backend Progress Tracker
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 **Stack:** Node.js + Express.js + TypeScript, Firebase Admin SDK, Cloud Firestore, RTDB, Cloud Storage  
 **Spec reference:** `docs/veyro_backend.md` §2–17; `docs/veyro.md` §4–5, §6 (PROMPT 07)  
@@ -34,10 +34,10 @@
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Awaiting review and merge. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
-| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | REVIEW | Anupam | BE-FND-001 | 21 Nov. Standalone build, type-check and API configuration tests passed. [OpenSpec checklist](../../openspec/changes/validate-api-config/tasks.md). Pending review and merge. |
-| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | NOT_STARTED | Anupam | BE-FND-002 | Shared singleton instance |
-| BE-FND-004 | Global error middleware + AppError class hierarchy | NOT_STARTED | Anupam | BE-FND-001 | Safe client responses |
+| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Merged in PR #9; independent review evidence pending. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
+| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | REVIEW | Anupam | BE-FND-001 | 21 Nov. Standalone build, type-check and API configuration tests passed. [OpenSpec checklist](../../openspec/changes/validate-api-config/tasks.md). On team branch at 829c3f4, pending merge to main. |
+| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | REVIEW | Anupam | BE-FND-002 | 22 Nov. Default app reuse and managed configuration tested. API build and type-check passed. All 24 API tests passed with the Firestore emulator. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/initialize-firebase-admin/tasks.md) |
+| BE-FND-004 | Global error middleware + AppError class hierarchy | REVIEW | Anupam | BE-FND-001 | 22 Nov. Safe Express error responses, parser failures and missing routes verified. API build, type-check and all 27 emulator-backed suite tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/add-api-error-handler/tasks.md) |
 | BE-FND-005 | Request context middleware (requestId tracking) | NOT_STARTED | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |
 | BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | NOT_STARTED | Anupam | BE-FND-004 | Canonical envelope format |
 | BE-FND-007 | CORS configuration | NOT_STARTED | Anupam | BE-FND-001 | Whitelisted origins only |

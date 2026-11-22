@@ -1,6 +1,6 @@
 # Veyro — Project Status
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 **Release:** 1.0 (College Capstone)  
 **Spec versions:** Unified Specification v3.6 / Backend Technical Specification v1.3  
@@ -11,7 +11,7 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | REVIEW | Review and merge BE-FND-002, then start BE-FND-003 |
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-004 on the team branch |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
@@ -20,9 +20,10 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 
 | Team 2 progress | Status | Evidence |
 |---|---|---|
-| BE-FND-001 API scaffold | REVIEW | Build and local health/404 smoke test passed |
+| BE-FND-001 API scaffold | REVIEW | Merged in PR #9. Independent review evidence pending |
 | BE-FND-002 API configuration | REVIEW | Build, type-check and configuration tests passed |
-| Next Anupam task | NOT_STARTED | BE-FND-003 Firebase Admin SDK initialization |
+| BE-FND-003 Firebase Admin initialization | REVIEW | API build, type-check and singleton tests passed |
+| BE-FND-004 Global error handling | REVIEW | Build and type-check passed. All 27 API tests passed with Firestore emulation. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 

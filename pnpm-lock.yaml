@@ -25,6 +25,9 @@ importers:
       express-validator:
         specifier: ^7.1.0
         version: 7.3.2
+      firebase-admin:
+        specifier: ^12.2.0
+        version: 12.7.0
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17

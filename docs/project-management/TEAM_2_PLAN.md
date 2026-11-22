@@ -1,6 +1,6 @@
 # Team 2 — Anupam and Pritam feature plan
 
-**Last updated:** 21 November 2026
+**Last updated:** 22 November 2026
 
 This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status and evidence in [Backend Progress](BACKEND_PROGRESS.md) and shared milestones and blockers in [Project Status](PROJECT_STATUS.md).
 
@@ -17,7 +17,7 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 | Person | Active feature | Status | Reviewer | Next action |
 |---|---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | REVIEW | Pritam | Review and merge BE-FND-002, then activate BE-FND-003 |
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Pritam | Review BE-FND-004 on the team branch |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Anupam | Prepare the Admin API contract while waiting for T2-A2 and Team 1 interfaces |
 
 When a feature starts, update this table and the corresponding rows in [Backend Progress](BACKEND_PROGRESS.md).
@@ -33,8 +33,8 @@ When a feature starts, update this table and the corresponding rows in [Backend 
 | T2-A5 — Trip lifecycle and OTP | Anupam | NOT_STARTED | BE-016, BE-018 | T2-A3 and Team 3 location contract | Transition, OTP expiry and replay tests pass |
 | T2-A6 — Waiting, no-show and cancellation | Anupam | NOT_STARTED | BE-015, BE-017 | T2-A4 and T2-A5 | Policy boundaries and duplicate-safe incident facts pass |
 | T2-P1 — Admin approval and audit | Pritam | BLOCKED | BE-029–032 | T2-A2 and Team 1 application interfaces | Secure review, audit and control tests pass |
-| T2-P2 — Fare calculation | Pritam | NOT_STARTED | BE-011, BE-042 | T2-A2 and domain interfaces | Quote and final-fare boundary tests pass |
-| T2-P3 — Payment verification | Pritam | NOT_STARTED | BE-021–023 | T2-P2, T2-A5 and T2-A6 | Signature, duplicate and retry tests pass |
+| T2-P2 — Fare calculation | Pritam | BLOCKED | BE-011, BE-042 | T2-A2 and domain interfaces | Quote and final-fare boundary tests pass |
+| T2-P3 — Payment verification | Pritam | BLOCKED | BE-021–023 | T2-P2, T2-A5 and T2-A6 | Signature, duplicate and retry tests pass |
 | T2-P4 — Ledger and disputes | Pritam | NOT_STARTED | BE-043 | T2-P3 and T2-A6 | Ledger invariants and audited adjustments pass |
 | T2-P5 — Booking balance gate | Pritam | NOT_STARTED | BE-024 | T2-P4 and T2-A3 | Balance restriction and concurrency tests pass |
 | T2-P6 — Reports, safety and SOS | Pritam | NOT_STARTED | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |

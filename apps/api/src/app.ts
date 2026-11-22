@@ -1,17 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import { loadConfig } from './config/env.js';
-import { sendSuccess, sendError } from './shared/http/response.js';
+import { getFirebaseAdminApp } from './config/firebase-admin.js';
+import { sendSuccess } from './shared/http/response.js';
+import { RouteNotFoundError } from './shared/http/app-error.js';
+import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp(config = loadConfig()): express.Application {
+  getFirebaseAdminApp();
   const app = express();
 
   app.use(cors({
     origin: config.frontendOrigin,
     credentials: true,
   }));
-
-  app.use(express.json());
 
   // Attach request tracing id
   app.use((req, res, next) => {
@@ -24,6 +26,8 @@ export function createApp(config = loadConfig()): express.Application {
     res.setHeader('X-Request-Id', requestId);
     next();
   });
+
+  app.use(express.json());
 
   // Health check endpoint
   app.get(`${config.apiBasePath}/health`, (_req, res) => {
@@ -39,16 +43,8 @@ export function createApp(config = loadConfig()): express.Application {
     );
   });
 
-  // 404 Not Found handler
-  app.use((req, res) => {
-    return sendError(
-      res,
-      `Cannot ${req.method} ${req.originalUrl}`,
-      'ROUTE_NOT_FOUND',
-      404
-    );
-  });
+  app.use((_req, _res, next) => next(new RouteNotFoundError()));
+  app.use(errorHandler);
 
   return app;
 }
-
