@@ -36,3 +36,19 @@ export const veyroFonts = {
   mono: ['JetBrains Mono', 'monospace'],
 } as const;
 
+export const veyroShape = {
+  card: '1.25rem',
+  panel: '1rem',
+} as const;
+
+export const veyroShadow = {
+  glass: '0 24px 70px -35px rgba(0, 0, 0, 0.85)',
+  lime: '0 0 0 1px rgba(184, 242, 58, 0.28)',
+} as const;
+
+export const veyroMotion = {
+  'veyro-dash': 'veyro-dash 1.6s linear infinite',
+  'veyro-float': 'veyro-float 6s ease-in-out infinite',
+  'veyro-rise': 'veyro-rise 500ms ease-out both',
+} as const;
+

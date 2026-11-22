@@ -11,7 +11,7 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-008–010 and the OpenAPI contract |
+| Anupam | T2-A3 — Instant booking and assignment | BLOCKED | Review M2 Firestore transactions and connect verified inputs |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
@@ -30,6 +30,7 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | BE-FND-008 Public API liveness | REVIEW | Existing health payload preserved and cache prevention verified over HTTP. |
 | BE-FND-009 Request validation | REVIEW | Valid sanitized input and multiple invalid fields verified through a test route. |
 | BE-FND-010 Interactive API contract | REVIEW | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. |
+| BE-011–015 Booking core | BLOCKED | Internal services tested in Firestore. Identity, eligibility, route inputs, workers and cancellation policy adapters pending. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 
@@ -37,7 +38,7 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 |---|---|---|
 | M0 — Repository & Scaffold | IN_PROGRESS | Monorepo structure, root configs, trackers |
 | M1 — Design System & Auth | NOT_STARTED | Shared tokens, components, passwordless auth |
-| M2 — Core Booking Flow | NOT_STARTED | Vehicle pass, instant/scheduled quotes & bookings |
+| M2 — Core Booking Flow | IN_PROGRESS | Vehicle pass, instant/scheduled quotes & bookings |
 | M3 — Trip Lifecycle & Maps | NOT_STARTED | Arrival, OTP verification, live GPS tracking |
 | M4 — Payments & Admin | NOT_STARTED | Razorpay Test Mode, balance gate, Admin portal |
 | M5 — Testing & Deployment | NOT_STARTED | Automated test suite, manual release checklist |

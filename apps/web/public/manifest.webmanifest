@@ -1,0 +1,45 @@
+{
+  "name": "Veyro — Your Keys. Our Pro.",
+  "short_name": "Veyro",
+  "description": "You own the ride. We bring the verified chauffeur — on demand or scheduled around your day.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#030407",
+  "theme_color": "#030407",
+  "categories": ["travel", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/veyro-dark-pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/veyro-dark-pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/veyro-dark-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a chauffeur",
+      "short_name": "Book",
+      "url": "/auth?role=customer"
+    },
+    {
+      "name": "Drive with Veyro",
+      "short_name": "Drive",
+      "url": "/auth?role=driver"
+    }
+  ]
+}

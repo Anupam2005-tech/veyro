@@ -75,11 +75,11 @@
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate and immutable in-memory quote snapshot verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
-| BE-012 | Booking module — creation, state machine | `bookings/` | NOT_STARTED | Anupam | BE-011 | Atomic state transitions |
-| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Firestore transaction |
-| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Pickup-12h to pickup-2h |
-| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | NOT_STARTED | Anupam | BE-012 | DEC-05 slabs |
+| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | Persisted server-built hourly snapshot with owner, vehicle and route. Verified Firestore round trip. Pending verified quote inputs and eligibility from A2 and Teams 1/3. [M2 checklist](../../openspec/changes/implement-booking-core/tasks.md) |
+| BE-012 | Booking module — creation, state machine | `bookings/` | BLOCKED | Anupam | BE-011 | Owner-bound, retry-safe creation and state transitions tested in Firestore. Verified identity, balance, vehicle and quote checks still need production adapters. [M2 checklist](../../openspec/changes/implement-booking-core/tasks.md) |
+| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | BLOCKED | Anupam | BE-012 | Targeted five-minute offers, rejection, atomic acceptance, reservation conflicts and retry-safe events tested. Pending eligibility integration, expiry trigger and delivery. [M2 checklist](../../openspec/changes/implement-booking-core/tasks.md) |
+| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | BLOCKED | Anupam | BE-012 | Immediate broadcast at 4–12h confirmed by Anupam; 4h and 30d boundaries, first assignment and NEEDS_REBOOK cutoff tested. Pending eligibility, workers and delivery. [M2 checklist](../../openspec/changes/implement-booking-core/tasks.md) |
+| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | BLOCKED | Anupam | BE-012 | DEC-05 fee boundaries, immutable cancellation facts and reservation release tested. Pending approved reasons, authoritative trip facts and downstream incident handling. [M2 checklist](../../openspec/changes/implement-booking-core/tasks.md) |
 
 ---
 

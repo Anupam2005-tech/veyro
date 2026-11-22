@@ -3,14 +3,176 @@
 @tailwind utilities;
 
 :root {
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --night-canvas: #030407;
+  --night-surface: #0b0e17;
+  --night-glass: rgba(170, 176, 196, 0.08);
+  --night-glass-strong: rgba(170, 176, 196, 0.14);
+  --night-border: rgba(170, 176, 196, 0.22);
+  --night-text: #f2f4fa;
+  --night-muted: #aab0c4;
+  --night-accent: #b8f23a;
+  --night-accent-hover: #c9f762;
+  --night-accent-ink: #030407;
+  --night-sassy: #ff2e93;
+
+  --studio-bg: #f8f9fc;
+  --studio-surface: #ffffff;
+  --studio-obsidian: #090b10;
+  --studio-ink: #090b10;
+  --studio-muted: #525866;
+  --studio-tint: #eef2f8;
+  --studio-border: #e2e6f0;
+  --studio-input-border: #71788a;
+  --studio-lime: #b8f23a;
+  --studio-sassy: #ff2e93;
+
+  --font-display: var(--font-syne), 'Syne', sans-serif;
+  --font-body: var(--font-inter), 'Inter', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+
+  --theme-canvas: var(--night-canvas);
+  --theme-surface: var(--night-surface);
+  --theme-glass: var(--night-glass);
+  --theme-glass-strong: var(--night-glass-strong);
+  --theme-border: var(--night-border);
+  --theme-text: var(--night-text);
+  --theme-muted: var(--night-muted);
+  --theme-accent: var(--night-accent);
+  --theme-accent-hover: var(--night-accent-hover);
+  --theme-accent-ink: var(--night-accent-ink);
+  --theme-sassy: var(--night-sassy);
+  --theme-focus: var(--night-accent);
+  --theme-error: #ff8ba7;
+  --theme-error-ink: #090b10;
+  --theme-warning: #fcd34b;
+  --theme-success: var(--night-accent);
+  --theme-info: #7dd3fc;
+  --theme-neutral: #cbd5e1;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-body);
+[data-theme='studio'] {
+  --theme-canvas: var(--studio-bg);
+  --theme-surface: var(--studio-surface);
+  --theme-glass: var(--studio-tint);
+  --theme-glass-strong: var(--studio-border);
+  --theme-border: var(--studio-border);
+  --theme-text: var(--studio-ink);
+  --theme-muted: var(--studio-muted);
+  --theme-accent: var(--studio-lime);
+  --theme-accent-hover: var(--studio-lime);
+  --theme-accent-ink: var(--studio-ink);
+  --theme-sassy: var(--studio-sassy);
+  --theme-focus: var(--studio-ink);
+  --theme-error: #b42318;
+  --theme-error-ink: #ffffff;
+  --theme-warning: #92400e;
+  --theme-success: #166534;
+  --theme-info: #075985;
+  --theme-neutral: #475569;
 }
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--theme-canvas);
+    color: var(--theme-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--theme-accent);
+    color: var(--theme-accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: var(--theme-glass);
+    border: 1px solid var(--theme-border);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .hairline {
+    border-color: var(--theme-border);
+  }
+}
+
+@keyframes veyro-dash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@keyframes veyro-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes veyro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.veyro-route-line {
+  stroke-dasharray: 10 6;
+  animation: veyro-dash 1.6s linear infinite;
+}
+
+.veyro-float {
+  animation: veyro-float 6s ease-in-out infinite;
+}
+
+.veyro-rise {
+  animation: veyro-rise 500ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .veyro-route-line,
+  .veyro-float,
+  .veyro-rise {
+    animation: none;
+  }
+}

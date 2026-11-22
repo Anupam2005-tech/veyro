@@ -1,21 +1,47 @@
+import Link from 'next/link';
+import { AppShell, PublicHeader, VeyroButton } from '@veyro/ui';
+import { BookingModes } from '@/components/landing/BookingModes';
+import { Faq } from '@/components/landing/Faq';
+import { FareSafety } from '@/components/landing/FareSafety';
+import { Hero } from '@/components/landing/Hero';
+import { HowItWorks } from '@/components/landing/HowItWorks';
+import { InstallAppButton } from '@/components/landing/InstallAppButton';
+import { SiteFooter } from '@/components/landing/SiteFooter';
+import { TripVerification } from '@/components/landing/TripVerification';
+import { VehicleExplainer } from '@/components/landing/VehicleExplainer';
+
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <div className="max-w-xl mx-auto space-y-6">
-        <div className="inline-block px-3 py-1 text-xs font-mono uppercase tracking-wider rounded-full bg-night-surface border border-night-border text-night-muted">
-          Veyro Release 1 • Scaffold M0
-        </div>
-        <h1 className="text-4xl sm:text-5xl font-display font-extrabold tracking-tight text-night-text">
-          VEYRO
-        </h1>
-        <p className="text-lg text-night-muted">
-          Your keys. Our pro. Zero traffic stress.
-        </p>
-        <p className="text-sm font-mono text-night-muted/80">
-          Next.js App Router scaffold initialized.
-        </p>
-      </div>
-    </main>
+    <AppShell
+      theme="night"
+      header={
+        <PublicHeader
+          links={[
+            { label: 'How it works', href: '#how-it-works' },
+            { label: 'Booking', href: '#booking-modes' },
+            { label: 'Fares', href: '#fares' },
+            { label: 'Safety', href: '#safety' },
+            { label: 'FAQ', href: '#faq' },
+          ]}
+          actions={
+            <>
+              <InstallAppButton />
+              <VeyroButton asChild size="sm" variant="secondary">
+                <Link href="/auth">Sign In</Link>
+              </VeyroButton>
+            </>
+          }
+        />
+      }
+      footer={<SiteFooter />}
+    >
+      <Hero />
+      <HowItWorks />
+      <BookingModes />
+      <VehicleExplainer />
+      <FareSafety />
+      <TripVerification />
+      <Faq />
+    </AppShell>
   );
 }
-
