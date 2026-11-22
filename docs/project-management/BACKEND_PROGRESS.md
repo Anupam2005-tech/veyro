@@ -135,7 +135,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | INF-001 | Firestore Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Restrictive client rules |
-| INF-002 | RTDB Security Rules (deny-by-default) | NOT_STARTED | Team 3 — Bipul / Pranesh | FND-013 | Location path scoping |
+| INF-002 | RTDB Security Rules (deny-by-default) | REVIEW | Bipul (Team 3 — Bipul / Pranesh) | FND-013 | Feature: T3-INF002; updated: 2026-11-22; reviewer: Pranesh + Team 2 security review pending; change/paths: `infra/firebase/database.rules.json`; evidence: JSON parse valid, root + `trips/$tripId/location|presence` + `drivers/$driverId/presence` all `.read/.write false`; no client writes, server Admin SDK bypasses rules; blocker/next: narrow per-trip read grants await BE-019 path + BE-001 auth claims + BE-016 trip state; emulator cross-account tests pending |
 | INF-003 | Storage Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Private document paths |
 | INF-004 | Firestore composite indexes | NOT_STARTED | Anupam | BE-012 | `firestore.indexes.json` |
 | INF-005 | Firebase Emulator Suite configuration | NOT_STARTED | Anupam | FND-014 | Local testing harness |
