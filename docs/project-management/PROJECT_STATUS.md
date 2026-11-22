@@ -11,7 +11,7 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-005 on the team branch |
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-006 and its shared HTTP contract change |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
@@ -24,7 +24,8 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | BE-FND-002 API configuration | REVIEW | Build, type-check and configuration tests passed |
 | BE-FND-003 Firebase Admin initialization | REVIEW | API build, type-check and singleton tests passed |
 | BE-FND-004 Global error handling | REVIEW | Build and type-check passed. All 27 API tests passed with Firestore emulation. Pushed in 1aa7f33. |
-| BE-FND-005 Request context | REVIEW | Build, type-check and all 29 API tests passed with Firestore emulation. |
+| BE-FND-005 Request context | REVIEW | Build, type-check and all 29 API tests passed with Firestore emulation. Pushed in 1e5e457. |
+| BE-FND-006 Response helpers | REVIEW | API build, type-check and all 30 API tests passed with Firestore emulation. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 

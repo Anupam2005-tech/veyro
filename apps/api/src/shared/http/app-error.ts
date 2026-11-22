@@ -6,7 +6,7 @@ export class AppError extends Error {
     readonly statusCode: number,
     readonly code: string,
     message: string,
-    readonly details: Pick<ApiFieldError, 'field' | 'message'>[] = [],
+    readonly details: ApiFieldError[] = [],
   ) {
     super(message);
     this.name = new.target.name;
