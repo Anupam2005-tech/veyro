@@ -59,3 +59,29 @@ test('delegates failures after response headers were sent', () => {
   errorHandler(error, {}, { headersSent: true }, err => { forwarded = err; });
   assert.equal(forwarded, error);
 });
+
+test('health requests preserve a valid ID and get distinct IDs for absent or invalid headers', async t => {
+  const base = await serve(t, createApp());
+  const generated = new Set();
+  for (const incoming of ['client.1_A-b', undefined, undefined, 'a,b', 'x'.repeat(129)]) {
+    const headers = incoming === undefined ? {} : { 'X-Request-Id': incoming };
+    const response = await fetch(base + '/api/v1/health', { headers });
+    assert.equal(response.status, 200);
+    const id = response.headers.get('X-Request-Id');
+    assert.equal((await response.json()).meta.requestId, id);
+    if (incoming === 'client.1_A-b') {
+      assert.equal(id, incoming);
+    } else {
+      assert.match(id, /^req_[a-f0-9-]{36}$/);
+      generated.add(id);
+    }
+  }
+  assert.equal(generated.size, 4);
+});
+
+test('request context is established before CORS handles a preflight', async t => {
+  const base = await serve(t, createApp());
+  const response = await fetch(base + '/api/v1/health', { method: 'OPTIONS' });
+  assert.equal(response.status, 204);
+  assert.ok(response.headers.get('X-Request-Id'));
+});

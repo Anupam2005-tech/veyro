@@ -8,10 +8,10 @@ export function sendSuccess<T>(
   statusCode = 200,
   metaExtra?: Record<string, unknown>
 ): Response {
-  const requestId = (res.req as { id?: string }).id ?? 'req_local_dev';
+  const requestId = res.req.id ?? 'req_local_dev';
   const meta: ApiMeta = {
-    requestId,
     ...metaExtra,
+    requestId,
   };
 
   const payload: ApiSuccessResponse<T> = {
@@ -32,10 +32,10 @@ export function sendError(
   details: ApiFieldError[] = [],
   metaExtra?: Record<string, unknown>
 ): Response {
-  const requestId = (res.req as { id?: string }).id ?? 'req_local_dev';
+  const requestId = res.req.id ?? 'req_local_dev';
   const meta: ApiMeta = {
-    requestId,
     ...metaExtra,
+    requestId,
   };
 
   const payload: ApiErrorResponse = {

@@ -5,27 +5,18 @@ import { getFirebaseAdminApp } from './config/firebase-admin.js';
 import { sendSuccess } from './shared/http/response.js';
 import { RouteNotFoundError } from './shared/http/app-error.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { requestContext } from './middleware/request-context.js';
 
 export function createApp(config = loadConfig()): express.Application {
   getFirebaseAdminApp();
   const app = express();
 
+  app.use(requestContext);
   app.use(cors({
     origin: config.frontendOrigin,
     credentials: true,
+    exposedHeaders: ['X-Request-Id'],
   }));
-
-  // Attach request tracing id
-  app.use((req, res, next) => {
-    const incomingId = req.headers['x-request-id'];
-    const requestId = typeof incomingId === 'string' && incomingId.length > 0
-      ? incomingId
-      : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    (req as { id?: string }).id = requestId;
-    res.setHeader('X-Request-Id', requestId);
-    next();
-  });
 
   app.use(express.json());
 
