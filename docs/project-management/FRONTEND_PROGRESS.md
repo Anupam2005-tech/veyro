@@ -84,7 +84,7 @@
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
 | FE-026 | Trip cockpit — all states | VIEW-06 `/customer/trips/[id]` | NOT_STARTED | Member 2 | FE-020, BE-016 | |
-| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | NOT_STARTED | Member 3 | FE-026, BE-019 | |
+| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | REVIEW | Member 3 (Team 3) | FE-026, BE-019 | T3 oneshot 2026-11-22; `apps/web/src/maps/trip-map-helpers.ts` — 30s stale freeze + last-updated + permission states; web type-check passed; screen wiring belongs to Team 1 FE-026 |
 | FE-028 | OTP display (start + end) | VIEW-06 `/customer/trips/[id]` | NOT_STARTED | Member 2 | FE-026 | |
 | FE-029 | SOS action (demo mode wording) | VIEW-06 `/customer/trips/[id]` | NOT_STARTED | Member 2 | FE-026, BE-026 | |
 | FE-030 | Trip sharing (create, revoke) | VIEW-10 `/share/[token]` | NOT_STARTED | Member 2 | FE-026, BE-020 | |
@@ -101,9 +101,9 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-034 | Google Maps provider adapter | — | NOT_STARTED | Member 3 | FND-006 | |
-| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | NOT_STARTED | Member 3 | FE-034, FE-018 | |
-| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | NOT_STARTED | Member 3 | FE-034, FE-027 | |
+| FE-034 | Google Maps provider adapter | — | REVIEW | Member 3 (Team 3) | FND-006 | T3 oneshot 2026-11-22; `apps/web/src/maps/maps-adapter.ts` — `MapsAdapter` contract + stub, key via `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` only; web type-check passed; loader/quotas pending deployment config |
+| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | IN_PROGRESS | Member 3 (Team 3) | FE-034, FE-018 | T3 oneshot 2026-11-22; adapter `routePreview/geocode` contract + `DriverMarker` type ready; full Places UI blocked on Maps key + Team 1 FE-018 booking studio |
+| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Member 3 (Team 3) | FE-034, FE-027 | T3 oneshot 2026-11-22; adapter + stale helpers ready for Team 1 VIEW-06/13; web type-check passed; live subscription wiring awaits BE-019 RTDB + Team 1 cockpits |
 
 ---
 
