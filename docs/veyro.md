@@ -1315,6 +1315,13 @@ These replace the earlier M1–M7 allocation for this section. Existing task IDs
 - Payments, Admin and safety services.
 - Shared identity/authorization contracts and security review for Team 3 services; Team 3 implements its own domain checks and tests.
 
+### Individual feature ownership and tracking
+
+- **Anupam:** backend foundations and identity/security, then instant/scheduled booking, trip lifecycle/OTP, waiting/no-show and cancellation.
+- **Pritam:** Admin approval/audit, then fare services, payment verification, ledger/disputes, balance gate and reports/account safety/simulated SOS.
+- Each person works on **one feature at a time**, including tests and review; at most two Team 2 features are active. The partner reviews, with outside-pair review for the changes specified in §12.7.
+- Follow [Team 2's ordered feature plan](project-management/TEAM_2_PLAN.md) for dependencies, acceptance gates and active slots. Maintain task evidence in [Backend Progress](project-management/BACKEND_PROGRESS.md) and milestone/blocker summaries in [Project Status](project-management/PROJECT_STATUS.md). Reassign a bounded feature explicitly when workload requires it.
+
 ### Typical tasks and deliverables
 
 - Establish central Firebase Admin initialization, backend configuration, authentication, role/resource authorization, App Check, shared request context, validation and safe errors.
