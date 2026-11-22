@@ -61,7 +61,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-007 | Driver module (profile, capabilities, rates, service areas) | `drivers/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-001 | HOURLY active, PER_KM stored |
 | BE-008 | Application module (submission, review, document metadata) | `applications/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-007 | PENDING_REVIEW state |
 | BE-009 | Document upload completion endpoint | `applications/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-008 | Storage path validation |
-| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-007 | Presence and availability checks. Final booking eligibility belongs to BE-012 |
+| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | REVIEW | Pranesh (Team 3 — Bipul / Pranesh) | BE-007 | Feature: T3-BE010; updated: 2026-11-22; reviewer: Bipul + Team 2 security review pending; change/paths: `apps/api/src/modules/availability/availability.types.ts`, `availability.service.ts`, `availability.validator.ts`, `apps/api/test/availability.test.cjs`; evidence: `pnpm --filter @veyro/contracts build` + `pnpm --filter @veyro/api type-check` passed, `pnpm --filter @veyro/api build` passed, `node --test availability+hourly-fare+admin-decision-rules` 14 passed (5 new availability); blocker/next: needs BE-007 driver persistence contract and BE-001 auth for route wiring + Team 2 security review; no OpenSpec change approved for Team 3 yet. Final booking eligibility belongs to BE-012 |
 
 ---
 
