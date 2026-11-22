@@ -1,4 +1,5 @@
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
+import { enforceBookingBalance } from '../payments/payment-service.js';
 import { AppError } from '../../shared/http/app-error.js';
 import { documentId, type BookingQuote } from '../quotes/quote-repository.js';
 import { cancellationFeeInr, minute, scheduledWindow, type CancellationFacts } from './booking-policy.js';
@@ -58,6 +59,7 @@ export class BookingCore {
         if (existing.get('pickupAt') !== pickupAt) throw conflict();
         return ref.id;
       }
+      await enforceBookingBalance(this.db, tx, customerId);
       await this.checks.verifyCreation(tx, quote);
       const at = this.now();
       const scheduled = pickupAt !== null;

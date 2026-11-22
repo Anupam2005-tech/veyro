@@ -22,7 +22,7 @@ const policyRows = [
 
 export function FareSafety() {
   return (
-    <section id="fares" className="border-b border-night-border py-20 sm:py-24">
+    <section id="fares" className="border-b border-night-border py-16 sm:py-24">
       <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
           Fares &amp; policy
@@ -34,8 +34,9 @@ export function FareSafety() {
           The driver-service fare is shown separately from expenses you pay
           directly. Only HOURLY pricing is active in Release 1.
         </p>
-        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+        <div className="mt-10 grid gap-6 lg:grid-cols-2">
           <FareBreakdown
+            className="border-night-border bg-night-surface shadow-none"
             lines={[
               { label: 'Driver service · 2 hours', amount: '₹420.00', emphasis: true },
               { label: 'Estimated base fare', amount: '₹420.00' },
@@ -45,15 +46,15 @@ export function FareSafety() {
             exclusions={[...publicPolicy.excludedExpenses]}
             note="Illustrative estimate at an assumed ₹210/hour driver rate. The final fare is calculated by Veyro from the recorded trip time."
           />
-          <div className="space-y-4">
+          <div className="rounded-card border border-night-border bg-night-surface">
             {policyRows.map((row) => {
               const Icon = row.icon;
               return (
                 <div
                   key={row.label}
-                  className="glass-panel flex gap-4 rounded-card p-5"
+                  className="flex gap-4 border-b border-night-border p-5"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-night-glass-strong text-night-accent">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-night-canvas text-night-accent">
                     <Icon aria-hidden="true" className="h-4 w-4" />
                   </span>
                   <div>
@@ -65,7 +66,7 @@ export function FareSafety() {
                 </div>
               );
             })}
-            <p className="flex items-start gap-2 text-xs text-night-muted">
+            <p className="flex items-start gap-2 p-5 text-xs text-night-muted">
               <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Applicable policy versions and rates are frozen with each quote at
               confirmation.

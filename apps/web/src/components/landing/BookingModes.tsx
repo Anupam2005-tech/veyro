@@ -4,7 +4,7 @@ import { publicPolicy } from '@/lib/public-policy';
 
 export function BookingModes() {
   return (
-    <section id="booking-modes" className="border-b border-night-border py-20 sm:py-24">
+    <section id="booking-modes" className="border-b border-night-border py-16 sm:py-24">
       <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
           Two ways to ride
@@ -12,10 +12,10 @@ export function BookingModes() {
         <h2 className="mt-4 font-display text-3xl font-bold text-night-text sm:text-4xl">
           Instant or scheduled. Always your call.
         </h2>
-        <div className="mt-12 grid gap-5 lg:grid-cols-2">
-          <article className="glass-panel rounded-card p-6 shadow-glass sm:p-8">
+        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <article className="rounded-card border border-night-border bg-night-surface p-6 sm:p-8">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-night-accent text-night-accent-ink">
+              <span className="flex h-10 w-10 items-center justify-center rounded-control bg-night-accent text-night-accent-ink">
                 <Zap aria-hidden="true" className="h-5 w-5" />
               </span>
               <h3 className="font-display text-2xl font-bold text-night-text">Instant</h3>
@@ -48,9 +48,9 @@ export function BookingModes() {
             </p>
           </article>
 
-          <article className="glass-panel rounded-card p-6 shadow-glass sm:p-8">
+          <article className="rounded-card border border-night-border bg-night-surface p-6 sm:p-8">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-night-border bg-night-glass-strong text-night-accent">
+              <span className="flex h-10 w-10 items-center justify-center rounded-control border border-night-border bg-night-canvas text-night-accent">
                 <CalendarClock aria-hidden="true" className="h-5 w-5" />
               </span>
               <h3 className="font-display text-2xl font-bold text-night-text">Scheduled</h3>

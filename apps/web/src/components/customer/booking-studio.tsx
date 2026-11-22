@@ -154,7 +154,7 @@ function LocationField({
         <ul
           id={`${id}-suggestions`}
           aria-label={`${label} suggestions`}
-          className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-panel border border-studio-border bg-white shadow-lg"
+          className="absolute inset-x-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-panel border border-studio-border bg-white"
         >
           {options.map((option) => (
             <li key={option.id}>
@@ -199,7 +199,7 @@ function DriverCard({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`w-full rounded-panel border p-4 text-left transition-colors ${
+      className={`w-full rounded-card border p-3 text-left transition-colors ${
         selected
           ? 'border-studio-ink bg-studio-obsidian text-white'
           : 'border-studio-border bg-white text-studio-ink hover:border-studio-ink'
@@ -217,7 +217,7 @@ function DriverCard({
           {driver.rating}
         </span>
       </div>
-      <div className={`mt-4 grid grid-cols-3 gap-2 border-t pt-3 text-xs ${selected ? 'border-white/15' : 'border-studio-border'}`}>
+      <div className={`mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-xs ${selected ? 'border-white/15' : 'border-studio-border'}`}>
         <span className="inline-flex items-center gap-1">
           <Wallet aria-hidden="true" className="h-3.5 w-3.5" /> ₹{driver.hourlyRate}/h
         </span>
@@ -566,14 +566,15 @@ export default function BookingStudio() {
 
   function renderPanel() {
     return (
-      <div className="space-y-5 p-5 sm:p-6">
+      <div className="space-y-4 p-4 sm:p-5">
         <div>
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                 Customer booking studio
               </p>
-              <h1 className="mt-2 font-display text-2xl font-extrabold text-studio-ink">
+              <h1 className="mt-2 flex items-center gap-2 font-display text-2xl font-extrabold text-studio-ink">
+                <span className="h-2 w-2 rounded-full bg-studio-lime shrink-0" aria-hidden="true" />
                 Plan your ride
               </h1>
             </div>
@@ -591,7 +592,7 @@ export default function BookingStudio() {
           ) : null}
         </div>
 
-        <section className="space-y-4 rounded-panel border border-studio-border bg-white p-4">
+        <section className="space-y-3 rounded-card border border-studio-border bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-extrabold text-studio-ink">1. Route</h2>
             {provider.id === 'demo' ? <DemoBadge label="Demo map" /> : null}
@@ -660,7 +661,7 @@ export default function BookingStudio() {
             <p className="text-xs text-studio-muted">Maximum of three intermediate stops reached.</p>
           )}
 
-          <div className="rounded-panel bg-studio-tint p-3 text-xs text-studio-muted">
+          <div className="rounded-panel border-l-2 border-l-studio-lime bg-gradient-to-r from-studio-lime/10 via-studio-tint to-studio-tint p-3 text-xs text-studio-muted">
             {routeLoading ? (
               <span className="inline-flex items-center gap-2">
                 <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
@@ -694,7 +695,7 @@ export default function BookingStudio() {
           ) : null}
         </section>
 
-        <section className="space-y-4 rounded-panel border border-studio-border bg-white p-4">
+        <section className="space-y-3 rounded-card border border-studio-border bg-white p-4">
           <h2 className="font-display text-base font-extrabold text-studio-ink">2. Booking type</h2>
           <div className="grid grid-cols-2 gap-2">
             {(['INSTANT', 'SCHEDULED'] as const).map((type) => (
@@ -759,7 +760,7 @@ export default function BookingStudio() {
           )}
         </section>
 
-        <section className="space-y-3 rounded-panel border border-studio-border bg-white p-4">
+        <section className="space-y-3 rounded-card border border-studio-border bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-extrabold text-studio-ink">3. Vehicle pass</h2>
             {vehicle ? <CarFront aria-hidden="true" className="h-4 w-4 text-studio-ink" /> : null}
@@ -794,11 +795,11 @@ export default function BookingStudio() {
           )}
         </section>
 
-        <section className="space-y-4 rounded-panel border border-studio-border bg-white p-4">
+        <section className="space-y-3 rounded-card border border-studio-border bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-extrabold text-studio-ink">4. Eligible drivers</h2>
             {bookingType === 'SCHEDULED' ? (
-              <span className="rounded-full bg-studio-tint px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-muted">
+              <span className="rounded-control bg-studio-tint px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-muted">
                 Count only
               </span>
             ) : null}
@@ -893,7 +894,7 @@ export default function BookingStudio() {
                     type="button"
                     onClick={() => toggleLanguage(language)}
                     aria-pressed={filters.languages.includes(language)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    className={`rounded-control border px-3 py-1 text-xs font-semibold ${
                       filters.languages.includes(language)
                         ? 'border-studio-ink bg-studio-ink text-white'
                         : 'border-studio-border text-studio-muted'
@@ -958,10 +959,10 @@ export default function BookingStudio() {
           ) : null}
         </section>
 
-        <section className="space-y-4 rounded-panel border border-studio-border bg-white p-4">
+        <section className="space-y-3 rounded-card border border-studio-border bg-white p-4">
           <h2 className="font-display text-base font-extrabold text-studio-ink">5. Quote & confirm</h2>
           {balanceBlocksBooking ? (
-            <div className="sticky top-2 z-10 space-y-3 rounded-card border border-[color:var(--theme-warning)] bg-white/95 p-4 shadow-glass backdrop-blur">
+            <div className="sticky top-2 z-10 space-y-3 rounded-card border border-[color:var(--theme-warning)] bg-white/95 p-3">
               <FormAlert tone="warning" title="Settle previous fare">
                 A confirmed unpaid balance of ₹{unpaidBalance} blocks new bookings. Razorpay is shown
                 in test mode only. A timely disputed amount remains under review.
@@ -1048,9 +1049,9 @@ export default function BookingStudio() {
   return (
     <CustomerShell subtitle="Map-first booking studio">
       <div className="relative min-h-[calc(100vh-4rem)] bg-studio-bg">
-        <div className="grid gap-0 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <div className="mx-auto grid w-full max-w-content gap-0 lg:grid-cols-[420px_minmax(0,1fr)]">
           <aside
-            className={`fixed inset-x-0 bottom-16 z-20 max-h-[72vh] overflow-y-auto rounded-t-card border border-studio-border bg-studio-bg shadow-2xl transition-transform lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:border-r lg:shadow-none ${
+            className={`fixed inset-x-0 bottom-16 z-20 max-h-[72vh] overflow-y-auto rounded-t-card border border-studio-border bg-studio-bg shadow-studio-card transition-transform lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:border-r lg:shadow-none ${
               sheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-4.5rem)]'
             }`}
           >
@@ -1074,7 +1075,7 @@ export default function BookingStudio() {
             <div className={sheetExpanded ? 'block' : 'hidden lg:block'}>{renderPanel()}</div>
           </aside>
 
-          <div className="min-h-[calc(100vh-4rem)] p-0 lg:p-5">
+          <div className="min-h-[calc(100vh-4rem)] p-0 sm:p-5">
             <RouteMap
               points={points}
               route={route}

@@ -8,6 +8,14 @@ import { errorHandler } from './middleware/error-handler.js';
 import { createDocsRouter } from './middleware/api-docs.js';
 import { requestContext } from './middleware/request-context.js';
 
+import { authenticate } from './middleware/authenticate.js';
+import { requireAppCheck } from './middleware/require-app-check.js';
+import { bootstrapSession } from './modules/auth/session.js';
+
+import { createPaymentRouter, razorpayWebhook } from './modules/payments/payment-routes.js';
+import { createSafetyRouter } from './modules/safety/safety-routes.js';
+import { requireRole } from './middleware/require-role.js';
+
 export function createApp(config = loadConfig()): express.Application {
   getFirebaseAdminApp();
   const app = express();
@@ -20,7 +28,18 @@ export function createApp(config = loadConfig()): express.Application {
     exposedHeaders: ['X-Request-Id'],
   }));
 
+  app.post(`${config.apiBasePath}/payments/webhooks/razorpay`,
+    express.raw({ type: 'application/json', limit: '256kb' }), razorpayWebhook);
   app.use(express.json());
+
+  app.post(`${config.apiBasePath}/auth/session`, authenticate, requireAppCheck, bootstrapSession);
+
+  app.use(`${config.apiBasePath}/payments`, authenticate, requireAppCheck, requireRole('CUSTOMER'), createPaymentRouter());
+  const safety = createSafetyRouter();
+  for (const path of ['/reports', '/admin/reports', '/admin/audit', '/sos', '/notifications']) {
+    app.use(`${config.apiBasePath}${path}`, authenticate, requireAppCheck, requireRole('CUSTOMER', 'DRIVER', 'ADMIN'));
+  }
+  app.use(config.apiBasePath, safety);
 
   // Health check endpoint
   app.get(`${config.apiBasePath}/health`, (_req, res) => {

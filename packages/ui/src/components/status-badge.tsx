@@ -69,15 +69,22 @@ export interface StatusBadgeProps {
 export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
+  const isPulsing = status === 'active' || status === 'pending';
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
+        'inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 text-xs font-semibold',
         config.className,
         className
       )}
     >
+      {isPulsing ? (
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 rounded-full bg-current dot-pulse"
+        />
+      ) : null}
       <Icon aria-hidden="true" className="h-3.5 w-3.5" />
       {label ?? config.label}
     </span>
@@ -103,7 +110,7 @@ export function NoticeBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium',
+        'inline-flex items-center gap-2 rounded-control border px-2.5 py-1 text-xs font-medium',
         tones[tone],
         className
       )}

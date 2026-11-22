@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -37,6 +38,7 @@ type Errors = Record<string, string>;
 export default function CustomerOnboarding() {
   const router = useRouter();
   const { user, profile, loading, refreshProfile } = useSession();
+  const reduceMotion = useReducedMotion();
   const [step, setStep] = React.useState(0);
   const [fullName, setFullName] = React.useState('');
   const [phone, setPhone] = React.useState('');
@@ -142,11 +144,11 @@ export default function CustomerOnboarding() {
       subtitle="Set up your Veyro rider profile"
       stepLabel={`Step ${Math.min(step + 1, 3)} of 3`}
     >
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
-        <Stepper steps={steps} current={step} className="mb-8" />
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
+        <Stepper steps={steps} current={step} className="mb-6" />
 
-        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-          <aside className="space-y-5">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10 lg:items-start">
+          <aside className="space-y-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                 Welcome to Veyro
@@ -161,7 +163,9 @@ export default function CustomerOnboarding() {
             </div>
 
             <div className="rounded-card border border-studio-border bg-studio-surface p-5">
-              <ShieldCheck aria-hidden="true" className="h-5 w-5 text-studio-ink" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-studio-tint">
+                <ShieldCheck aria-hidden="true" className="h-5 w-5 text-studio-ink" />
+              </span>
               <p className="mt-3 font-display text-base font-bold text-studio-ink">
                 Verification comes first
               </p>
@@ -178,258 +182,294 @@ export default function CustomerOnboarding() {
             ) : null}
           </aside>
 
-          <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-8">
-            {loading ? (
-              <div className="space-y-4">
-                <div className="h-6 w-40 animate-pulse motion-reduce:animate-none rounded bg-studio-tint" />
-                <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
-                <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
-              </div>
-            ) : !user ? (
-              <div className="space-y-5">
-                <FormAlert tone="warning" title="Sign in to continue">
-                  We need a verified Veyro identity before saving your profile.
-                </FormAlert>
-                <VeyroButton asChild className="w-full">
-                  <Link href="/auth?role=customer">Sign in as a customer</Link>
-                </VeyroButton>
-              </div>
-            ) : step === 2 ? (
-              <div className="py-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-studio-lime text-studio-ink">
-                  <CheckCircle2 aria-hidden="true" className="h-7 w-7" />
+          <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-8">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="h-6 w-40 animate-pulse motion-reduce:animate-none rounded bg-studio-tint" />
+                  <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
+                  <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
                 </div>
-                <h2 className="mt-6 font-display text-3xl font-extrabold text-studio-ink">
-                  You are ready to ride
-                </h2>
-                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-studio-muted">
-                  Your Veyro profile is set. Add another vehicle any time from your profile, or head
-                  straight to the booking studio.
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                  <VeyroButton asChild size="lg">
-                    <Link href="/customer">Open booking studio</Link>
-                  </VeyroButton>
-                  <VeyroButton asChild variant="secondary" size="lg">
-                    <Link href="/">Back to home</Link>
+              ) : !user ? (
+                <div className="space-y-5">
+                  <FormAlert tone="warning" title="Sign in to continue">
+                    We need a verified Veyro identity before saving your profile.
+                  </FormAlert>
+                  <VeyroButton asChild className="w-full">
+                    <Link href="/auth?role=customer">Sign in as a customer</Link>
                   </VeyroButton>
                 </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} noValidate>
-                {step === 0 ? (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="font-display text-2xl font-extrabold text-studio-ink">
-                        Tell us about you
-                      </h2>
-                      <p className="mt-2 text-sm text-studio-muted">
-                        This stays with your Veyro identity and cannot be trusted from the browser
-                        alone.
-                      </p>
-                    </div>
-
-                    <Field id="customer-name" label="Full name" required error={errors.fullName}>
-                      <Input
-                        id="customer-name"
-                        autoComplete="name"
-                        placeholder="Aarav Sharma"
-                        value={fullName}
-                        invalid={Boolean(errors.fullName)}
-                        aria-describedby={errors.fullName ? 'customer-name-error' : undefined}
-                        onChange={(event) => setFullName(event.currentTarget.value)}
-                      />
-                    </Field>
-
-                    <Field
-                      id="customer-phone"
-                      label="Contact phone"
-                      required
-                      error={errors.phone}
-                      hint="International format, for example +919876543210."
-                    >
-                      <Input
-                        id="customer-phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="+919876543210"
-                        value={phone}
-                        invalid={Boolean(errors.phone)}
-                        aria-describedby={errors.phone ? 'customer-phone-error' : 'customer-phone-hint'}
-                        onChange={(event) => setPhone(event.currentTarget.value)}
-                      />
-                    </Field>
-
-                    <div className="space-y-3">
-                      <CheckboxField
-                        id="customer-terms"
-                        checked={consentTerms}
-                        error={errors.consentTerms}
-                        onChange={setConsentTerms}
-                        label={
-                          <>
-                            I accept the{' '}
-                            <Link href="/legal/terms" className="underline underline-offset-2">
-                              Terms of Service
-                            </Link>
-                          </>
-                        }
-                      />
-                      <CheckboxField
-                        id="customer-privacy"
-                        checked={consentPrivacy}
-                        error={errors.consentPrivacy}
-                        onChange={setConsentPrivacy}
-                        label={
-                          <>
-                            I have read the{' '}
-                            <Link href="/legal/privacy" className="underline underline-offset-2">
-                              Privacy Policy
-                            </Link>
-                          </>
-                        }
-                      />
-                    </div>
-
-                    <VeyroButton
-                      type="button"
-                      size="lg"
-                      className="w-full"
-                      onClick={() => {
-                        if (validateDetails()) setStep(1);
-                      }}
-                    >
-                      Continue to vehicle
-                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              ) : step === 2 ? (
+                <div className="py-6 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-studio-lime text-studio-ink">
+                    <CheckCircle2 aria-hidden="true" className="h-7 w-7" />
+                  </div>
+                  <h2 className="mt-6 font-display text-3xl font-extrabold text-studio-ink">
+                    You are ready to ride
+                  </h2>
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-studio-muted">
+                    Your Veyro profile is set. Add another vehicle any time from your profile, or head
+                    straight to the booking studio.
+                  </p>
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    <VeyroButton asChild size="lg">
+                      <Link href="/customer">Open booking studio</Link>
+                    </VeyroButton>
+                    <VeyroButton asChild variant="secondary" size="lg">
+                      <Link href="/">Back to home</Link>
                     </VeyroButton>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-studio-tint">
-                        <CarFront aria-hidden="true" className="h-5 w-5 text-studio-ink" />
-                      </span>
-                      <div>
-                        <h2 className="font-display text-2xl font-extrabold text-studio-ink">
-                          Add your first vehicle
-                        </h2>
-                        <p className="mt-1 text-sm text-studio-muted">
-                          Optional. You can skip this and add a vehicle later.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <Field id="vehicle-make" label="Make" error={errors.make}>
-                        <Input
-                          id="vehicle-make"
-                          placeholder="Toyota"
-                          value={make}
-                          invalid={Boolean(errors.make)}
-                          aria-describedby={errors.make ? 'vehicle-make-error' : undefined}
-                          onChange={(event) => setMake(event.currentTarget.value)}
-                        />
-                      </Field>
-                      <Field id="vehicle-model" label="Model" error={errors.model}>
-                        <Input
-                          id="vehicle-model"
-                          placeholder="Camry"
-                          value={model}
-                          invalid={Boolean(errors.model)}
-                          aria-describedby={errors.model ? 'vehicle-model-error' : undefined}
-                          onChange={(event) => setModel(event.currentTarget.value)}
-                        />
-                      </Field>
-                      <Field id="vehicle-category" label="Category" error={errors.category}>
-                        <Select
-                          id="vehicle-category"
-                          value={category}
-                          invalid={Boolean(errors.category)}
-                          aria-describedby={errors.category ? 'vehicle-category-error' : undefined}
-                          onChange={(event) => setCategory(event.currentTarget.value)}
-                        >
-                          <option value="">Select category</option>
-                          {categories.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </Select>
-                      </Field>
-                      <Field
-                        id="vehicle-transmission"
-                        label="Transmission"
-                        error={errors.transmission}
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} noValidate>
+                  <AnimatePresence mode="wait">
+                    {step === 0 ? (
+                      <motion.div
+                        key="step-0"
+                        initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={reduceMotion ? undefined : { opacity: 0, x: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-5"
                       >
-                        <Select
-                          id="vehicle-transmission"
-                          value={transmission}
-                          invalid={Boolean(errors.transmission)}
-                          aria-describedby={
-                            errors.transmission ? 'vehicle-transmission-error' : undefined
-                          }
-                          onChange={(event) => setTransmission(event.currentTarget.value)}
+                        <div>
+                          <h2 className="font-display text-2xl font-extrabold text-studio-ink">
+                            Tell us about you
+                          </h2>
+                          <p className="mt-2 text-sm text-studio-muted">
+                            This stays with your Veyro identity and cannot be trusted from the browser
+                            alone.
+                          </p>
+                        </div>
+
+                        <div className="rounded-panel">
+                          <Field id="customer-name" label="Full name" required error={errors.fullName}>
+                            <Input
+                              id="customer-name"
+                              autoComplete="name"
+                              placeholder="Aarav Sharma"
+                              value={fullName}
+                              invalid={Boolean(errors.fullName)}
+                              aria-describedby={errors.fullName ? 'customer-name-error' : undefined}
+                              onChange={(event) => setFullName(event.currentTarget.value)}
+                            />
+                          </Field>
+                        </div>
+
+                        <div className="rounded-panel">
+                          <Field
+                            id="customer-phone"
+                            label="Contact phone"
+                            required
+                            error={errors.phone}
+                            hint="International format, for example +919876543210."
+                          >
+                            <Input
+                              id="customer-phone"
+                              type="tel"
+                              inputMode="tel"
+                              autoComplete="tel"
+                              placeholder="+919876543210"
+                              value={phone}
+                              invalid={Boolean(errors.phone)}
+                              aria-describedby={errors.phone ? 'customer-phone-error' : 'customer-phone-hint'}
+                              onChange={(event) => setPhone(event.currentTarget.value)}
+                            />
+                          </Field>
+                        </div>
+
+                        <div className="space-y-3">
+                          <CheckboxField
+                            id="customer-terms"
+                            checked={consentTerms}
+                            error={errors.consentTerms}
+                            onChange={setConsentTerms}
+                            label={
+                              <>
+                                I accept the{' '}
+                                <Link href="/legal/terms" className="underline underline-offset-2">
+                                  Terms of Service
+                                </Link>
+                              </>
+                            }
+                          />
+                          <CheckboxField
+                            id="customer-privacy"
+                            checked={consentPrivacy}
+                            error={errors.consentPrivacy}
+                            onChange={setConsentPrivacy}
+                            label={
+                              <>
+                                I have read the{' '}
+                                <Link href="/legal/privacy" className="underline underline-offset-2">
+                                  Privacy Policy
+                                </Link>
+                              </>
+                            }
+                          />
+                        </div>
+
+                        <VeyroButton
+                          type="button"
+                          size="lg"
+                          className="w-full"
+                          onClick={() => {
+                            if (validateDetails()) setStep(1);
+                          }}
                         >
-                          <option value="">Select transmission</option>
-                          {transmissions.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </Select>
-                      </Field>
-                      <Field id="vehicle-fuel" label="Fuel type" error={errors.fuelType}>
-                        <Select
-                          id="vehicle-fuel"
-                          value={fuelType}
-                          invalid={Boolean(errors.fuelType)}
-                          aria-describedby={errors.fuelType ? 'vehicle-fuel-error' : undefined}
-                          onChange={(event) => setFuelType(event.currentTarget.value)}
-                        >
-                          <option value="">Select fuel type</option>
-                          {fuelTypes.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </Select>
-                      </Field>
-                    </div>
-
-                    <div className="flex items-start gap-2 rounded-panel bg-studio-tint p-4 text-xs leading-relaxed text-studio-muted">
-                      <Sparkles aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-                      Category and transmission are used for matching. Fuel is informational only.
-                    </div>
-
-                    {submitError ? (
-                      <FormAlert tone="error" title="Could not save profile">
-                        {submitError}
-                      </FormAlert>
-                    ) : null}
-
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row">
-                      <VeyroButton
-                        type="button"
-                        variant="secondary"
-                        size="lg"
-                        className="sm:w-auto"
-                        onClick={() => {
-                          setErrors({});
-                          setStep(0);
-                        }}
+                          Continue to vehicle
+                          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                        </VeyroButton>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="step-1"
+                        initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={reduceMotion ? undefined : { opacity: 0, x: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-5"
                       >
-                        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-                        Back
-                      </VeyroButton>
-                      <VeyroButton type="submit" size="lg" className="flex-1" loading={submitting}>
-                        Finish setup
-                      </VeyroButton>
-                    </div>
-                  </div>
-                )}
-              </form>
-            )}
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-studio-tint">
+                            <CarFront aria-hidden="true" className="h-5 w-5 text-studio-ink" />
+                          </span>
+                          <div>
+                            <h2 className="font-display text-2xl font-extrabold text-studio-ink">
+                              Add your first vehicle
+                            </h2>
+                            <p className="mt-1 text-sm text-studio-muted">
+                              Optional. You can skip this and add a vehicle later.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="rounded-panel">
+                            <Field id="vehicle-make" label="Make" error={errors.make}>
+                              <Input
+                                id="vehicle-make"
+                                placeholder="Toyota"
+                                value={make}
+                                invalid={Boolean(errors.make)}
+                                aria-describedby={errors.make ? 'vehicle-make-error' : undefined}
+                                onChange={(event) => setMake(event.currentTarget.value)}
+                              />
+                            </Field>
+                          </div>
+                          <div className="rounded-panel">
+                            <Field id="vehicle-model" label="Model" error={errors.model}>
+                              <Input
+                                id="vehicle-model"
+                                placeholder="Camry"
+                                value={model}
+                                invalid={Boolean(errors.model)}
+                                aria-describedby={errors.model ? 'vehicle-model-error' : undefined}
+                                onChange={(event) => setModel(event.currentTarget.value)}
+                              />
+                            </Field>
+                          </div>
+                          <div className="rounded-panel">
+                            <Field id="vehicle-category" label="Category" error={errors.category}>
+                              <Select
+                                id="vehicle-category"
+                                value={category}
+                                invalid={Boolean(errors.category)}
+                                aria-describedby={errors.category ? 'vehicle-category-error' : undefined}
+                                onChange={(event) => setCategory(event.currentTarget.value)}
+                              >
+                                <option value="">Select category</option>
+                                {categories.map((item) => (
+                                  <option key={item} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </Select>
+                            </Field>
+                          </div>
+                          <div className="rounded-panel">
+                            <Field
+                              id="vehicle-transmission"
+                              label="Transmission"
+                              error={errors.transmission}
+                            >
+                              <Select
+                                id="vehicle-transmission"
+                                value={transmission}
+                                invalid={Boolean(errors.transmission)}
+                                aria-describedby={
+                                  errors.transmission ? 'vehicle-transmission-error' : undefined
+                                }
+                                onChange={(event) => setTransmission(event.currentTarget.value)}
+                              >
+                                <option value="">Select transmission</option>
+                                {transmissions.map((item) => (
+                                  <option key={item} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </Select>
+                            </Field>
+                          </div>
+                          <div className="rounded-panel">
+                            <Field id="vehicle-fuel" label="Fuel type" error={errors.fuelType}>
+                              <Select
+                                id="vehicle-fuel"
+                                value={fuelType}
+                                invalid={Boolean(errors.fuelType)}
+                                aria-describedby={errors.fuelType ? 'vehicle-fuel-error' : undefined}
+                                onChange={(event) => setFuelType(event.currentTarget.value)}
+                              >
+                                <option value="">Select fuel type</option>
+                                {fuelTypes.map((item) => (
+                                  <option key={item} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </Select>
+                            </Field>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 rounded-panel border border-studio-border bg-studio-tint p-4 text-xs leading-relaxed text-studio-muted">
+                          <Sparkles aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+                          Category and transmission are used for matching. Fuel is informational only.
+                        </div>
+
+                        {submitError ? (
+                          <FormAlert tone="error" title="Could not save profile">
+                            {submitError}
+                          </FormAlert>
+                        ) : null}
+
+                        <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                          <VeyroButton
+                            type="button"
+                            variant="secondary"
+                            size="lg"
+                            className="sm:w-auto"
+                            onClick={() => {
+                              setErrors({});
+                              setStep(0);
+                            }}
+                          >
+                            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                            Back
+                          </VeyroButton>
+                          <VeyroButton type="submit" size="lg" className="flex-1" loading={submitting}>
+                            Finish setup
+                          </VeyroButton>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </form>
+              )}
+            </motion.div>
           </section>
         </div>
       </div>

@@ -201,7 +201,7 @@ export default function CustomerProfile() {
 
   return (
     <CustomerShell subtitle="Profile, vehicles and emergency contacts">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -219,7 +219,7 @@ export default function CustomerProfile() {
         </div>
 
         {unpaidBalance > 0 ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <FormAlert tone={details?.disputedAmountUnderReview ? 'info' : 'warning'} title="Outstanding balance">
               ₹{unpaidBalance} is recorded on this profile. Confirmed unpaid balances block new
               bookings; disputed amounts remain under review under the approved policy.
@@ -228,13 +228,13 @@ export default function CustomerProfile() {
         ) : null}
 
         {error ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <FormAlert tone="error" title="Profile issue">{error}</FormAlert>
           </div>
         ) : null}
 
         {success ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <FormAlert tone="success" title="Profile saved">
               Your customer profile is up to date.
             </FormAlert>
@@ -242,21 +242,23 @@ export default function CustomerProfile() {
         ) : null}
 
         {loading ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <LoadingState label="Loading your profile…" />
           </div>
         ) : (
-          <form className="mt-8 space-y-6" onSubmit={(event) => void handleSave(event)} noValidate>
-            <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-8">
+          <form className="mt-6 space-y-4" onSubmit={(event) => void handleSave(event)} noValidate>
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <h2 className="font-display text-xl font-extrabold text-studio-ink">Contact details</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <Field id="profile-name" label="Full name" required error={errors.fullName}>
-                  <Input
-                    id="profile-name"
-                    value={fullName}
-                    invalid={Boolean(errors.fullName)}
-                    onChange={(event) => setFullName(event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="profile-name"
+                      value={fullName}
+                      invalid={Boolean(errors.fullName)}
+                      onChange={(event) => setFullName(event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
                 <Field
                   id="profile-phone"
@@ -265,18 +267,20 @@ export default function CustomerProfile() {
                   error={errors.phone}
                   hint="International format, for example +919876543210."
                 >
-                  <Input
-                    id="profile-phone"
-                    type="tel"
-                    value={phone}
-                    invalid={Boolean(errors.phone)}
-                    onChange={(event) => setPhone(event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="profile-phone"
+                      type="tel"
+                      value={phone}
+                      invalid={Boolean(errors.phone)}
+                      onChange={(event) => setPhone(event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
               </div>
             </section>
 
-            <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-8">
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Vehicles</h2>
@@ -295,13 +299,16 @@ export default function CustomerProfile() {
               </div>
 
               {vehicles.length === 0 ? (
-                <p className="mt-6 rounded-panel bg-studio-tint p-4 text-sm text-studio-muted">
+                <p className="mt-4 rounded-panel bg-studio-tint p-3 text-sm text-studio-muted">
                   No vehicle yet. Add one to unlock compatible driver matching.
                 </p>
               ) : (
-                <div className="mt-6 space-y-5">
+                <div className="mt-4 space-y-3">
                   {vehicles.map((vehicle, index) => (
-                    <div key={vehicle.id} className="rounded-panel border border-studio-border p-4">
+                    <div
+                      key={vehicle.id}
+                      className="rounded-panel border border-studio-border bg-white p-3"
+                    >
                       <div className="flex items-center justify-between">
                         <p className="inline-flex items-center gap-2 text-sm font-bold text-studio-ink">
                           <CarFront aria-hidden="true" className="h-4 w-4" /> Vehicle {index + 1}
@@ -316,73 +323,85 @@ export default function CustomerProfile() {
                           <Trash2 aria-hidden="true" className="h-4 w-4" />
                         </VeyroButton>
                       </div>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         <Field id={`vehicle-${index}-make`} label="Make" error={errors[`vehicle-${index}-make`]}>
-                          <Input
-                            id={`vehicle-${index}-make`}
-                            value={vehicle.make}
-                            onChange={(event) => updateVehicle(index, { make: event.currentTarget.value })}
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`vehicle-${index}-make`}
+                              value={vehicle.make}
+                              onChange={(event) => updateVehicle(index, { make: event.currentTarget.value })}
+                            />
+                          </div>
                         </Field>
                         <Field id={`vehicle-${index}-model`} label="Model" error={errors[`vehicle-${index}-model`]}>
-                          <Input
-                            id={`vehicle-${index}-model`}
-                            value={vehicle.model}
-                            onChange={(event) => updateVehicle(index, { model: event.currentTarget.value })}
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`vehicle-${index}-model`}
+                              value={vehicle.model}
+                              onChange={(event) => updateVehicle(index, { model: event.currentTarget.value })}
+                            />
+                          </div>
                         </Field>
                         <Field
                           id={`vehicle-${index}-registration`}
                           label="Registration"
                           error={errors[`vehicle-${index}-registration`]}
                         >
-                          <Input
-                            id={`vehicle-${index}-registration`}
-                            value={vehicle.registrationNumber ?? ''}
-                            onChange={(event) =>
-                              updateVehicle(index, { registrationNumber: event.currentTarget.value })
-                            }
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`vehicle-${index}-registration`}
+                              value={vehicle.registrationNumber ?? ''}
+                              onChange={(event) =>
+                                updateVehicle(index, { registrationNumber: event.currentTarget.value })
+                              }
+                            />
+                          </div>
                         </Field>
                         <Field id={`vehicle-${index}-category`} label="Category">
-                          <Select
-                            id={`vehicle-${index}-category`}
-                            value={vehicle.category}
-                            onChange={(event) => updateVehicle(index, { category: event.currentTarget.value })}
-                          >
-                            {categories.map((category) => (
-                              <option key={category} value={category}>
-                                {category}
-                              </option>
-                            ))}
-                          </Select>
+                          <div className="input-glow rounded-panel">
+                            <Select
+                              id={`vehicle-${index}-category`}
+                              value={vehicle.category}
+                              onChange={(event) => updateVehicle(index, { category: event.currentTarget.value })}
+                            >
+                              {categories.map((category) => (
+                                <option key={category} value={category}>
+                                  {category}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
                         </Field>
                         <Field id={`vehicle-${index}-transmission`} label="Transmission">
-                          <Select
-                            id={`vehicle-${index}-transmission`}
-                            value={vehicle.transmission}
-                            onChange={(event) =>
-                              updateVehicle(index, {
-                                transmission: event.currentTarget.value as VehicleTransmission,
-                              })
-                            }
-                          >
-                            <option value="AUTOMATIC">Automatic</option>
-                            <option value="MANUAL">Manual</option>
-                          </Select>
+                          <div className="input-glow rounded-panel">
+                            <Select
+                              id={`vehicle-${index}-transmission`}
+                              value={vehicle.transmission}
+                              onChange={(event) =>
+                                updateVehicle(index, {
+                                  transmission: event.currentTarget.value as VehicleTransmission,
+                                })
+                              }
+                            >
+                              <option value="AUTOMATIC">Automatic</option>
+                              <option value="MANUAL">Manual</option>
+                            </Select>
+                          </div>
                         </Field>
                         <Field id={`vehicle-${index}-fuel`} label="Fuel type">
-                          <Select
-                            id={`vehicle-${index}-fuel`}
-                            value={vehicle.fuelType}
-                            onChange={(event) => updateVehicle(index, { fuelType: event.currentTarget.value })}
-                          >
-                            {fuelTypes.map((fuel) => (
-                              <option key={fuel} value={fuel}>
-                                {fuel}
-                              </option>
-                            ))}
-                          </Select>
+                          <div className="input-glow rounded-panel">
+                            <Select
+                              id={`vehicle-${index}-fuel`}
+                              value={vehicle.fuelType}
+                              onChange={(event) => updateVehicle(index, { fuelType: event.currentTarget.value })}
+                            >
+                              {fuelTypes.map((fuel) => (
+                                <option key={fuel} value={fuel}>
+                                  {fuel}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
                         </Field>
                       </div>
                     </div>
@@ -391,7 +410,7 @@ export default function CustomerProfile() {
               )}
             </section>
 
-            <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-8">
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">
@@ -412,13 +431,16 @@ export default function CustomerProfile() {
               </div>
 
               {contacts.length === 0 ? (
-                <p className="mt-6 rounded-panel bg-studio-tint p-4 text-sm text-studio-muted">
+                <p className="mt-4 rounded-panel bg-studio-tint p-3 text-sm text-studio-muted">
                   No emergency contacts added.
                 </p>
               ) : (
-                <div className="mt-6 space-y-5">
+                <div className="mt-4 space-y-3">
                   {contacts.map((contact, index) => (
-                    <div key={contact.id} className="rounded-panel border border-studio-border p-4">
+                    <div
+                      key={contact.id}
+                      className="rounded-panel border border-studio-border bg-white p-3"
+                    >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-bold text-studio-ink">Contact {index + 1}</p>
                         <VeyroButton
@@ -431,38 +453,44 @@ export default function CustomerProfile() {
                           <Trash2 aria-hidden="true" className="h-4 w-4" />
                         </VeyroButton>
                       </div>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
                         <Field id={`contact-${index}-name`} label="Name" error={errors[`contact-${index}-name`]}>
-                          <Input
-                            id={`contact-${index}-name`}
-                            value={contact.name}
-                            onChange={(event) => updateContact(index, { name: event.currentTarget.value })}
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`contact-${index}-name`}
+                              value={contact.name}
+                              onChange={(event) => updateContact(index, { name: event.currentTarget.value })}
+                            />
+                          </div>
                         </Field>
                         <Field
                           id={`contact-${index}-relationship`}
                           label="Relationship"
                           error={errors[`contact-${index}-relationship`]}
                         >
-                          <Input
-                            id={`contact-${index}-relationship`}
-                            value={contact.relationship}
-                            onChange={(event) =>
-                              updateContact(index, { relationship: event.currentTarget.value })
-                            }
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`contact-${index}-relationship`}
+                              value={contact.relationship}
+                              onChange={(event) =>
+                                updateContact(index, { relationship: event.currentTarget.value })
+                              }
+                            />
+                          </div>
                         </Field>
                         <Field
                           id={`contact-${index}-phone`}
                           label="Phone"
                           error={errors[`contact-${index}-phone`]}
                         >
-                          <Input
-                            id={`contact-${index}-phone`}
-                            type="tel"
-                            value={contact.phone}
-                            onChange={(event) => updateContact(index, { phone: event.currentTarget.value })}
-                          />
+                          <div className="input-glow rounded-panel">
+                            <Input
+                              id={`contact-${index}-phone`}
+                              type="tel"
+                              value={contact.phone}
+                              onChange={(event) => updateContact(index, { phone: event.currentTarget.value })}
+                            />
+                          </div>
                         </Field>
                       </div>
                     </div>
@@ -471,7 +499,7 @@ export default function CustomerProfile() {
               )}
             </section>
 
-            <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-8">
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <div className="flex items-center gap-3">
                 <BellRing aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                 <div>
@@ -521,7 +549,7 @@ export default function CustomerProfile() {
               </div>
             </section>
 
-            <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-8">
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <div className="flex items-center gap-3">
                 <ShieldCheck aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                 <div>
@@ -559,7 +587,7 @@ export default function CustomerProfile() {
               </div>
             </section>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-studio-surface p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-studio-surface p-4">
               <p className="inline-flex items-center gap-2 text-xs text-studio-muted">
                 <Wallet aria-hidden="true" className="h-4 w-4" />
                 Platform fee is ₹0 and driver commission is 0% in Release 1.

@@ -151,7 +151,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
 
   return (
     <AdminShell subtitle={`Application ${applicationId}`}>
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <Link href="/admin" className="inline-flex items-center gap-2 text-xs font-semibold text-studio-muted hover:text-studio-ink">
           <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
           Back to review console
@@ -173,13 +173,13 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
         </div>
 
         {loading ? (
-          <LoadingState label="Loading application…" className="mt-8" />
+          <LoadingState label="Loading application…" className="mt-6" />
         ) : error || !application ? (
-          <ErrorState title="Application unavailable" description={error ?? 'Not found.'} className="mt-8" />
+          <ErrorState title="Application unavailable" description={error ?? 'Not found.'} className="mt-6" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-            <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+            <div className="space-y-4">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -190,7 +190,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                     </h2>
                     <p className="mt-1 text-sm text-studio-muted">{application.phone}</p>
                   </div>
-                  <span className="rounded-full bg-studio-tint px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
+                  <span className="rounded-control bg-studio-tint px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
                     {application.status.replace('_', ' ')}
                   </span>
                 </div>
@@ -225,7 +225,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 </p>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Private documents</h2>
                   <FileLock2 aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -248,7 +248,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                           {document.fileName} · {(document.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
-                      <span className="rounded-full bg-studio-tint px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
+                      <span className="rounded-control bg-studio-tint px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
                         Presigned · 5 min
                       </span>
                     </li>
@@ -256,7 +256,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 </ul>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Incident history</h2>
                   <ShieldAlert aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -280,7 +280,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 )}
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Audit trail</h2>
                   <History aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -305,7 +305,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
               </section>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               {notice ? (
                 <FormAlert
                   tone={notice.includes('Could not') || notice.includes('required') ? 'error' : 'success'}
@@ -325,7 +325,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 </FormAlert>
               ) : null}
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Application decision</h2>
                 <p className="mt-2 text-xs text-studio-muted">
                   Reject and request-changes require a reason. Approval is recorded with admin ID and
@@ -369,7 +369,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 </div>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Safety control</h2>
                   <ShieldAlert aria-hidden="true" className="h-5 w-5 text-studio-muted" />

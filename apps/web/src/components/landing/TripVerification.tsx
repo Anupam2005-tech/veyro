@@ -4,7 +4,7 @@ import { DemoSosAction } from './DemoSosAction';
 
 export function TripVerification() {
   return (
-    <section id="safety" className="border-b border-night-border py-20 sm:py-24">
+    <section id="safety" className="border-b border-night-border py-16 sm:py-24">
       <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
           Trip verification &amp; safety
@@ -12,7 +12,7 @@ export function TripVerification() {
         <h2 className="mt-4 font-display text-3xl font-bold text-night-text sm:text-4xl">
           Verified at every handoff.
         </h2>
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
           <div className="space-y-5">
             <OtpVaultCard title="Start OTP" mode="display" code="482913" helper="Shown after the driver arrives." />
             <OtpVaultCard title="End OTP" mode="display" code="713064" helper="Separate, single-use code for trip end." />
@@ -20,7 +20,7 @@ export function TripVerification() {
               Demo codes · not valid for a trip
             </p>
           </div>
-          <div className="glass-panel rounded-card p-6 sm:p-8">
+          <div className="rounded-card border border-night-border bg-night-surface p-6 sm:p-8">
             <DynamicTripPill
               label="Driver en route"
               countdown="04:32"
@@ -45,7 +45,7 @@ export function TripVerification() {
               Revocation is available to the customer at any time.
             </p>
           </div>
-          <div className="glass-panel flex flex-col justify-between rounded-card p-6 sm:p-8">
+          <div className="flex flex-col justify-between rounded-card border border-night-border bg-night-surface p-6 sm:p-8">
             <div>
               <h3 className="flex items-center gap-2 font-display text-xl font-bold text-night-text">
                 Emergency safety

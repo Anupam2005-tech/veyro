@@ -25,9 +25,11 @@ export function Stepper({ steps, current, className }: StepperProps) {
             <span
               aria-hidden="true"
               className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold',
-                state === 'complete' && 'border-theme-accent bg-theme-accent text-theme-accent-ink',
-                state === 'current' && 'border-theme-accent text-[color:var(--theme-focus)]',
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold transition-all duration-300',
+                state === 'complete' &&
+                  'border-[#B8F23A] bg-[#B8F23A] text-theme-accent-ink shadow-lime-glow',
+                state === 'current' &&
+                  'border-[#B8F23A] bg-[#B8F23A]/10 text-[#B8F23A] shadow-lime-glow ring-2 ring-[#B8F23A]/20',
                 state === 'upcoming' && 'border-theme-border text-theme-muted'
               )}
             >
@@ -37,8 +39,10 @@ export function Stepper({ steps, current, className }: StepperProps) {
             <span
               aria-hidden="true"
               className={cn(
-                'hidden text-xs font-medium sm:block',
-                state === 'upcoming' ? 'text-theme-muted' : 'text-theme-text'
+                'hidden text-xs font-medium sm:block transition-colors duration-200',
+                state === 'upcoming' && 'text-theme-muted',
+                state === 'current' && 'font-semibold text-white',
+                state === 'complete' && 'text-theme-text'
               )}
             >
               {step}
@@ -47,8 +51,10 @@ export function Stepper({ steps, current, className }: StepperProps) {
               <span
                 aria-hidden="true"
                 className={cn(
-                  'hidden h-px w-6 sm:block',
-                  index < current ? 'bg-theme-accent' : 'bg-theme-border'
+                  'hidden h-0.5 w-6 rounded-full sm:block transition-all duration-500 ease-out',
+                  index < current
+                    ? 'bg-[#B8F23A] shadow-[0_0_8px_rgba(184,242,58,0.4)]'
+                    : 'bg-theme-border'
                 )}
               />
             ) : null}

@@ -35,7 +35,8 @@ export function OtpVaultCard({
   return (
     <section
       className={cn(
-        'rounded-card border border-white/15 bg-studio-obsidian p-5 text-white shadow-glass',
+        'rounded-card border border-white/15 bg-studio-obsidian p-5 text-white transition-colors duration-150',
+        mode === 'display' && 'border-[#B8F23A]/40',
         className
       )}
     >
@@ -58,7 +59,7 @@ export function OtpVaultCard({
           <button
             type="button"
             onClick={() => setRevealed((current) => !current)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+            className="inline-flex items-center gap-1.5 rounded-control border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
           >
             {revealed ? (
               <EyeOff aria-hidden="true" className="h-3.5 w-3.5" />

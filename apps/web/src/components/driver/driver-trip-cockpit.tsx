@@ -222,7 +222,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
 
   return (
     <DriverShell subtitle={`Trip ${tripId}`}>
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Link href="/driver" className="text-xs font-semibold text-studio-muted hover:text-studio-ink">
@@ -259,7 +259,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                 <Link
                   key={item.state}
                   href={`/driver/trips/${encodeURIComponent(tripId)}?${params.toString()}`}
-                  className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
+                  className={`rounded-control border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
                     preview?.state === item.state
                       ? 'border-studio-ink bg-studio-ink text-white'
                       : 'border-studio-border text-studio-muted hover:text-studio-ink'
@@ -330,7 +330,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                 </div>
               </div>
 
-              <div className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white shadow-glass">
+              <div className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
                   Navigation
                 </p>
@@ -363,7 +363,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
             </div>
 
             <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                   Trip details
                 </p>
@@ -422,7 +422,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
               </section>
 
               {shownTrip.state === 'EN_ROUTE' || shownTrip.state === 'AWAITING_DRIVER' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+                <section className="rounded-card border border-studio-border bg-studio-surface p-5">
                   <h3 className="font-display text-lg font-bold text-studio-ink">Confirm arrival</h3>
                   <p className="mt-2 text-xs leading-relaxed text-studio-muted">
                     Tap only at the pickup point. Backend geofence and accuracy checks run before
@@ -443,9 +443,9 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state === 'ARRIVED_WAITING' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+                <section className="rounded-card border border-studio-border bg-studio-surface p-5">
                   <h3 className="font-display text-lg font-bold text-studio-ink">Waiting clock</h3>
-                  <div className="mt-4 flex items-center justify-between rounded-panel bg-studio-bg p-4">
+                  <div className="mt-4 flex items-center justify-between rounded-panel border border-studio-border bg-studio-bg p-4">
                     <span className="text-sm text-studio-muted">Free grace remaining</span>
                     <span className="inline-flex items-center gap-2 font-mono text-xl font-bold text-studio-ink">
                       <Timer aria-hidden="true" className="h-4 w-4" />
@@ -485,7 +485,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state === 'ACTIVE' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+                <section className="rounded-card border border-studio-border bg-studio-surface p-5">
                   <h3 className="font-display text-lg font-bold text-studio-ink">End the trip</h3>
                   <p className="mt-2 text-xs text-studio-muted">
                     Ask the customer for the separate end code. Single use; never logged or placed in
@@ -519,7 +519,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
               {shownTrip.state === 'COMPLETED' ? (
                 <form
                   onSubmit={(event) => void handleReport(event)}
-                  className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6"
+                  className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="font-display text-lg font-bold text-studio-ink">Report a problem</h3>
@@ -566,7 +566,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                 </form>
               ) : null}
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-display text-lg font-bold text-studio-ink">Safety</h3>

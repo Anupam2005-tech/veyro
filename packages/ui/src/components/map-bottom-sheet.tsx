@@ -23,17 +23,17 @@ export function MapBottomSheet({
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-full border border-theme-border bg-theme-glass px-4 py-2 text-sm font-medium text-theme-text hover:bg-theme-glass-strong"
+          className="inline-flex items-center gap-2 rounded-control border border-theme-border bg-theme-glass px-4 py-2 text-sm font-medium text-theme-text hover:bg-theme-glass-strong"
         >
           <MapPin aria-hidden="true" className="h-4 w-4 text-theme-accent" />
           {triggerLabel}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
         <Dialog.Content
           className={cn(
-            'fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-card border border-theme-border bg-theme-surface p-5 shadow-glass',
+            'fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-card border border-theme-border bg-theme-surface p-5',
             'sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[26rem] sm:rounded-card',
             className
           )}
@@ -46,7 +46,7 @@ export function MapBottomSheet({
               <button
                 type="button"
                 aria-label="Close location details"
-                className="rounded-full p-1.5 text-theme-muted hover:bg-theme-glass"
+                className="rounded-control p-1.5 text-theme-muted hover:bg-theme-glass"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>

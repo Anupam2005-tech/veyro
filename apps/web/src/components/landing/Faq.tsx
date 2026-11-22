@@ -9,8 +9,8 @@ import { landingFaq } from '@/lib/public-policy';
 
 export function Faq() {
   return (
-    <section id="faq" className="py-20 sm:py-24">
-      <div className="mx-auto grid max-w-content gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+    <section id="faq" className="py-16 sm:py-24">
+      <div className="mx-auto grid max-w-content gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:px-8">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
             FAQ
@@ -29,14 +29,16 @@ export function Faq() {
             Get started →
           </Link>
         </div>
-        <Accordion type="single" collapsible className="border-t border-night-border">
-          {landingFaq.map((item, index) => (
-            <AccordionItem key={item.question} value={`faq-${index}`}>
-              <AccordionTrigger>{item.question}</AccordionTrigger>
-              <AccordionContent>{item.answer}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <div className="rounded-card border border-night-border bg-night-surface px-5 sm:px-6">
+          <Accordion type="single" collapsible className="[&>*:last-child]:border-b-0">
+            {landingFaq.map((item, index) => (
+              <AccordionItem key={item.question} value={`faq-${index}`}>
+                <AccordionTrigger>{item.question}</AccordionTrigger>
+                <AccordionContent>{item.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
       </div>
     </section>
   );

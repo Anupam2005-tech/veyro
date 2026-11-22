@@ -22,11 +22,11 @@ function StateShell({
   return (
     <div
       className={cn(
-        'glass-panel flex flex-col items-center rounded-card px-6 py-12 text-center',
+        'flex flex-col items-center rounded-card border border-theme-border bg-theme-surface px-6 py-12 text-center',
         className
       )}
     >
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-theme-glass-strong text-[color:var(--theme-focus)]">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-control bg-theme-glass-strong text-[color:var(--theme-focus)]">
         {icon}
       </div>
       <h3 className="text-lg font-semibold text-theme-text">{title}</h3>
@@ -71,7 +71,7 @@ export function LoadingState({
     <div
       role="status"
       className={cn(
-        'glass-panel flex flex-col items-center rounded-card px-6 py-12 text-center',
+        'veyro-shimmer flex flex-col items-center rounded-card border border-theme-border bg-theme-surface px-6 py-12 text-center',
         className
       )}
     >

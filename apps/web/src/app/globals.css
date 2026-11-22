@@ -48,6 +48,12 @@
   --theme-success: var(--night-accent);
   --theme-info: #7dd3fc;
   --theme-neutral: #cbd5e1;
+
+  --color-primary: var(--night-accent);
+  --background: var(--night-canvas);
+  --foreground: var(--night-text);
+  --muted: var(--night-surface);
+  --muted-foreground: var(--night-muted);
 }
 
 [data-theme='studio'] {
@@ -69,6 +75,12 @@
   --theme-success: #166534;
   --theme-info: #075985;
   --theme-neutral: #475569;
+
+  --color-primary: var(--studio-lime);
+  --background: var(--studio-bg);
+  --foreground: var(--studio-ink);
+  --muted: var(--studio-surface);
+  --muted-foreground: var(--studio-muted);
 }
 
 @layer base {
@@ -107,8 +119,7 @@
   .glass-panel {
     background: var(--theme-glass);
     border: 1px solid var(--theme-border);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    border-radius: 0.75rem;
   }
 
   .hairline {
@@ -175,4 +186,92 @@
   .veyro-rise {
     animation: none;
   }
+
+  .veyro-shimmer,
+  .veyro-fade-in-up,
+  .veyro-scale-in,
+  .dot-pulse {
+    animation: none;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+  }
 }
+
+/* === PREMIUM VEYRO ADDITIONS === */
+
+@keyframes veyro-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes veyro-glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes veyro-fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes veyro-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.veyro-shimmer {
+  background: linear-gradient(90deg, var(--theme-glass) 0%, var(--theme-glass-strong) 20%, var(--theme-glass) 40%, var(--theme-glass) 100%);
+  background-size: 200% 100%;
+  animation: veyro-shimmer 1.8s ease-in-out infinite;
+}
+
+.veyro-fade-in-up { animation: veyro-fade-in-up 600ms ease-out both; }
+.veyro-scale-in { animation: veyro-scale-in 400ms ease-out both; }
+
+.glass-premium {
+  background: var(--theme-glass);
+  border: 1px solid var(--theme-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.night-noise { position: relative; }
+.night-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+}
+
+.section-divider {
+  border: none;
+  height: 1px;
+  background: var(--theme-border);
+  opacity: 0.8;
+}
+
+.hover-lift {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.hover-lift:hover {
+  border-color: var(--theme-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.header-scrolled {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.input-glow:focus-within { box-shadow: 0 0 0 1px var(--theme-accent); border-radius: inherit; }
+.dot-pulse { animation: veyro-glow-pulse 2s ease-in-out infinite; }
+.stagger-1 { animation-delay: 80ms; }
+.stagger-2 { animation-delay: 160ms; }
+.stagger-3 { animation-delay: 240ms; }
+.stagger-4 { animation-delay: 320ms; }
+.stagger-5 { animation-delay: 400ms; }

@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { LoaderCircle } from 'lucide-react';
@@ -24,7 +22,7 @@ export interface VeyroButtonProps
 
 const variantClasses: Record<VeyroButtonVariant, string> = {
   primary:
-    'bg-theme-accent text-theme-accent-ink hover:bg-theme-accent-hover shadow-lime',
+    'bg-theme-accent text-theme-accent-ink hover:bg-theme-accent-hover',
   obsidian:
     'bg-theme-surface text-theme-text border border-theme-border hover:bg-theme-glass-strong',
   secondary:
@@ -36,8 +34,8 @@ const variantClasses: Record<VeyroButtonVariant, string> = {
 
 const sizeClasses: Record<VeyroButtonSize, string> = {
   sm: 'h-10 px-4 text-sm',
-  md: 'h-12 px-5 text-sm',
-  lg: 'h-14 px-7 text-base',
+  md: 'h-11 px-5 text-sm',
+  lg: 'h-12 px-6 text-base',
 };
 
 export const VeyroButton = React.forwardRef<HTMLButtonElement, VeyroButtonProps>(
@@ -64,7 +62,7 @@ export const VeyroButton = React.forwardRef<HTMLButtonElement, VeyroButtonProps>
         aria-busy={loading || undefined}
         disabled={asChild ? undefined : disabled || loading}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors',
+          'inline-flex items-center justify-center gap-2 rounded-control font-semibold transition-colors duration-150',
           'disabled:pointer-events-none disabled:opacity-50',
           variantClasses[variant],
           sizeClasses[size],

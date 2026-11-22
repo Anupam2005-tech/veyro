@@ -6,6 +6,12 @@
 
 ---
 
+## Runtime repair — 22 November 2026
+
+| Change | Status | Evidence |
+|---|---|---|
+| Stale Next.js chunk cleanup | REVIEW | Web type-check passed. Headless Chrome hydrated the landing page with zero runtime exceptions. A seeded worker and old shell cache were removed on development reload. Original affected browser confirmation pending. [OpenSpec](../../openspec/changes/fix-stale-web-chunks/tasks.md) |
+
 ## Legend
 
 | Status | Meaning |

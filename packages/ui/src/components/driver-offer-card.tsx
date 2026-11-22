@@ -35,7 +35,7 @@ export function DriverOfferCard({
   return (
     <article
       className={cn(
-        'glass-panel rounded-card p-5 shadow-glass sm:p-6',
+        'border border-theme-border border-l-[3px] border-l-[#B8F23A]/50 rounded-card bg-theme-surface p-5 sm:p-6',
         className
       )}
     >

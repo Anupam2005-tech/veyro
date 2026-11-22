@@ -157,7 +157,7 @@ export default function DriverDashboard() {
 
   return (
     <DriverShell subtitle="Availability and ride offers">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -186,10 +186,10 @@ export default function DriverDashboard() {
                     <Link
                       key={item}
                       href={`/driver?${params.toString()}`}
-                      className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
+                      className={`rounded-control border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
                         preview === item
                           ? 'border-studio-ink bg-studio-ink text-white'
-                          : 'border-studio-border text-studio-muted hover:text-studio-ink'
+                          : 'border-studio-border text-studio-muted hover:border-studio-ink/60 hover:text-studio-ink'
                       }`}
                     >
                       {item.replace('-', ' ')}
@@ -197,7 +197,7 @@ export default function DriverDashboard() {
                   );
                 })}
                 {preview ? (
-                  <Link href={previewHref(null)} className="text-xs text-studio-muted underline">
+                  <Link href={previewHref(null)} className="text-xs text-studio-muted underline hover:text-studio-ink">
                     Clear
                   </Link>
                 ) : null}
@@ -207,15 +207,24 @@ export default function DriverDashboard() {
         </div>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+          <div className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                   Availability
                 </p>
-                <h2 className="mt-2 font-display text-2xl font-extrabold text-studio-ink">
-                  {shownProfile?.online ? 'Online and visible' : 'Offline'}
-                </h2>
+                <div className="mt-2 flex items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                      shownProfile?.online
+                        ? 'bg-emerald-500'
+                        : 'bg-studio-muted/40'
+                    }`}
+                  />
+                  <h2 className="font-display text-2xl font-extrabold text-studio-ink">
+                    {shownProfile?.online ? 'Online and visible' : 'Offline'}
+                  </h2>
+                </div>
               </div>
               <VeyroButton
                 type="button"
@@ -224,8 +233,16 @@ export default function DriverDashboard() {
                 loading={busyOnline}
                 disabled={!eligible && !shownProfile?.online}
                 onClick={() => void handleOnline(!shownProfile?.online)}
+                className={`transition-colors ${
+                  shownProfile?.online
+                    ? 'bg-studio-obsidian text-white hover:bg-studio-obsidian/90'
+                    : 'bg-studio-lime text-studio-ink hover:bg-studio-lime/90'
+                }`}
               >
-                <Radio aria-hidden="true" className="h-4 w-4" />
+                <Radio
+                  aria-hidden="true"
+                  className={`h-4 w-4 ${shownProfile?.online ? 'text-studio-lime' : ''}`}
+                />
                 {shownProfile?.online ? 'Go offline' : 'Go online'}
               </VeyroButton>
             </div>
@@ -251,9 +268,19 @@ export default function DriverDashboard() {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-studio-muted">
                   GPS freshness
                 </p>
-                <p className="mt-2 text-sm font-bold text-studio-ink">
-                  {shownProfile?.gpsFresh ? 'Fresh · under 30s' : 'Stale'}
-                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  {shownProfile?.gpsFresh ? (
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="dot-pulse absolute inline-flex h-full w-full rounded-full bg-studio-lime opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    </span>
+                  ) : (
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  )}
+                  <p className="text-sm font-bold text-studio-ink">
+                    {shownProfile?.gpsFresh ? 'Fresh · under 30s' : 'Stale'}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -288,7 +315,7 @@ export default function DriverDashboard() {
             ) : null}
           </div>
 
-          <div className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white shadow-glass sm:p-7">
+          <div className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
@@ -326,7 +353,7 @@ export default function DriverDashboard() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section className="mt-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -393,7 +420,7 @@ export default function DriverDashboard() {
           )}
         </section>
 
-        <section className="mt-10">
+        <section className="mt-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -403,7 +430,7 @@ export default function DriverDashboard() {
                 Planned pickups, exact broadcast window
               </h2>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-studio-border bg-studio-surface px-3 py-1.5 text-xs text-studio-muted">
+            <span className="inline-flex items-center gap-2 rounded-control border border-studio-border bg-studio-surface px-3 py-1.5 text-xs text-studio-muted">
               <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />
               First valid acceptance wins
             </span>
@@ -418,10 +445,10 @@ export default function DriverDashboard() {
               scheduledOffers.map((offer) => (
                 <article
                   key={offer.id}
-                  className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass"
+                  className="rounded-card border border-studio-border bg-studio-surface p-5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="rounded-full bg-studio-ink px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-white">
+                    <span className="rounded-control bg-studio-ink px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-white">
                       Scheduled
                     </span>
                     <span className="text-xs font-semibold text-studio-muted">

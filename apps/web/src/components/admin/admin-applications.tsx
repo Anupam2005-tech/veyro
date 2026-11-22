@@ -63,7 +63,7 @@ export default function AdminApplications() {
 
   return (
     <AdminShell subtitle="Driver applications">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -81,22 +81,22 @@ export default function AdminApplications() {
         </div>
 
         {loading ? (
-          <LoadingState label="Loading applications…" className="mt-8" />
+          <LoadingState label="Loading applications…" className="mt-6" />
         ) : error ? (
-          <ErrorState title="Applications unavailable" description={error} className="mt-8" />
+          <ErrorState title="Applications unavailable" description={error} className="mt-6" />
         ) : applications.length === 0 ? (
           <EmptyState
             title="No applications found"
             description="New driver applications will appear here for review."
-            className="mt-8"
+            className="mt-6"
           />
         ) : (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-2">
             {applications.map((application) => (
               <Link
                 key={application.id}
                 href={`/admin/applications/${application.id}${demoPreview ? '?role=admin' : ''}`}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-white p-5 shadow-glass transition-colors hover:border-studio-ink"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-white p-4 transition-colors hover:bg-studio-tint/40"
               >
                 <div className="flex items-start gap-4">
                   <FileSearch aria-hidden="true" className="mt-0.5 h-5 w-5 text-studio-muted" />

@@ -76,6 +76,42 @@ function statusIcon(status: DriverApplicationStatus) {
   return <AlertCircle aria-hidden="true" className="h-7 w-7" />;
 }
 
+function statusBadgeStyles(status: DriverApplicationStatus) {
+  if (status === 'APPROVED') {
+    return {
+      iconBg: 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30',
+      badge: 'border-emerald-500/30 bg-emerald-50 text-emerald-800',
+      cardBorder: 'border-emerald-200/70',
+    };
+  }
+  if (status === 'PENDING_REVIEW') {
+    return {
+      iconBg: 'bg-sky-500/15 text-sky-700 border border-sky-500/30',
+      badge: 'border-sky-500/30 bg-sky-50 text-sky-800',
+      cardBorder: 'border-sky-200/70',
+    };
+  }
+  if (status === 'NEEDS_CHANGES') {
+    return {
+      iconBg: 'bg-amber-500/15 text-amber-700 border border-amber-500/30',
+      badge: 'border-amber-500/30 bg-amber-50 text-amber-800',
+      cardBorder: 'border-amber-200/70',
+    };
+  }
+  if (status === 'DEACTIVATED') {
+    return {
+      iconBg: 'bg-zinc-500/15 text-zinc-700 border border-zinc-500/30',
+      badge: 'border-zinc-500/30 bg-zinc-100 text-zinc-800',
+      cardBorder: 'border-zinc-300/70',
+    };
+  }
+  return {
+    iconBg: 'bg-rose-500/15 text-rose-700 border border-rose-500/30',
+    badge: 'border-rose-500/30 bg-rose-50 text-rose-800',
+    cardBorder: 'border-rose-200/70',
+  };
+}
+
 function previewReason(status: DriverApplicationStatus): string {
   if (status === 'NEEDS_CHANGES') {
     return 'Driving licence image is unclear. Upload a full, readable front side and resubmit.';
@@ -166,7 +202,7 @@ export default function DriverStatus() {
       subtitle="Track your Veyro review"
       stepLabel="Application"
     >
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-10">
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <aside className="space-y-5">
             <div>
@@ -204,10 +240,10 @@ export default function DriverStatus() {
                     <Link
                       key={state}
                       href={`/driver/status?state=${state.toLowerCase()}`}
-                      className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
+                      className={`rounded-control border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
                         preview === state
                           ? 'border-studio-ink bg-studio-ink text-white'
-                          : 'border-studio-border text-studio-muted hover:text-studio-ink'
+                          : 'border-studio-border text-studio-muted hover:border-studio-ink/60 hover:text-studio-ink'
                       }`}
                     >
                       {state.replace('_', ' ').toLowerCase()}
@@ -216,7 +252,7 @@ export default function DriverStatus() {
                 </div>
                 <Link
                   href="/driver/status"
-                  className="mt-3 inline-block text-xs text-studio-muted underline underline-offset-2"
+                  className="mt-3 inline-block text-xs text-studio-muted underline underline-offset-2 hover:text-studio-ink"
                 >
                   Clear preview
                 </Link>
@@ -224,7 +260,11 @@ export default function DriverStatus() {
             ) : null}
           </aside>
 
-          <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-8">
+          <section
+            className={`rounded-card border bg-studio-surface p-5 sm:p-6 ${
+              status ? statusBadgeStyles(status).cardBorder : 'border-studio-border'
+            }`}
+          >
             {loading || applicationLoading ? (
               <div className="space-y-4">
                 <div className="h-16 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
@@ -242,7 +282,7 @@ export default function DriverStatus() {
               </div>
             ) : !status || !copy ? (
               <div className="py-8 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-studio-tint">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-control border border-studio-border bg-studio-tint">
                   <FileCheck2 aria-hidden="true" className="h-7 w-7 text-studio-ink" />
                 </div>
                 <h2 className="mt-6 font-display text-2xl font-extrabold text-studio-ink">
@@ -259,18 +299,25 @@ export default function DriverStatus() {
               <div>
                 <div className="flex items-start gap-4">
                   <span
-                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
-                      status === 'APPROVED'
-                        ? 'bg-studio-lime text-studio-ink'
-                        : 'bg-studio-tint text-studio-ink'
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-control ${
+                      statusBadgeStyles(status).iconBg
                     }`}
                   >
                     {statusIcon(status)}
                   </span>
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
-                      Application status
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
+                        Application status
+                      </p>
+                      <span
+                        className={`rounded-control border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider ${
+                          statusBadgeStyles(status).badge
+                        }`}
+                      >
+                        {status.replace('_', ' ')}
+                      </span>
+                    </div>
                     <h2 className="mt-1 font-display text-3xl font-extrabold text-studio-ink">
                       {copy.title}
                     </h2>
@@ -333,7 +380,7 @@ export default function DriverStatus() {
                       {profile.documents.map((document) => (
                         <li
                           key={`${document.kind}-${document.storagePath}`}
-                          className="flex items-center justify-between gap-3 rounded-panel border border-studio-border px-4 py-3 text-xs"
+                          className="flex items-center justify-between gap-3 rounded-panel border border-studio-border bg-studio-bg/40 px-4 py-3 text-xs"
                         >
                           <span className="truncate font-medium text-studio-ink">
                             {document.kind.replace('_', ' ').toLowerCase()} · {document.fileName}

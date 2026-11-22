@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { motion, useReducedMotion } from 'motion/react';
 import { LayoutDashboard, LogOut, Navigation, UserRound, Wallet } from 'lucide-react';
 import { AppShell, DemoBadge, VeyroButton } from '@veyro/ui';
 import { getDriverProfile } from '@/lib/api/client';
@@ -30,7 +31,18 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
   const { user, profile, loading, demoMode, signOut } = useSession();
   const [signingOut, setSigningOut] = React.useState(false);
   const [activeTripId, setActiveTripId] = React.useState<string | null>(null);
+  const [scrolled, setScrolled] = React.useState(false);
+  const shouldReduceMotion = useReducedMotion();
   const demoPreview = isDemoDataMode && searchParams.get('role') === 'driver';
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navigation = React.useMemo<NavItem[]>(
     () => [
@@ -102,12 +114,16 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
   }
 
   const header = (
-    <header className="border-b border-studio-border bg-studio-surface/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+    <header
+      className={`border-b border-studio-border bg-studio-surface ${
+        scrolled ? 'header-scrolled' : ''
+      }`}
+    >
+      <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <Link
             href="/driver"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-studio-obsidian font-display text-sm font-extrabold text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white transition-colors hover:bg-studio-ink"
             aria-label="Veyro driver studio"
           >
             V
@@ -123,10 +139,8 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
         <nav aria-label="Driver navigation" className="hidden items-center gap-1 lg:flex">
           {navigation.map((item) => {
             const active = isActive(item);
-            const className = `inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-colors ${
-              active
-                ? 'bg-studio-obsidian text-white'
-                : 'text-studio-muted hover:bg-studio-tint hover:text-studio-ink'
+            const className = `relative inline-flex h-10 items-center gap-2 rounded-control px-3 text-sm font-semibold transition-colors ${
+              active ? 'text-studio-ink' : 'text-studio-muted hover:text-studio-ink'
             } ${item.disabled ? 'cursor-not-allowed opacity-45' : ''}`;
             const content = (
               <>
@@ -151,6 +165,13 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
                 className={className}
               >
                 {content}
+                {active && (
+                  <motion.div
+                    layoutId="driver-nav-indicator"
+                    className="absolute inset-x-0 -bottom-px h-0.5 bg-studio-lime"
+                    transition={shouldReduceMotion ? { duration: 0 } : undefined}
+                  />
+                )}
               </Link>
             );
           })}
@@ -178,7 +199,7 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
     <div className="grid h-16 grid-cols-4">
       {navigation.map((item) => {
         const active = isActive(item);
-        const className = `flex flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold ${
+        const className = `relative flex flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold ${
           active ? 'text-studio-ink' : 'text-studio-muted'
         } ${item.disabled ? 'cursor-not-allowed opacity-45' : ''}`;
         const content = (
@@ -194,6 +215,13 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
         ) : (
           <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={className}>
             {content}
+            {active && (
+              <motion.div
+                layoutId="driver-bottom-indicator"
+                className="absolute bottom-0 h-0.5 w-8 bg-studio-lime"
+                transition={shouldReduceMotion ? { duration: 0 } : undefined}
+              />
+            )}
           </Link>
         );
       })}

@@ -8,6 +8,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        background: 'var(--theme-canvas)',
+        foreground: 'var(--theme-text)',
+        primary: {
+          DEFAULT: 'var(--theme-accent)',
+          foreground: 'var(--theme-accent-ink)',
+        },
+        muted: {
+          DEFAULT: 'var(--theme-surface)',
+          foreground: 'var(--theme-muted)',
+        },
         theme: {
           canvas: 'var(--theme-canvas)',
           surface: 'var(--theme-surface)',
@@ -53,15 +63,24 @@ const config: Config = {
         mono: ['var(--font-mono)'],
       },
       borderRadius: {
-        card: '1.25rem',
-        panel: '1rem',
+        card: '0.75rem',
+        panel: '0.5rem',
+        control: '0.5rem',
       },
       boxShadow: {
-        glass: '0 24px 70px -35px rgba(0, 0, 0, 0.85)',
+        glass: '0 1px 2px rgba(0, 0, 0, 0.12)',
         lime: '0 0 0 1px rgba(184, 242, 58, 0.28)',
+        'glass-glow': '0 0 0 0.5px rgba(255, 255, 255, 0.04) inset',
+        'lime-glow': '0 0 0 2px rgba(184, 242, 58, 0.16)',
+        'card-hover': '0 4px 16px -8px rgba(0, 0, 0, 0.18)',
+        'studio-card': '0 1px 2px rgba(9, 11, 16, 0.04)',
+        'studio-card-hover': '0 2px 8px rgba(9, 11, 16, 0.08)',
+      },
+      transitionTimingFunction: {
+        spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
       maxWidth: {
-        content: '72rem',
+        content: '82rem',
       },
       keyframes: {
         'veyro-dash': { to: { strokeDashoffset: '-32' } },

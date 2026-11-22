@@ -38,7 +38,7 @@ export function InstallAppButton() {
         await installEvent.userChoice;
         setInstallEvent(null);
       }}
-      className="inline-flex h-10 items-center gap-2 rounded-full border border-night-border px-4 text-xs font-semibold text-night-text hover:bg-night-glass"
+      className="inline-flex h-10 items-center gap-2 rounded-control border border-night-border px-4 text-xs font-semibold text-night-text hover:bg-night-surface"
     >
       <Download aria-hidden="true" className="h-3.5 w-3.5" />
       Install app

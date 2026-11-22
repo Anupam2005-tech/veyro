@@ -37,13 +37,17 @@ export const veyroFonts = {
 } as const;
 
 export const veyroShape = {
-  card: '1.25rem',
-  panel: '1rem',
+  card: '0.75rem',
+  panel: '0.5rem',
+  control: '0.5rem',
 } as const;
 
 export const veyroShadow = {
-  glass: '0 24px 70px -35px rgba(0, 0, 0, 0.85)',
+  glass: '0 1px 2px rgba(0, 0, 0, 0.12)',
   lime: '0 0 0 1px rgba(184, 242, 58, 0.28)',
+  'glass-glow': '0 0 0 0.5px rgba(255, 255, 255, 0.04) inset',
+  'lime-glow': '0 0 0 2px rgba(184, 242, 58, 0.16)',
+  'studio-card': '0 1px 2px rgba(9, 11, 16, 0.04)',
 } as const;
 
 export const veyroMotion = {

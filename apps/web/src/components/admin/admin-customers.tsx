@@ -61,7 +61,7 @@ export default function AdminCustomers() {
 
   return (
     <AdminShell subtitle="Customer account controls">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -78,7 +78,7 @@ export default function AdminCustomers() {
           {demoPreview ? <DemoBadge /> : null}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <FormAlert tone="info" title="Demo account controls">
             Customer suspension and restore data in this pass is labelled demo state. A real restore
             requires the approval backend endpoint.
@@ -86,22 +86,22 @@ export default function AdminCustomers() {
         </div>
 
         {loading ? (
-          <LoadingState label="Loading customer accounts…" className="mt-8" />
+          <LoadingState label="Loading customer accounts…" className="mt-6" />
         ) : error ? (
-          <ErrorState title="Customer accounts unavailable" description={error} className="mt-8" />
+          <ErrorState title="Customer accounts unavailable" description={error} className="mt-6" />
         ) : customers.length === 0 ? (
           <EmptyState
             title="No customer accounts found"
             description="Customer status records will appear here."
-            className="mt-8"
+            className="mt-6"
           />
         ) : (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-2">
             {customers.map((customer) => (
               <Link
                 key={customer.id}
                 href={`/admin/customers/${customer.id}${demoPreview ? '?role=admin' : ''}`}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-white p-5 shadow-glass transition-colors hover:border-studio-ink"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-white p-4 transition-colors hover:bg-studio-tint/40"
               >
                 <div className="flex items-start gap-4">
                   <UsersRound aria-hidden="true" className="mt-0.5 h-5 w-5 text-studio-muted" />

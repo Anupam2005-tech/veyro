@@ -22,7 +22,7 @@ export function SafetyActionButton({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className="inline-flex min-h-12 items-center gap-2 rounded-full bg-red-600 px-6 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-12 items-center gap-2 rounded-control bg-red-600 px-6 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Siren aria-hidden="true" className="h-5 w-5" />
         {label}

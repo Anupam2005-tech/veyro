@@ -26,7 +26,7 @@ export function HolographicVehiclePass({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-card border border-white/15 bg-studio-obsidian p-5 text-white shadow-glass',
+        'relative overflow-hidden rounded-card border border-white/15 bg-studio-obsidian p-5 text-white transition-colors duration-150 before:absolute before:inset-x-5 before:top-0 before:h-0.5 before:bg-[#B8F23A]/60 before:content-[\'\']',
         compact ? 'max-w-sm' : 'w-full',
         className
       )}
@@ -36,7 +36,7 @@ export function HolographicVehiclePass({
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            'radial-gradient(circle at 85% 10%, rgba(184,242,58,0.22), transparent 42%), radial-gradient(circle at 10% 90%, rgba(170,176,196,0.18), transparent 45%)',
+            'radial-gradient(circle at 85% 10%, rgba(184,242,58,0.22), transparent 42%), radial-gradient(circle at 10% 90%, rgba(170,176,196,0.18), transparent 45%), radial-gradient(circle at 50% 0%, rgba(125,211,252,0.12), transparent 50%)',
         }}
       />
       <div className="relative flex items-start justify-between gap-4">
@@ -53,7 +53,7 @@ export function HolographicVehiclePass({
             </p>
           ) : null}
         </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-white/20 bg-white/10">
           <CarFront aria-hidden="true" className="h-5 w-5 text-[#B8F23A]" />
         </div>
       </div>

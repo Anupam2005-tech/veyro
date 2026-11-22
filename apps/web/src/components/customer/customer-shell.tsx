@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion, useReducedMotion } from 'motion/react';
 import { CalendarDays, LogOut, MapPinned, UserRound } from 'lucide-react';
 import { AppShell, DemoBadge, VeyroButton } from '@veyro/ui';
 import { useSession } from '@/lib/auth/session-provider';
@@ -23,6 +24,17 @@ export function CustomerShell({ subtitle, children }: CustomerShellProps) {
   const router = useRouter();
   const { user, profile, loading, demoMode, signOut } = useSession();
   const [signingOut, setSigningOut] = React.useState(false);
+  const [scrolled, setScrolled] = React.useState(false);
+  const shouldReduceMotion = useReducedMotion();
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   React.useEffect(() => {
     if (loading) {
@@ -46,12 +58,16 @@ export function CustomerShell({ subtitle, children }: CustomerShellProps) {
   }
 
   const header = (
-    <header className="border-b border-studio-border bg-studio-surface/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+    <header
+      className={`border-b border-studio-border bg-studio-surface ${
+        scrolled ? 'header-scrolled' : ''
+      }`}
+    >
+      <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <Link
             href="/customer"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-studio-obsidian font-display text-sm font-extrabold text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white transition-colors hover:bg-studio-ink"
             aria-label="Veyro booking studio"
           >
             V
@@ -72,14 +88,21 @@ export function CustomerShell({ subtitle, children }: CustomerShellProps) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${
+                className={`relative inline-flex h-10 items-center gap-2 rounded-control px-3 text-sm font-semibold transition-colors ${
                   active
-                    ? 'bg-studio-obsidian text-white'
-                    : 'text-studio-muted hover:bg-studio-tint hover:text-studio-ink'
+                    ? 'text-studio-ink'
+                    : 'text-studio-muted hover:text-studio-ink'
                 }`}
               >
                 <item.icon aria-hidden="true" className="h-4 w-4" />
                 {item.label}
+                {active && (
+                  <motion.div
+                    layoutId="customer-nav-indicator"
+                    className="absolute inset-x-0 -bottom-px h-0.5 bg-studio-lime"
+                    transition={shouldReduceMotion ? { duration: 0 } : undefined}
+                  />
+                )}
               </Link>
             );
           })}
@@ -112,12 +135,19 @@ export function CustomerShell({ subtitle, children }: CustomerShellProps) {
             key={item.href}
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
+            className={`relative flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
               active ? 'text-studio-ink' : 'text-studio-muted'
             }`}
           >
             <item.icon aria-hidden="true" className="h-4 w-4" />
             {item.label}
+            {active && (
+              <motion.div
+                layoutId="customer-bottom-indicator"
+                className="absolute bottom-0 h-0.5 w-8 bg-studio-lime"
+                transition={shouldReduceMotion ? { duration: 0 } : undefined}
+              />
+            )}
           </Link>
         );
       })}

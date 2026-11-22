@@ -11,7 +11,7 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A3 — Instant booking and assignment | BLOCKED | Review M2 Firestore transactions and connect verified inputs |
+| Anupam | T2-A2 — Identity and authorization | IN_PROGRESS | Review requested M4 implementation and upstream data contracts |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
@@ -30,6 +30,9 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | BE-FND-008 Public API liveness | REVIEW | Existing health payload preserved and cache prevention verified over HTTP. |
 | BE-FND-009 Request validation | REVIEW | Valid sanitized input and multiple invalid fields verified through a test route. |
 | BE-FND-010 Interactive API contract | REVIEW | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. |
+| BE-001 Firebase authentication | REVIEW | Verified phone sign-in and disabled-user rejection with the Auth emulator. All 44 API tests passed. |
+| BE-002–004 Roles, session and App Check | REVIEW | All 45 API tests passed with Auth and Firestore emulation. Live App Check integration pending. |
+| BE-021–029 Payments and safety | REVIEW / BLOCKED | Local API/Functions implemented. Invoice/trip/incident producers and real Razorpay/FCM integration remain. |
 | BE-011–015 Booking core | BLOCKED | Internal services tested in Firestore. Identity, eligibility, route inputs, workers and cancellation policy adapters pending. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
@@ -37,13 +40,47 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | Milestone | Status | Target |
 |---|---|---|
 | M0 — Repository & Scaffold | IN_PROGRESS | Monorepo structure, root configs, trackers |
-| M1 — Design System & Auth | NOT_STARTED | Shared tokens, components, passwordless auth |
+| M1 — Design System & Auth | IN_PROGRESS | Shared tokens, components, passwordless auth |
 | M2 — Core Booking Flow | IN_PROGRESS | Vehicle pass, instant/scheduled quotes & bookings |
 | M3 — Trip Lifecycle & Maps | NOT_STARTED | Arrival, OTP verification, live GPS tracking |
-| M4 — Payments & Admin | NOT_STARTED | Razorpay Test Mode, balance gate, Admin portal |
+| M4 — Payments & Admin | IN_PROGRESS | Razorpay Test Mode, balance gate, Admin portal |
 | M5 — Testing & Deployment | NOT_STARTED | Automated test suite, manual release checklist |
 
 ---
+
+## Code and OpenSpec audit — 22 November 2026
+
+This audit includes committed source through `23fef99` and the local BE-001–004 changes. Implementation and test evidence are recorded separately from review and release approval.
+
+| Area | Verified implementation | Remaining work |
+|---|---|---|
+| BE-FND-001–010 | API scaffold, configuration, Admin initialization, errors, context, responses, CORS, health, validation and Swagger | Review evidence and Functions deployment packaging |
+| BE-001–004 | Bearer verification, Firestore role checks, session bootstrap and App Check consumption middleware | Web client must send fresh limited-use tokens; live App Check/IAM verification |
+| BE-041 | Existing profile roles are preserved; multi-role profiles can select an already-held role | Provider linking/conflict recovery, controlled Admin grant workflow and approved addition of a second product role |
+| BE-011–015 | Durable hourly quote, booking transactions, offers, reservations, scheduled windows and cancellation policy facts | Production eligibility/balance/route/trip adapters, HTTP endpoints and deadline workers |
+| BE-016–018 | No trip backend implementation located | Arrival, trip transitions, waiting/no-show and OTP lifecycle |
+| Pritam modules | Audit repository, Admin decision rules, hourly fare, signatures, balance policy and dispute deadline helpers | Endpoint wiring, transactional financial records, provider integration and authorization |
+| Rules and emulators | Deny-all Firestore/Storage rules and local Auth/Firestore configuration exist | Rules tests and scoped module access; remaining emulator services |
+| Functions | Express HTTPS entry point exists | API package exports repaired during M4. Local type-check passes; deployment packaging remains pending |
+
+| Verification | Result |
+|---|---|
+| API build and type-check | Passed |
+| API tests with Auth and Firestore emulators | 48 passed, 0 skipped after M4. Provider and FCM calls use test doubles. |
+| Strict OpenSpec validation | 21 changes passed after M4 |
+| Functions type-check | Passed after M4 API export repair |
+| Public business operations mounted | Health, session, payment and safety routes; Swagger is development opt-in |
+
+### Anupam execution order after this audit
+
+| Order | Work | Dependency |
+|---|---|---|
+| 1 | Verify Functions workspace packaging for deployment under T2-A1 / INF-007 | Local import failure repaired during M4; deployment packaging pending |
+| 2 | Close T2-A2 identity handoff and BE-041 | Coordinate App Check header with Team 1; verify token verifier IAM and real consumption |
+| 3 | Integrate booking creation and offers | Teams 1/3 supply authoritative profiles, vehicles, routing and availability; Pritam supplies scoped balance facts |
+| 4 | Complete trip, OTP, cancellation and deadline workers | Agreed arrival/no-show interfaces, cancellation reasons and completed booking integration |
+
+The existing readiness reconciliation proposal still contains policy alternatives that disagree with implemented behavior. Review those unresolved items before using it to change response or state contracts. The user's confirmed immediate scheduled broadcast and NEEDS_REBOOK behavior is recorded in `implement-booking-core`.
 
 ## Decision register status
 
@@ -85,8 +122,8 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 
 | Blocker | Affects | Resolution |
 |---|---|---|
-| Readiness documentation awaits owner approval | Team 2 foundation work | Resolve [`reconcile-project-readiness`](../../openspec/changes/reconcile-project-readiness/tasks.md) before authorized foundation repair |
-| Monorepo scaffold incomplete | All feature development | M0 completion required before parallel coding |
+| Readiness reconciliation remains pending | Policy and contract reconciliation | Review [`reconcile-project-readiness`](../../openspec/changes/reconcile-project-readiness/tasks.md) before authorized foundation repair |
+| Functions deployment packaging unverified | API deployment and background functions | Local export/import checks pass; verify packaged workspace dependencies before deployment |
 | Firebase project unprovisioned | Backend runtime, deployment | Firebase console setup and Blaze plan configuration |
 | Cancellation reason taxonomy | Cancellation UI, validation | Adopt standard preset reasons for demo |
 

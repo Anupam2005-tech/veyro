@@ -23,7 +23,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="border-b border-night-border py-20 sm:py-24">
+    <section id="how-it-works" className="border-b border-night-border py-16 sm:py-24">
       <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
           How it works
@@ -35,16 +35,13 @@ export function HowItWorks() {
           Veyro is not a taxi fleet or a rental service. We connect a vehicle
           owner with an independent professional driver.
         </p>
-        <ol className="mt-12 grid gap-5 md:grid-cols-3">
+        <ol className="mt-10 grid gap-px overflow-hidden rounded-card border border-night-border bg-night-border md:grid-cols-3">
           {steps.map((step) => {
             const Icon = step.icon;
             return (
-              <li
-                key={step.number}
-                className="glass-panel rounded-card p-6 shadow-glass"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-night-border bg-night-glass-strong text-night-accent">
+              <li key={step.number} className="bg-night-surface p-6 sm:p-8">
+                <div className="flex items-center justify-between border-b border-night-border pb-5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-control bg-night-canvas text-night-accent">
                     <Icon aria-hidden="true" className="h-5 w-5" />
                   </span>
                   <span className="font-mono text-xs text-night-muted">

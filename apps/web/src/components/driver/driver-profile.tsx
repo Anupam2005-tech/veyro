@@ -105,7 +105,7 @@ export default function DriverProfile() {
 
   return (
     <DriverShell subtitle="Profile and verification">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -120,7 +120,7 @@ export default function DriverProfile() {
             </p>
           </div>
           {profile?.applicationStatus ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-studio-border bg-studio-surface px-4 py-2 text-xs font-semibold text-studio-ink">
+            <span className="inline-flex items-center gap-2 rounded-control border border-studio-border bg-studio-surface px-4 py-2 text-xs font-semibold text-studio-ink">
               <BadgeCheck aria-hidden="true" className="h-4 w-4" />
               {profile.applicationStatus.replace('_', ' ')}
             </span>
@@ -135,7 +135,7 @@ export default function DriverProfile() {
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
             <form
               onSubmit={(event) => void handleSave(event)}
-              className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7"
+              className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Personal details</h2>
@@ -143,47 +143,59 @@ export default function DriverProfile() {
               </div>
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <Field id="driver-name" label="Full name" required>
-                  <Input
-                    id="driver-name"
-                    value={form.fullName}
-                    onChange={(event) => setField('fullName', event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-name"
+                      value={form.fullName}
+                      onChange={(event) => setField('fullName', event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
                 <Field id="driver-phone" label="Phone" required>
-                  <Input
-                    id="driver-phone"
-                    value={form.phone}
-                    onChange={(event) => setField('phone', event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-phone"
+                      value={form.phone}
+                      onChange={(event) => setField('phone', event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
                 <Field id="driver-experience" label="Experience (years)">
-                  <Input
-                    id="driver-experience"
-                    inputMode="numeric"
-                    value={form.experienceYears}
-                    onChange={(event) => setField('experienceYears', event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-experience"
+                      inputMode="numeric"
+                      value={form.experienceYears}
+                      onChange={(event) => setField('experienceYears', event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
                 <Field id="driver-languages" label="Languages" hint="Comma separated">
-                  <Input
-                    id="driver-languages"
-                    value={form.languages.join(', ')}
-                    onChange={(event) => setField('languages', splitList(event.currentTarget.value))}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-languages"
+                      value={form.languages.join(', ')}
+                      onChange={(event) => setField('languages', splitList(event.currentTarget.value))}
+                    />
+                  </div>
                 </Field>
                 <Field id="driver-categories" label="Vehicle categories" hint="Comma separated">
-                  <Input
-                    id="driver-categories"
-                    value={form.categories.join(', ')}
-                    onChange={(event) => setField('categories', splitList(event.currentTarget.value))}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-categories"
+                      value={form.categories.join(', ')}
+                      onChange={(event) => setField('categories', splitList(event.currentTarget.value))}
+                    />
+                  </div>
                 </Field>
                 <Field id="driver-areas" label="Service areas" className="sm:col-span-2">
-                  <Input
-                    id="driver-areas"
-                    value={form.serviceAreas}
-                    onChange={(event) => setField('serviceAreas', event.currentTarget.value)}
-                  />
+                  <div className="input-glow rounded-panel">
+                    <Input
+                      id="driver-areas"
+                      value={form.serviceAreas}
+                      onChange={(event) => setField('serviceAreas', event.currentTarget.value)}
+                    />
+                  </div>
                 </Field>
               </div>
               {notice ? (
@@ -195,7 +207,7 @@ export default function DriverProfile() {
                   {notice}
                 </FormAlert>
               ) : null}
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <VeyroButton type="submit" size="lg" loading={saving}>
                   Save profile
                 </VeyroButton>
@@ -206,7 +218,7 @@ export default function DriverProfile() {
             </form>
 
             <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Rate</h2>
                   <Gauge aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -221,7 +233,7 @@ export default function DriverProfile() {
                 </p>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Private documents</h2>
                   <FileLock2 aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -247,7 +259,7 @@ export default function DriverProfile() {
                 )}
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Safety record</h2>
                   <ShieldAlert aria-hidden="true" className="h-5 w-5 text-studio-muted" />

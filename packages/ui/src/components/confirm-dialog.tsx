@@ -33,10 +33,10 @@ export function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
         <Dialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-card border border-theme-border bg-theme-surface p-6 shadow-glass',
+            'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 veyro-scale-in rounded-card border border-theme-border bg-theme-surface p-6 shadow-studio-card',
             className
           )}
         >
@@ -44,7 +44,7 @@ export function ConfirmDialog({
             <div className="flex items-start gap-3">
               <span
                 className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-control',
                   destructive
                     ? 'bg-theme-glass text-[color:var(--theme-error)]'
                     : 'bg-theme-glass text-[color:var(--theme-focus)]'
@@ -65,7 +65,7 @@ export function ConfirmDialog({
               <button
                 type="button"
                 aria-label="Close dialog"
-                className="rounded-full p-1 text-theme-muted hover:bg-theme-glass"
+                className="rounded-control p-1 text-theme-muted hover:bg-theme-glass"
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>

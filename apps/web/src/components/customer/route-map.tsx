@@ -176,11 +176,11 @@ export default function RouteMap({
   return (
     <section className="relative h-[420px] overflow-hidden rounded-card border border-studio-border bg-[#e9eef5] lg:h-full lg:min-h-[620px]">
       <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-studio-obsidian px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white">
+        <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-studio-obsidian px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white">
           {useGoogleMap ? 'Google road map' : 'Demo map preview'}
         </span>
         {route ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-studio-ink shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-white px-3 py-1.5 text-xs font-semibold text-studio-ink">
             <RouteIcon aria-hidden="true" className="h-3.5 w-3.5 text-studio-ink" />
             {route.distanceKm} km · {route.durationMinutes} min
           </span>
@@ -311,24 +311,24 @@ export default function RouteMap({
       )}
 
       {loading ? (
-        <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-studio-ink shadow-sm">
+        <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-control border border-studio-border bg-white px-3 py-2 text-xs font-semibold text-studio-ink">
           <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
           Calculating road route…
         </div>
       ) : null}
 
       {error ? (
-        <div className="absolute inset-x-4 bottom-4 z-10 flex items-center gap-2 rounded-panel border border-red-300 bg-white p-3 text-xs font-semibold text-red-700 shadow-sm">
+        <div className="absolute inset-x-4 bottom-4 z-10 flex items-center gap-2 rounded-panel border border-red-300 bg-white p-3 text-xs font-semibold text-red-700">
           <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
           {error}
         </div>
       ) : null}
 
       <div className="pointer-events-none absolute bottom-4 right-4 z-10 hidden flex-col items-end gap-1 text-[10px] font-medium text-studio-muted sm:flex">
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1">
+        <span className="inline-flex items-center gap-1 rounded-control border border-studio-border bg-white/90 px-2.5 py-1">
           <MapPin aria-hidden="true" className="h-3 w-3" /> Drag pins to adjust
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1">
+        <span className="inline-flex items-center gap-1 rounded-control border border-studio-border bg-white/90 px-2.5 py-1">
           <Navigation aria-hidden="true" className="h-3 w-3" /> Route recalculates after 400ms
         </span>
       </div>

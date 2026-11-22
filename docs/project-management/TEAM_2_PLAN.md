@@ -17,8 +17,10 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 | Person | Active feature | Status | Reviewer | Next action |
 |---|---|---|---|---|
-| Anupam | T2-A3 — Instant booking and assignment | BLOCKED | Pritam | Review M2 Firestore transactions and connect verified inputs |
+| Anupam | T2-A2 — Identity and authorization | IN_PROGRESS | Pritam | Review BE-001–004; repair INF-007 package resolution before release |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Anupam | Prepare the Admin API contract while waiting for T2-A2 and Team 1 interfaces |
+
+The user requested BE-021–029 across existing owners on 22 November. M4 code is locally reviewable alongside the pending identity changes. Owner assignments remain as recorded; review payment/security interfaces with Pritam and notification delivery with Team 3. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md).
 
 When a feature starts, update this table and the corresponding rows in [Backend Progress](BACKEND_PROGRESS.md).
 
@@ -27,7 +29,7 @@ When a feature starts, update this table and the corresponding rows in [Backend 
 | Feature | Owner | Status | Task IDs | Depends on | Handoff condition |
 |---|---|---|---|---|---|
 | T2-A1 — Foundation and local runtime | Anupam | REVIEW | BE-FND-001–010, INF-005, INF-007 | Readiness reconciliation and foundation approval | Build, type-check, local startup, emulator and shared-file evidence recorded |
-| T2-A2 — Identity and authorization | Anupam | NOT_STARTED | BE-001–004, BE-041, INF-001, INF-003 | T2-A1 | Auth/App Check, role checks and cross-user denial tests pass |
+| T2-A2 — Identity and authorization | Anupam | IN_PROGRESS | BE-001–004, BE-041, INF-001, INF-003 | T2-A1 | Auth/App Check, role checks and cross-user denial tests pass |
 | T2-A3 — Instant booking and assignment | Anupam | BLOCKED | BE-012–013 | T2-A2, T2-P2, Team 1 interfaces and Team 3 availability | Concurrent acceptance and reservation tests pass |
 | T2-A4 — Scheduled booking lifecycle | Anupam | BLOCKED | BE-014, BE-034–035 | T2-A3 | Timing, expiry and retry-safe job tests pass |
 | T2-A5 — Trip lifecycle and OTP | Anupam | NOT_STARTED | BE-016, BE-018 | T2-A3 and Team 3 location contract | Transition, OTP expiry and replay tests pass |
@@ -38,6 +40,8 @@ When a feature starts, update this table and the corresponding rows in [Backend 
 | T2-P4 — Ledger and disputes | Pritam | NOT_STARTED | BE-043 | T2-P3 and T2-A6 | Ledger invariants and audited adjustments pass |
 | T2-P5 — Booking balance gate | Pritam | NOT_STARTED | BE-024 | T2-P4 and T2-A3 | Balance restriction and concurrency tests pass |
 | T2-P6 — Reports, safety and SOS | Pritam | NOT_STARTED | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |
+
+See the [22 November code audit](PROJECT_STATUS.md#code-and-openspec-audit--22-november-2026) for current implementation gaps and execution order.
 
 ## Anupam — ordered feature queue
 

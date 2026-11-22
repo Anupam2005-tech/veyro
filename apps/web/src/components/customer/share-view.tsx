@@ -59,18 +59,18 @@ export default function ShareView({ token }: { token: string }) {
   }, [pathname, router, sessionLoading, token, user]);
 
   const header = (
-    <header className="border-b border-studio-border bg-studio-surface/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+    <header className="border-b border-studio-border bg-studio-surface">
+      <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-studio-obsidian font-display text-sm font-extrabold text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white"
           aria-label="Veyro home"
         >
           V
         </Link>
         <div className="flex items-center gap-2">
           {demoMode ? <DemoBadge /> : null}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-studio-border bg-studio-surface px-3 py-1.5 text-xs font-semibold text-studio-ink">
+          <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-studio-surface px-3 py-1.5 text-xs font-semibold text-studio-ink">
             <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
             Read-only
           </span>
@@ -81,8 +81,8 @@ export default function ShareView({ token }: { token: string }) {
 
   return (
     <AppShell theme="studio" header={header}>
-      <div className="min-h-screen bg-studio-bg px-5 py-8 sm:px-8 sm:py-12">
-        <div className="mx-auto max-w-5xl">
+      <div className="min-h-screen bg-studio-bg px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-content">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -101,13 +101,13 @@ export default function ShareView({ token }: { token: string }) {
             ) : null}
           </div>
 
-          <div className="mt-8">
+          <div className="mt-6">
             {sessionLoading || loading ? (
               <LoadingState label="Verifying share link…" />
             ) : error ? (
               <ErrorState title="Share link unavailable" description={error} />
             ) : !user ? (
-              <div className="rounded-card border border-studio-border bg-studio-surface p-8 text-center">
+              <div className="rounded-card border border-studio-border bg-studio-surface p-6 text-center sm:p-8">
                 <LockKeyhole aria-hidden="true" className="mx-auto h-8 w-8 text-studio-ink" />
                 <h2 className="mt-4 font-display text-2xl font-extrabold text-studio-ink">
                   Sign in to view this trip
@@ -122,7 +122,7 @@ export default function ShareView({ token }: { token: string }) {
                 </VeyroButton>
               </div>
             ) : share ? (
-              <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+              <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
                 <div className="overflow-hidden rounded-card border border-studio-border bg-studio-surface">
                   <RouteMap
                     points={[
@@ -154,8 +154,8 @@ export default function ShareView({ token }: { token: string }) {
                     showDriverMarkers={Boolean(share.liveLocation && !share.liveLocation.stale)}
                   />
                 </div>
-                <div className="space-y-5">
-                  <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
+                <div className="space-y-4">
+                  <section className="rounded-card border border-studio-border bg-studio-surface p-4 sm:p-5">
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                       Minimum trip information
                     </p>
@@ -175,7 +175,7 @@ export default function ShareView({ token }: { token: string }) {
                         </span>
                       </p>
                       {share.driverName ? (
-                        <p className="rounded-panel bg-studio-bg p-4 text-xs text-studio-ink">
+                        <p className="rounded-panel border border-studio-border/60 bg-studio-bg p-4 text-xs text-studio-ink">
                           Driver: {share.driverName}
                           {share.driverVehicle ? ` · ${share.driverVehicle}` : ''}
                         </p>
@@ -184,7 +184,7 @@ export default function ShareView({ token }: { token: string }) {
                       )}
                     </div>
                   </section>
-                  <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
+                  <section className="rounded-card border border-studio-border bg-studio-surface p-4 sm:p-5">
                     <Clock3 aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                     <p className="mt-3 text-sm font-bold text-studio-ink">
                       {share.driverEtaMinutes !== null

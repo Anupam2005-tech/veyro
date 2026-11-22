@@ -4,10 +4,12 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 
 const controlClasses =
-  'w-full rounded-panel border bg-theme-surface px-4 py-3 text-sm text-theme-text placeholder:text-theme-muted transition-colors focus:border-[color:var(--theme-focus)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme-focus)] disabled:cursor-not-allowed disabled:opacity-50';
+  'w-full rounded-control border bg-theme-surface px-4 py-3 text-sm text-theme-text placeholder:text-theme-muted transition-colors duration-150 focus:border-[color:var(--theme-focus)] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme-focus)] disabled:cursor-not-allowed disabled:opacity-50';
 
 function controlVariant(invalid?: boolean) {
-  return invalid ? 'border-[color:var(--theme-error)]' : 'border-theme-border';
+  return invalid
+    ? 'border-[color:var(--theme-error)] focus:border-[color:var(--theme-error)] focus:ring-[color:var(--theme-error)]/30 focus:shadow-none'
+    : 'border-theme-border';
 }
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {

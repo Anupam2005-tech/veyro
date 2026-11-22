@@ -194,7 +194,7 @@ export default function TripSummary({ tripId }: { tripId: string }) {
 
   return (
     <CustomerShell subtitle={`Receipt ${tripId}`}>
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <Link href={`/customer/trips/${tripId}`} className="inline-flex items-center gap-2 text-xs font-semibold text-studio-muted hover:text-studio-ink">
           <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
           Back to trip
@@ -220,8 +220,8 @@ export default function TripSummary({ tripId }: { tripId: string }) {
         ) : error || !trip ? (
           <ErrorState title="Receipt unavailable" description={error ?? 'Trip not found.'} className="mt-8" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-            <div className="space-y-5">
+          <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <div className="space-y-4">
               {trip.finalFare ? (
                 <>
                   <FareBreakdown
@@ -233,33 +233,40 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                     exclusions={trip.finalFare.exclusions}
                     note="HOURLY driver-service fare · no minimum fare or minimum billable time"
                   />
-                  <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-panel bg-studio-bg p-4">
-                        <p className="text-xs text-studio-muted">Estimate</p>
-                        <p className="mt-1 font-display text-2xl font-extrabold text-studio-ink">
+                  <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-panel border border-studio-border bg-studio-bg/60 p-3">
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-studio-muted">Estimated Fare</p>
+                        <p className="mt-1 font-display text-2xl font-black tracking-tight text-studio-ink sm:text-3xl">
                           {inr(trip.finalFare.estimateInr)}
                         </p>
                       </div>
-                      <div className="rounded-panel bg-studio-bg p-4">
-                        <p className="text-xs text-studio-muted">Final</p>
-                        <p className="mt-1 font-display text-2xl font-extrabold text-studio-ink">
+                      <div className="rounded-panel border border-studio-lime/40 bg-gradient-to-br from-studio-tint/50 via-white to-studio-tint/20 p-3">
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-studio-muted">Final Charged Fare</p>
+                        <p className="mt-1 font-display text-3xl font-black tracking-tight text-studio-obsidian sm:text-4xl">
                           {inr(trip.finalFare.totalInr)}
                         </p>
                       </div>
-                      <p className="text-xs text-studio-muted">
-                        Billable time: {trip.finalFare.billableMinutes} min
-                      </p>
-                      <p className="text-xs text-studio-muted">
-                        Recorded distance: {trip.finalFare.billableKm} km
-                      </p>
-                      <p className="text-xs text-studio-muted">
-                        Waiting / no-show: {inr(trip.finalFare.waitingFeeInr)} /{' '}
-                        {inr(trip.finalFare.noShowFeeInr)}
-                      </p>
-                      <p className="text-xs text-studio-muted">
-                        Platform fee / commission: {inr(0)} / 0%
-                      </p>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-t border-studio-border pt-3 text-xs text-studio-muted sm:grid-cols-4">
+                      <div>
+                        <span className="block text-[11px] text-studio-muted">Billable time</span>
+                        <span className="font-semibold text-studio-ink">{trip.finalFare.billableMinutes} min</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-studio-muted">Recorded distance</span>
+                        <span className="font-semibold text-studio-ink">{trip.finalFare.billableKm} km</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-studio-muted">Wait / no-show</span>
+                        <span className="font-semibold text-studio-ink">
+                          {inr(trip.finalFare.waitingFeeInr)} / {inr(trip.finalFare.noShowFeeInr)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-studio-muted">Platform fee / comm.</span>
+                        <span className="font-semibold text-studio-ink">{inr(0)} / 0%</span>
+                      </div>
                     </div>
                   </section>
                   <FormAlert
@@ -296,13 +303,16 @@ export default function TripSummary({ tripId }: { tripId: string }) {
               ) : null}
             </div>
 
-            <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
+            <div className="space-y-4">
+              <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-display text-xl font-extrabold text-studio-ink">Rate this drive</h2>
+                  <div>
+                    <h2 className="font-display text-xl font-extrabold text-studio-ink">Rate this drive</h2>
+                    <p className="mt-1 text-xs text-studio-muted">Your review helps improve driver quality and standards.</p>
+                  </div>
                   <Star aria-hidden="true" className="h-5 w-5 text-studio-ink" />
                 </div>
-                <div className="mt-5 flex gap-2" role="group" aria-label="Rating from one to five stars">
+                <div className="mt-5 flex items-center gap-2.5" role="group" aria-label="Rating from one to five stars">
                   {[1, 2, 3, 4, 5].map((value) => (
                     <button
                       key={value}
@@ -311,8 +321,10 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                       aria-pressed={rating === value}
                       disabled={demoPreview || busy}
                       onClick={() => setRating(value)}
-                      className={`rounded-full p-2 transition-colors disabled:opacity-50 ${
-                        value <= rating ? 'bg-studio-ink text-white' : 'bg-studio-tint text-studio-muted'
+                      className={`flex h-10 w-10 items-center justify-center rounded-control transition-colors disabled:opacity-50 ${
+                        value <= rating
+                          ? 'bg-studio-obsidian text-studio-lime'
+                          : 'bg-studio-tint text-studio-muted hover:bg-studio-border/50 hover:text-studio-ink'
                       }`}
                     >
                       <Star aria-hidden="true" className="h-5 w-5" fill={value <= rating ? 'currentColor' : 'none'} />
@@ -321,7 +333,7 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                 </div>
                 <VeyroButton
                   type="button"
-                  className="mt-5"
+                  className="mt-5 min-h-[44px] w-full"
                   loading={busy}
                   disabled={rating === 0 || demoPreview}
                   onClick={() => void handleRating()}
@@ -329,11 +341,12 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                   Submit rating
                 </VeyroButton>
                 {trip.driver ? (
-                  <div className="mt-4 rounded-panel bg-studio-bg p-4">
+                  <div className="mt-4 rounded-panel border border-studio-border bg-studio-bg/60 p-3">
                     <VeyroButton
                       type="button"
                       variant="secondary"
                       size="sm"
+                      className="min-h-[38px]"
                       loading={favouriteBusy}
                       aria-pressed={favouriteDriverIds.includes(trip.driver.id)}
                       onClick={() => void handleFavourite()}
@@ -358,7 +371,7 @@ export default function TripSummary({ tripId }: { tripId: string }) {
 
               <form
                 onSubmit={(event) => void handleReport(event)}
-                className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6"
+                className="rounded-card border border-studio-border bg-white p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Report an issue</h2>
@@ -370,33 +383,37 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                 </p>
                 <div className="mt-5 space-y-4">
                   <Field id="report-category" label="Category" required>
-                    <Select
-                      id="report-category"
-                      value={reportCategory}
-                      onChange={(event) =>
-                        setReportCategory(event.currentTarget.value as ReportSubmission['category'])
-                      }
-                    >
-                      {reportCategories.map((category) => (
-                        <option key={category.value} value={category.value}>
-                          {category.label}
-                        </option>
-                      ))}
-                    </Select>
+                    <div className="input-glow rounded-panel">
+                      <Select
+                        id="report-category"
+                        value={reportCategory}
+                        onChange={(event) =>
+                          setReportCategory(event.currentTarget.value as ReportSubmission['category'])
+                        }
+                      >
+                        {reportCategories.map((category) => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
                   </Field>
                   <Field id="report-description" label="Description" required>
-                    <Textarea
-                      id="report-description"
-                      value={reportDescription}
-                      onChange={(event) => setReportDescription(event.currentTarget.value)}
-                      placeholder="Describe what happened. Do not include payment card details."
-                    />
+                    <div className="input-glow rounded-panel">
+                      <Textarea
+                        id="report-description"
+                        value={reportDescription}
+                        onChange={(event) => setReportDescription(event.currentTarget.value)}
+                        placeholder="Describe what happened. Do not include payment card details."
+                      />
+                    </div>
                   </Field>
                 </div>
                 <VeyroButton
                   type="submit"
                   variant="secondary"
-                  className="mt-5"
+                  className="mt-5 min-h-[44px] w-full"
                   loading={busy}
                   disabled={demoPreview}
                 >
@@ -404,7 +421,7 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                 </VeyroButton>
               </form>
 
-              <section className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white shadow-glass sm:p-6">
+              <section className="rounded-card border border-studio-ink/20 bg-studio-obsidian p-4 text-white sm:p-5">
                 <BadgeCheck aria-hidden="true" className="h-6 w-6 text-studio-lime" />
                 <h2 className="mt-4 font-display text-lg font-bold">Service fare, not a taxi fare</h2>
                 <p className="mt-2 text-xs leading-relaxed text-white/65">

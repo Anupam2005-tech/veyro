@@ -25,12 +25,12 @@ export function OnboardingHeader({ title, subtitle, stepLabel }: OnboardingHeade
   }
 
   return (
-    <header className="border-b border-studio-border bg-studio-surface/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+    <header className="border-b border-studio-border bg-studio-surface">
+      <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-studio-obsidian font-display text-sm font-extrabold text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white"
             aria-label="Veyro home"
           >
             V
@@ -51,7 +51,7 @@ export function OnboardingHeader({ title, subtitle, stepLabel }: OnboardingHeade
           <Link
             href="/"
             aria-label="Veyro home"
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-studio-border px-3 text-xs font-semibold text-studio-ink hover:bg-studio-tint"
+            className="inline-flex h-9 items-center gap-1.5 rounded-control border border-studio-border px-3 text-xs font-semibold text-studio-ink hover:bg-studio-tint"
           >
             <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Home</span>

@@ -209,7 +209,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
 
   return (
     <CustomerShell subtitle={`Trip ${tripId}`}>
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Link href="/customer/bookings" className="text-xs font-semibold text-studio-muted hover:text-studio-ink">
@@ -237,7 +237,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
         </div>
 
         {demoPreview ? (
-          <div className="mt-6 flex flex-wrap gap-2 rounded-card border border-studio-border bg-studio-surface p-4">
+          <div className="mt-6 flex flex-wrap gap-2 rounded-card border border-studio-border bg-studio-surface p-3">
             {previews.map((item) => {
               const params = new URLSearchParams();
               params.set('role', 'customer');
@@ -246,7 +246,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 <Link
                   key={item.state}
                   href={`/customer/trips/${encodeURIComponent(tripId)}?${params.toString()}`}
-                  className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
+                  className={`rounded-control border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
                     preview?.state === item.state
                       ? 'border-studio-ink bg-studio-ink text-white'
                       : 'border-studio-border text-studio-muted hover:text-studio-ink'
@@ -264,8 +264,8 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
         ) : error || !shownTrip ? (
           <ErrorState title="Trip unavailable" description={error ?? 'Trip not found.'} className="mt-8" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-            <div className="space-y-5">
+          <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+            <div className="space-y-4">
               <div key={mapKey} className="overflow-hidden rounded-card border border-studio-border bg-studio-surface">
                 <RouteMap
                   points={[shownTrip.pickup, shownTrip.destination]}
@@ -283,7 +283,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                   }
                   showDriverMarkers={Boolean(shownTrip.liveLocation) && !shownTrip.liveLocation?.stale}
                 />
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-studio-border px-4 py-3 text-xs text-studio-muted">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-studio-border px-3 py-2.5 text-xs text-studio-muted">
                   <p className="flex items-center gap-2 font-semibold text-studio-ink">
                     <MapPin aria-hidden="true" className="h-4 w-4" />
                     {shownTrip.liveLocation
@@ -294,6 +294,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                     type="button"
                     size="sm"
                     variant="secondary"
+                    className="min-h-[38px] px-3.5"
                     onClick={() => setMapKey((current) => current + 1)}
                   >
                     Re-centre
@@ -318,13 +319,14 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state === 'AWAITING_DRIVER' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+                <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                         {shownTrip.bookingType === 'INSTANT' ? 'Instant response window' : 'Scheduled broadcast'}
                       </p>
-                      <h2 className="mt-2 font-display text-2xl font-extrabold text-studio-ink">
+                      <h2 className="mt-2 flex items-center font-display text-2xl font-extrabold text-studio-ink">
+                        <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-studio-lime" aria-hidden="true" />
                         {shownTrip.bookingType === 'INSTANT'
                           ? 'Waiting for driver acceptance'
                           : 'Eligible drivers are being notified'}
@@ -346,17 +348,18 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state === 'ARRIVED_WAITING' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+                <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                         Arrival confirmed
                       </p>
-                      <h2 className="mt-2 font-display text-2xl font-extrabold text-studio-ink">
+                      <h2 className="mt-2 flex items-center font-display text-2xl font-extrabold text-studio-ink">
+                        <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-studio-lime" aria-hidden="true" />
                         {formatTime(shownTrip.arrivalAt)}
                       </h2>
                     </div>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-studio-tint px-4 py-2 font-mono text-lg font-bold text-studio-ink">
+                    <span className="inline-flex items-center gap-2 rounded-control border border-studio-border bg-studio-tint px-3 py-2 font-mono text-lg font-bold text-studio-ink">
                       <Clock3 aria-hidden="true" className="h-4 w-4" />
                       {graceCountdown ?? '00:00'}
                     </span>
@@ -371,7 +374,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state === 'ACTIVE' ? (
-                <section className="rounded-card border border-studio-border bg-studio-obsidian p-5 text-white shadow-glass sm:p-7">
+                <section className="rounded-card border border-studio-ink/20 bg-gradient-to-br from-studio-obsidian to-[#1a1c20] p-4 text-white sm:p-5">
                   <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
                     Trip in progress
                   </p>
@@ -395,7 +398,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                     note={`Estimate ${inr(shownTrip.finalFare.estimateInr)} · payment ${shownTrip.finalFare.paymentStatus.toLowerCase()}`}
                     exclusions={shownTrip.finalFare.exclusions}
                   />
-                  <VeyroButton asChild size="lg">
+                  <VeyroButton asChild size="lg" className="min-h-[48px] w-full text-base">
                     <Link href={`/customer/trips/${tripId}/summary`}>
                       Open receipt, rating and report
                       <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -405,8 +408,8 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
             </div>
 
-            <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-6">
+            <div className="space-y-4">
+              <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                   Your driver
                 </p>
@@ -447,7 +450,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
               ) : null}
 
               {shownTrip.state !== 'COMPLETED' ? (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+                <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-display text-lg font-bold text-studio-ink">Share live trip</h3>
@@ -467,7 +470,13 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                           className="min-w-0 flex-1 bg-transparent px-2 font-mono text-[11px] text-studio-ink"
                         />
                         {shareUrl ? (
-                          <VeyroButton type="button" size="sm" variant="secondary" onClick={() => void handleCopy()}>
+                          <VeyroButton
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="min-h-[38px] px-3.5"
+                            onClick={() => void handleCopy()}
+                          >
                             <Copy aria-hidden="true" className="h-3.5 w-3.5" />
                             Copy
                           </VeyroButton>
@@ -477,6 +486,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                         type="button"
                         size="sm"
                         variant="secondary"
+                        className="min-h-[40px] w-full"
                         loading={busy}
                         disabled={Boolean(preview)}
                         onClick={() => void handleRevoke()}
@@ -488,7 +498,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                   ) : (
                     <VeyroButton
                       type="button"
-                      className="mt-4"
+                      className="mt-4 min-h-[44px] w-full"
                       loading={busy}
                       disabled={Boolean(preview)}
                       onClick={() => void handleShare()}
@@ -503,7 +513,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 </section>
               ) : null}
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+              <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-display text-lg font-bold text-studio-ink">Emergency SOS</h3>
@@ -514,7 +524,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                   <ShieldCheck aria-hidden="true" className="h-5 w-5 text-studio-ink" />
                 </div>
                 <SafetyActionButton
-                  className="mt-4"
+                  className="mt-4 min-h-[44px]"
                   demoMode
                   disabled={busy || Boolean(preview)}
                   onClick={() => void handleSos()}

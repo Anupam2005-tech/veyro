@@ -85,7 +85,7 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
 
   return (
     <AdminShell subtitle={`Customer ${customerId}`}>
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href={`/admin/customers${demoPreview ? '?role=admin' : ''}`}
           className="inline-flex items-center gap-2 text-xs font-semibold text-studio-muted hover:text-studio-ink"
@@ -119,7 +119,7 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
         </div>
 
         {notice ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <FormAlert
               tone={notice.includes('Could not') ? 'error' : 'success'}
               title="Customer status update"
@@ -130,13 +130,13 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
         ) : null}
 
         {loading ? (
-          <LoadingState label="Loading customer record…" className="mt-8" />
+          <LoadingState label="Loading customer record…" className="mt-6" />
         ) : error || !customer ? (
-          <ErrorState title="Customer record unavailable" description={error ?? 'Not found.'} className="mt-8" />
+          <ErrorState title="Customer record unavailable" description={error ?? 'Not found.'} className="mt-6" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.8fr] lg:items-start">
-            <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-7">
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
+            <div className="space-y-4">
+              <section className="rounded-card border border-studio-border bg-white p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Account</h2>
                   <ShieldAlert aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -170,7 +170,7 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
                 ) : null}
               </section>
 
-              <section className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-white p-5 sm:p-7">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Incident history</h2>
                 {customer.incidents.length === 0 ? (
                   <p className="mt-4 text-xs text-studio-muted">No incidents are recorded for this account.</p>
@@ -192,8 +192,8 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
               </section>
             </div>
 
-            <div className="space-y-5">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+            <div className="space-y-4">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Restore action</h2>
                   <History aria-hidden="true" className="h-5 w-5 text-studio-muted" />
@@ -213,7 +213,7 @@ export default function AdminCustomerDetail({ customerId }: { customerId: string
                 </VeyroButton>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Audit trail</h2>
                 {customer.auditTrail.length === 0 ? (
                   <p className="mt-4 text-xs text-studio-muted">No decisions recorded for this account yet.</p>

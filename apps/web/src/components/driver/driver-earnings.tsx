@@ -64,7 +64,7 @@ export default function DriverEarnings() {
 
   return (
     <DriverShell subtitle="Earnings ledger">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -89,9 +89,9 @@ export default function DriverEarnings() {
               {cards.map((card) => (
                 <div
                   key={card.label}
-                  className={`rounded-card border p-5 shadow-glass ${
+                  className={`rounded-card border p-5 ${
                     card.tone === 'dark'
-                      ? 'border-studio-obsidian bg-studio-obsidian text-white'
+                      ? 'border-studio-obsidian bg-studio-obsidian text-white ring-1 ring-studio-lime/20'
                       : 'border-studio-border bg-studio-surface text-studio-ink'
                   }`}
                 >
@@ -108,7 +108,7 @@ export default function DriverEarnings() {
             </div>
 
             <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">
                   Current rate configuration
                 </h2>
@@ -145,14 +145,14 @@ export default function DriverEarnings() {
                 </VeyroButton>
               </section>
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Trip ledger</h2>
                   <History aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                 </div>
                 <div className="mt-5 divide-y divide-studio-border">
                   {summary.entries.map((entry) => (
-                    <article key={entry.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+                    <article key={entry.id} className="flex flex-wrap items-center justify-between gap-4 py-3">
                       <div>
                         <p className="text-sm font-bold text-studio-ink">{entry.description}</p>
                         <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-studio-muted">

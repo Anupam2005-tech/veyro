@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { motion, useReducedMotion } from 'motion/react';
 import { ArrowRight, CalendarDays, CarFront, Clock3, MapPin, Navigation, UserRound } from 'lucide-react';
 import {
   ConfirmDialog,
@@ -91,7 +92,7 @@ function BookingCard({
   const canCancel = booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED';
 
   return (
-    <article className="rounded-card border border-studio-border bg-white p-5 shadow-glass sm:p-6">
+    <article className="rounded-card border border-studio-border bg-white p-4 shadow-studio-card sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -104,7 +105,7 @@ function BookingCard({
         <StatusBadge status={copy.status} label={copy.label} />
       </div>
 
-      <div className="mt-5 grid gap-4 text-sm text-studio-muted sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-3 text-sm text-studio-muted sm:grid-cols-2 lg:grid-cols-4">
         <p className="inline-flex items-start gap-2">
           <CalendarDays aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
           {formatDateTime(booking.pickupAt)}
@@ -123,7 +124,7 @@ function BookingCard({
         </p>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-studio-border pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-studio-border pt-3">
         <div className="space-y-1 text-xs text-studio-muted">
           <p className="inline-flex items-center gap-1.5">
             <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
@@ -162,6 +163,7 @@ function BookingCard({
 export default function BookingHub() {
   const searchParams = useSearchParams();
   const { user } = useSession();
+  const shouldReduceMotion = useReducedMotion();
   const [bookings, setBookings] = React.useState<BookingRecord[]>([]);
   const [favouriteDriverIds, setFavouriteDriverIds] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -232,7 +234,7 @@ export default function BookingHub() {
 
   return (
     <CustomerShell subtitle="Upcoming, active, past and favourite rides">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -254,7 +256,7 @@ export default function BookingHub() {
         </div>
 
         {createdId ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <FormAlert tone="success" title="Booking created">
               {createdId} is now in your booking hub. The quote snapshot is frozen.
             </FormAlert>
@@ -262,7 +264,7 @@ export default function BookingHub() {
         ) : null}
 
         {error ? (
-          <div className="mt-8">
+          <div className="mt-6">
             <ErrorState
               title="Could not load bookings"
               description={error}
@@ -272,7 +274,7 @@ export default function BookingHub() {
           </div>
         ) : null}
 
-        <div className="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Booking status">
+        <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Booking status">
           {(['upcoming', 'active', 'past', 'favourites'] as const).map((item) => (
             <button
               key={item}
@@ -280,7 +282,7 @@ export default function BookingHub() {
               role="tab"
               aria-selected={tab === item}
               onClick={() => setTab(item)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${
+              className={`rounded-control border px-3 py-2 text-sm font-semibold capitalize transition-colors ${
                 tab === item
                   ? 'border-studio-ink bg-studio-obsidian text-white'
                   : 'border-studio-border bg-white text-studio-muted hover:text-studio-ink'
@@ -308,7 +310,15 @@ export default function BookingHub() {
             />
           ) : (
             visible.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} onCancel={setCancelTarget} />
+              <motion.div
+                key={booking.id}
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }}
+              >
+                <BookingCard booking={booking} onCancel={setCancelTarget} />
+              </motion.div>
             ))
           )}
         </div>

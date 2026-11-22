@@ -122,7 +122,7 @@ export default function AdminReports() {
 
   return (
     <AdminShell subtitle="Incident reports">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -140,7 +140,7 @@ export default function AdminReports() {
         </div>
 
         {!loading ? (
-          <section className="mt-8 rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+          <section className="mt-6 rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
@@ -154,7 +154,7 @@ export default function AdminReports() {
                   incident timeline.
                 </p>
               </div>
-              <div className="w-full sm:w-72">
+              <div className="w-full rounded-control sm:w-72">
                 <Input
                   id="driver-lookup"
                   type="search"
@@ -175,7 +175,7 @@ export default function AdminReports() {
                   <Link
                     key={driver.id}
                     href={`/admin/applications/${driver.id}${demoPreview ? '?role=admin' : ''}`}
-                    className="flex items-center justify-between gap-4 rounded-panel border border-studio-border bg-white p-4 transition-colors hover:border-studio-ink"
+                    className="flex items-center justify-between gap-4 rounded-control border border-studio-border bg-white p-4 transition-colors hover:bg-studio-tint/40"
                   >
                     <div>
                       <p className="text-sm font-bold text-studio-ink">{driver.driverName}</p>
@@ -184,7 +184,7 @@ export default function AdminReports() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-studio-tint px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
+                      <span className="rounded-control bg-studio-tint px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
                         {driver.incidentCount} incident{driver.incidentCount === 1 ? '' : 's'}
                       </span>
                       <Search aria-hidden="true" className="h-4 w-4 text-studio-muted" />
@@ -197,12 +197,12 @@ export default function AdminReports() {
         ) : null}
 
         {loading ? (
-          <LoadingState label="Loading reports…" className="mt-8" />
+          <LoadingState label="Loading reports…" className="mt-6" />
         ) : error ? (
-          <ErrorState title="Reports unavailable" description={error} className="mt-8" />
+          <ErrorState title="Reports unavailable" description={error} className="mt-6" />
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-            <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+            <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Report directory</h2>
                 <Select value={filter} onChange={(event) => setFilter(event.currentTarget.value)} aria-label="Filter reports">
@@ -227,7 +227,7 @@ export default function AdminReports() {
                         setNote('');
                       }}
                       className={`flex w-full flex-wrap items-center justify-between gap-4 py-4 text-left transition-colors hover:bg-studio-tint/40 ${
-                        selected?.id === report.id ? 'bg-studio-tint/50' : ''
+                        selected?.id === report.id ? 'bg-studio-tint/50 border-l-2 border-l-studio-lime' : ''
                       }`}
                     >
                       <div>
@@ -238,7 +238,7 @@ export default function AdminReports() {
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${statusTone(report.status)}`}>
+                        <span className={`rounded-control px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${statusTone(report.status)}`}>
                           {report.status.replace('_', ' ')}
                         </span>
                         <Eye aria-hidden="true" className="h-4 w-4 text-studio-muted" />
@@ -249,7 +249,7 @@ export default function AdminReports() {
               )}
             </section>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               {notice ? (
                 <FormAlert tone={notice.includes('Could not') ? 'error' : 'success'} title="Report update">
                   {notice}
@@ -265,7 +265,7 @@ export default function AdminReports() {
                   </p>
                 </div>
               ) : (
-                <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+                <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">

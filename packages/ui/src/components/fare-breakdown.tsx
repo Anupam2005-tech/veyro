@@ -23,7 +23,7 @@ export function FareBreakdown({
   className,
 }: FareBreakdownProps) {
   return (
-    <section className={cn('glass-panel rounded-card p-5 sm:p-6', className)}>
+    <section className={cn('border border-theme-border bg-theme-surface rounded-card p-5 sm:p-6', className)}>
       <h3 className="font-display text-lg font-bold text-theme-text">
         Fare breakdown
       </h3>
@@ -39,7 +39,7 @@ export function FareBreakdown({
             <dd className="font-mono text-theme-text">{line.amount}</dd>
           </div>
         ))}
-        <div className="flex items-baseline justify-between gap-4 border-t border-theme-border pt-4">
+        <div className="flex items-baseline justify-between gap-4 border-t border-theme-border pt-4 -mx-3 px-3 py-2.5 rounded-panel bg-theme-glass-strong/40">
           <dt className="font-semibold text-theme-text">Total driver service fare</dt>
           <dd className="font-mono text-xl font-bold text-[color:var(--theme-focus)]">{total}</dd>
         </div>

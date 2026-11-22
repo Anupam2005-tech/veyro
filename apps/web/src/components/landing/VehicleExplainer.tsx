@@ -12,8 +12,8 @@ const demoVehicle = {
 
 export function VehicleExplainer() {
   return (
-    <section id="vehicle" className="border-b border-night-border py-20 sm:py-24">
-      <div className="mx-auto grid max-w-content items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <section id="vehicle" className="border-b border-night-border py-16 sm:py-24">
+      <div className="mx-auto grid max-w-content items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
         <div className="order-2 lg:order-1">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-night-accent">
             Customer-owned vehicle
@@ -41,7 +41,9 @@ export function VehicleExplainer() {
           </p>
         </div>
         <div className="order-1 lg:order-2">
-          <HolographicVehiclePass vehicle={demoVehicle} className="veyro-float" />
+          <div className="rounded-card border border-night-border bg-night-surface p-4 sm:p-6">
+            <HolographicVehiclePass vehicle={demoVehicle} />
+          </div>
         </div>
       </div>
     </section>

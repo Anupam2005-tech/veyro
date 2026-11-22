@@ -57,7 +57,575 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/v1/auth/session:
+    post:
+      operationId: bootstrapSession
+      summary: Create or synchronize the signed-in user's profile
+      description: Requires a Firebase ID token and a fresh limited-use App Check token per request. Retries with a fresh token reuse the same profile. No prior product role is required.
+      security:
+        - firebaseAuth: []
+          firebaseAppCheck: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleIntent: {type: string, nullable: true, enum: [customer, driver, null]}
+            example: {roleIntent: customer}
+      responses:
+        '200':
+          description: Active profile for the authenticated UID.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message, data, meta]
+                properties:
+                  success: {type: boolean, enum: [true]}
+                  message: {type: string}
+                  data:
+                    type: object
+                    required: [uid, role, roles, fullName, phone, onboardingComplete, updatedAt]
+                    properties:
+                      uid: {type: string}
+                      role: {type: string, enum: [CUSTOMER, DRIVER, ADMIN]}
+                      roles: {type: array, items: {type: string, enum: [CUSTOMER, DRIVER, ADMIN]}}
+                      fullName: {type: string}
+                      phone: {type: string}
+                      onboardingComplete: {type: boolean}
+                      updatedAt: {type: string, format: date-time}
+                  meta:
+                    type: object
+                    required: [requestId]
+                    properties:
+                      requestId: {type: string}
+              example:
+                success: true
+                message: Session ready.
+                data: {uid: demo-user, role: CUSTOMER, roles: [CUSTOMER], fullName: '', phone: '', onboardingComplete: false, updatedAt: '2026-11-22T12:00:00Z'}
+                meta: {requestId: demo-session}
+        '400':
+          description: Unsupported role intent or malformed JSON.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '401':
+          description: Missing or invalid Firebase authentication (UNAUTHENTICATED).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '403':
+          description: Invalid or consumed App Check token (APP_CHECK_FAILED), or inactive profile (PROFILE_UNAVAILABLE).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '500':
+          description: Unexpected provider or storage error (INTERNAL_ERROR).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+  /api/v1/payments/orders:
+    post:
+      summary: Create a Test Mode order from an owned confirmed payable
+      operationId: postApiV1PaymentsOrders
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - invoiceId
+              properties:
+                invoiceId:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/payments/verify:
+    post:
+      summary: Verify Checkout signature and fetch captured payment status
+      operationId: postApiV1PaymentsVerify
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - attemptId
+              - razorpay_order_id
+              - razorpay_payment_id
+              - razorpay_signature
+              properties:
+                attemptId:
+                  type: string
+                razorpay_order_id:
+                  type: string
+                razorpay_payment_id:
+                  type: string
+                razorpay_signature:
+                  type: string
+  /api/v1/payments/webhooks/razorpay:
+    post:
+      summary: Verify original webhook bytes and process provider-confirmed payments
+      operationId: postApiV1PaymentsWebhooksRazorpay
+      security: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: X-Razorpay-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Razorpay-Event-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/v1/reports:
+    post:
+      summary: Submit a private report about the caller’s trip
+      operationId: postApiV1Reports
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tripId
+              - category
+              - description
+              properties:
+                tripId:
+                  type: string
+                category:
+                  type: string
+                description:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/reports/{id}:
+    get:
+      summary: Read the caller’s own report
+      operationId: getApiV1ReportsId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/reports:
+    get:
+      summary: Read up to 50 open reports
+      operationId: getApiV1AdminReports
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+  /api/v1/admin/reports/{id}:
+    get:
+      summary: Read report identity and context
+      operationId: getApiV1AdminReportsId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/reports/{id}/resolve:
+    post:
+      summary: Resolve or dismiss a report with audit and reporter notification
+      operationId: postApiV1AdminReportsIdResolve
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              - note
+              properties:
+                status:
+                  type: string
+                note:
+                  type: string
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/audit/{id}:
+    get:
+      summary: Read an immutable Admin audit record
+      operationId: getApiV1AdminAuditId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/sos:
+    post:
+      summary: Record a Demo SOS for an active trip
+      operationId: postApiV1Sos
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tripId
+              properties:
+                tripId:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/sos/{id}/cancel:
+    post:
+      summary: Cancel a Demo SOS with an audit record
+      operationId: postApiV1SosIdCancel
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/notifications:
+    get:
+      summary: Read up to 50 latest caller-owned inbox records
+      operationId: getApiV1Notifications
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+  /api/v1/notifications/{id}/read:
+    post:
+      summary: Mark an owned notification read
+      operationId: postApiV1NotificationsIdRead
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/notifications/device:
+    post:
+      summary: Register a caller-owned push token
+      operationId: postApiV1NotificationsDevice
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
+  /api/v1/notifications/device/remove:
+    post:
+      summary: Remove a caller-owned push token
+      operationId: postApiV1NotificationsDeviceRemove
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
 components:
+  securitySchemes:
+    firebaseAuth: {type: http, scheme: bearer, bearerFormat: Firebase ID token}
+    firebaseAppCheck: {type: apiKey, in: header, name: X-Firebase-AppCheck}
   schemas:
     ApiError:
       type: object

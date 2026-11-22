@@ -25,12 +25,12 @@ export function DynamicTripPill({
   return (
     <div
       className={cn(
-        'inline-flex flex-wrap items-center gap-3 rounded-full border px-4 py-2 text-sm',
+        'inline-flex flex-wrap items-center gap-3 rounded-control border px-4 py-2 text-sm',
         toneClasses[tone],
         className
       )}
     >
-      <CircleDot aria-hidden="true" className="h-4 w-4" />
+      <CircleDot aria-hidden="true" className={cn('h-4 w-4', tone === 'live' && 'dot-pulse')} />
       <span className="font-semibold">{label}</span>
       {countdown ? (
         <span className="inline-flex items-center gap-1.5 font-mono text-xs">

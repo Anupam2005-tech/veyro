@@ -9,7 +9,7 @@ export function DemoBadge({ label = 'Demo mode', className }: DemoBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border border-theme-border bg-theme-glass px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-theme-muted',
+        'inline-flex items-center gap-1.5 rounded-control border border-theme-border bg-theme-glass px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-theme-muted',
         className
       )}
     >

@@ -22,4 +22,5 @@ export * from './components/status-badge';
 export * from './components/stepper';
 export * from './components/trip-pill';
 export * from './components/vehicle-pass';
+export * from './components/wordmark-footer';
 export * from './lib/utils';

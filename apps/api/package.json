@@ -27,5 +27,19 @@
     "@types/node": "^20.14.9",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
+  },
+  "exports": {
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./notifications": {
+      "types": "./dist/modules/notifications/notifications.d.ts",
+      "default": "./dist/modules/notifications/notifications.js"
+    },
+    "./safety": {
+      "types": "./dist/modules/safety/safety-service.d.ts",
+      "default": "./dist/modules/safety/safety-service.js"
+    }
   }
 }

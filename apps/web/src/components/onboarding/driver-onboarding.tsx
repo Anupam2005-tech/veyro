@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -75,6 +76,7 @@ const emptyDocument: DocumentState = {
 
 export default function DriverOnboarding() {
   const { user, profile, loading, refreshProfile } = useSession();
+  const reduceMotion = useReducedMotion();
   const [step, setStep] = React.useState(0);
   const [submitted, setSubmitted] = React.useState(false);
   const [fullName, setFullName] = React.useState('');
@@ -294,11 +296,11 @@ export default function DriverOnboarding() {
       subtitle="Apply to drive on Veyro"
       stepLabel={submitted ? 'Submitted' : `Step ${step + 1} of ${steps.length}`}
     >
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
-        {!submitted ? <Stepper steps={steps} current={step} className="mb-8" /> : null}
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
+        {!submitted ? <Stepper steps={steps} current={step} className="mb-6" /> : null}
 
-        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-          <aside className="space-y-5">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10 lg:items-start">
+          <aside className="space-y-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
                 Driver application
@@ -313,7 +315,9 @@ export default function DriverOnboarding() {
             </div>
 
             <div className="rounded-card border border-studio-border bg-studio-surface p-5">
-              <LockKeyhole aria-hidden="true" className="h-5 w-5 text-studio-ink" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-studio-tint">
+                <LockKeyhole aria-hidden="true" className="h-5 w-5 text-studio-ink" />
+              </span>
               <p className="mt-3 font-display text-base font-bold text-studio-ink">
                 Private document vault
               </p>
@@ -330,7 +334,7 @@ export default function DriverOnboarding() {
             ) : null}
           </aside>
 
-          <section className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-8">
+          <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-8">
             {loading ? (
               <div className="space-y-4">
                 <div className="h-6 w-48 animate-pulse motion-reduce:animate-none rounded bg-studio-tint" />
@@ -369,64 +373,98 @@ export default function DriverOnboarding() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} noValidate>
-                {step === 0 ? (
-                  <DriverStepOne
-                    fullName={fullName}
-                    phone={phone}
-                    experienceYears={experienceYears}
-                    spokenLanguages={spokenLanguages}
-                    errors={errors}
-                    setFullName={setFullName}
-                    setPhone={setPhone}
-                    setExperienceYears={setExperienceYears}
-                    onToggleLanguage={(value) =>
-                      toggleValue(spokenLanguages, setSpokenLanguages, value)
-                    }
-                  />
-                ) : null}
+                <AnimatePresence mode="wait">
+                  {step === 0 ? (
+                    <motion.div
+                      key="step-0"
+                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <DriverStepOne
+                        fullName={fullName}
+                        phone={phone}
+                        experienceYears={experienceYears}
+                        spokenLanguages={spokenLanguages}
+                        errors={errors}
+                        setFullName={setFullName}
+                        setPhone={setPhone}
+                        setExperienceYears={setExperienceYears}
+                        onToggleLanguage={(value) =>
+                          toggleValue(spokenLanguages, setSpokenLanguages, value)
+                        }
+                      />
+                    </motion.div>
+                  ) : null}
 
-                {step === 1 ? (
-                  <DriverStepTwo
-                    selectedCategories={selectedCategories}
-                    selectedTransmissions={selectedTransmissions}
-                    serviceAreas={serviceAreas}
-                    errors={errors}
-                    onToggleCategory={(value) =>
-                      toggleValue(selectedCategories, setSelectedCategories, value)
-                    }
-                    onToggleTransmission={(value) =>
-                      toggleValue(selectedTransmissions, setSelectedTransmissions, value)
-                    }
-                    setServiceAreas={setServiceAreas}
-                  />
-                ) : null}
+                  {step === 1 ? (
+                    <motion.div
+                      key="step-1"
+                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <DriverStepTwo
+                        selectedCategories={selectedCategories}
+                        selectedTransmissions={selectedTransmissions}
+                        serviceAreas={serviceAreas}
+                        errors={errors}
+                        onToggleCategory={(value) =>
+                          toggleValue(selectedCategories, setSelectedCategories, value)
+                        }
+                        onToggleTransmission={(value) =>
+                          toggleValue(selectedTransmissions, setSelectedTransmissions, value)
+                        }
+                        setServiceAreas={setServiceAreas}
+                      />
+                    </motion.div>
+                  ) : null}
 
-                {step === 2 ? (
-                  <DriverStepThree
-                    hourlyRate={hourlyRate}
-                    perKmRate={perKmRate}
-                    estimate={estimate}
-                    errors={errors}
-                    setHourlyRate={setHourlyRate}
-                    setPerKmRate={setPerKmRate}
-                  />
-                ) : null}
+                  {step === 2 ? (
+                    <motion.div
+                      key="step-2"
+                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <DriverStepThree
+                        hourlyRate={hourlyRate}
+                        perKmRate={perKmRate}
+                        estimate={estimate}
+                        errors={errors}
+                        setHourlyRate={setHourlyRate}
+                        setPerKmRate={setPerKmRate}
+                      />
+                    </motion.div>
+                  ) : null}
 
-                {step === 3 ? (
-                  <DriverStepFour
-                    documents={documents}
-                    errors={errors}
-                    onDocumentChange={handleDocument}
-                    summary={{
-                      name: fullName,
-                      phone,
-                      categories: selectedCategories,
-                      transmissions: selectedTransmissions,
-                      serviceAreas,
-                      hourlyRate,
-                    }}
-                  />
-                ) : null}
+                  {step === 3 ? (
+                    <motion.div
+                      key="step-3"
+                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <DriverStepFour
+                        documents={documents}
+                        errors={errors}
+                        onDocumentChange={handleDocument}
+                        summary={{
+                          name: fullName,
+                          phone,
+                          categories: selectedCategories,
+                          transmissions: selectedTransmissions,
+                          serviceAreas,
+                          hourlyRate,
+                        }}
+                      />
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
 
                 {submitError ? (
                   <FormAlert tone="error" title="Could not submit application" className="mt-6">
@@ -434,7 +472,7 @@ export default function DriverOnboarding() {
                   </FormAlert>
                 ) : null}
 
-                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row">
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
                   {step > 0 ? (
                     <VeyroButton
                       type="button"
@@ -498,7 +536,7 @@ function DriverStepOne({
   onToggleLanguage: (value: string) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepHeading
         icon={<BadgeCheck className="h-5 w-5" />}
         title="Your personal profile"
@@ -595,7 +633,7 @@ function DriverStepTwo({
   setServiceAreas: (value: string) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepHeading
         icon={<CarFront className="h-5 w-5" />}
         title="What you can drive"
@@ -673,7 +711,7 @@ function DriverStepThree({
   setPerKmRate: (value: string) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepHeading
         icon={<IndianRupee className="h-5 w-5" />}
         title="Set your rates"
@@ -717,7 +755,7 @@ function DriverStepThree({
             className="pr-24"
             onChange={(event) => setPerKmRate(event.currentTarget.value)}
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-studio-tint px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-muted">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-control bg-studio-tint px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-muted">
             Disabled
           </span>
         </div>
@@ -762,13 +800,13 @@ function DriverStepFour({
   };
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepHeading
         icon={<FileCheck2 className="h-5 w-5" />}
         title="Private documents"
         description="Review the summary, then submit for manual approval."
       />
-      <div className="space-y-5">
+      <div className="space-y-4">
         {documentKinds.map((kind) => (
           <FileDropzone
             key={kind}
@@ -811,7 +849,7 @@ function StepHeading({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-studio-tint text-studio-ink">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-studio-tint text-studio-ink">
         {icon}
       </span>
       <div>
@@ -836,7 +874,7 @@ function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
+      className={`rounded-control border px-3 py-2 text-xs font-semibold transition-colors ${
         active
           ? 'border-studio-ink bg-studio-ink text-white'
           : 'border-studio-border bg-studio-surface text-studio-muted hover:text-studio-ink'

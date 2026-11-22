@@ -89,7 +89,7 @@ export default function AdminOverview() {
 
   return (
     <AdminShell subtitle="Manual review and safety">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-studio-muted">
@@ -107,14 +107,14 @@ export default function AdminOverview() {
         </div>
 
         {loading ? (
-          <LoadingState label="Loading admin overview…" className="mt-8" />
+          <LoadingState label="Loading admin overview…" className="mt-6" />
         ) : error || !overview ? (
-          <ErrorState title="Admin overview unavailable" description={error ?? 'No data.'} className="mt-8" />
+          <ErrorState title="Admin overview unavailable" description={error ?? 'No data.'} className="mt-6" />
         ) : (
           <>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {cards.map((card) => (
-                <div key={card.label} className="rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass">
+                <div key={card.label} className="rounded-card border border-studio-border bg-studio-surface p-5">
                   <card.icon aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                   <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-studio-muted">
                     {card.label}
@@ -124,7 +124,7 @@ export default function AdminOverview() {
               ))}
             </div>
 
-            <section className="mt-8 rounded-card border border-studio-border bg-studio-surface p-5 shadow-glass sm:p-7">
+            <section className="mt-6 rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">
@@ -135,7 +135,7 @@ export default function AdminOverview() {
                   </p>
                 </div>
                 <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                  <div className="relative sm:w-64">
+                  <div className="relative sm:w-64 rounded-control">
                     <Search aria-hidden="true" className="absolute left-3 top-3.5 h-4 w-4 text-studio-muted" />
                     <Input
                       value={query}
@@ -174,7 +174,7 @@ export default function AdminOverview() {
                         className="flex flex-wrap items-center justify-between gap-4 py-4 transition-colors hover:bg-studio-tint/40"
                       >
                         <div className="flex items-start gap-3">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-studio-tint text-studio-ink">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-tint text-studio-ink">
                             <FileSearch aria-hidden="true" className="h-4 w-4" />
                           </span>
                           <div>
@@ -190,7 +190,7 @@ export default function AdminOverview() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${statusTone(application.status)}`}>
+                          <span className={`rounded-control px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${statusTone(application.status)}`}>
                             {application.status.replace('_', ' ')}
                           </span>
                           <ArrowRight aria-hidden="true" className="h-4 w-4 text-studio-muted" />

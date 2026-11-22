@@ -84,22 +84,16 @@ export default function AuthScreen() {
 
   return (
     <AppShell theme="night">
-      <div className="relative min-h-screen overflow-hidden bg-night-canvas">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-32 top-16 h-96 w-96 rounded-full bg-[#B8F23A]/[0.06] blur-3xl" />
-          <div className="absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-[#FF2E93]/[0.08] blur-3xl" />
-          <div className="absolute inset-0 opacity-[0.22] [background-image:linear-gradient(rgba(170,176,196,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(170,176,196,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-        </div>
-
-        <div className="relative mx-auto grid min-h-screen max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-12">
-          <section className="hidden lg:block">
+      <div className="min-h-screen bg-night-canvas">
+        <div className="mx-auto grid min-h-screen max-w-content gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(28rem,34rem)] lg:items-center lg:gap-16 lg:px-8 lg:py-20">
+          <section className="max-w-2xl">
             <div className="flex items-center gap-3">
               <DemoBadge />
               <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-night-muted">
                 Secure access
               </span>
             </div>
-            <h1 className="mt-8 max-w-xl font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-night-text">
+            <h1 className="mt-8 max-w-xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-night-text sm:text-5xl">
               Your ride starts with your identity.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-night-muted">
@@ -107,7 +101,7 @@ export default function AuthScreen() {
               onboarding that matches how you use the road.
             </p>
 
-            <div className="mt-10 rounded-card border border-night-border bg-night-glass p-6 shadow-glass backdrop-blur-xl">
+            <div className="mt-10 rounded-card border border-night-border bg-night-surface p-6">
               <svg
                 aria-hidden="true"
                 viewBox="0 0 420 120"
@@ -118,13 +112,12 @@ export default function AuthScreen() {
                   d="M12 96C86 96 76 24 154 24c70 0 56 72 132 72 52 0 62-36 122-36"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="veyro-route-line"
                 />
                 <circle cx="12" cy="96" r="7" fill="currentColor" />
                 <circle cx="408" cy="60" r="7" fill="#FF2E93" />
                 <circle cx="286" cy="96" r="5" fill="#F2F4FA" />
               </svg>
-              <div className="mt-4 grid grid-cols-3 gap-4 text-xs">
+              <div className="mt-4 grid grid-cols-3 gap-4 border-t border-night-border pt-4 text-xs">
                 <div>
                   <p className="font-display text-sm font-bold text-night-text">Passwordless</p>
                   <p className="mt-1 text-night-muted">Link, OTP or Google</p>
@@ -141,7 +134,7 @@ export default function AuthScreen() {
             </div>
           </section>
 
-          <section className="glass-panel rounded-card p-5 shadow-glass sm:p-8">
+          <section className="rounded-card border border-night-border bg-night-surface p-6 sm:p-8">
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-night-muted">
                 Veyro ID
@@ -183,7 +176,7 @@ export default function AuthScreen() {
             </fieldset>
 
             <div className="mt-7" role="group" aria-label="Sign-in method">
-              <div className="grid grid-cols-2 gap-2 rounded-panel border border-night-border bg-night-glass p-1.5">
+              <div className="grid grid-cols-2 gap-1 rounded-control border border-night-border bg-night-canvas p-1">
                 <button
                   type="button"
                   aria-pressed={method === 'email'}
@@ -191,7 +184,7 @@ export default function AuthScreen() {
                     setMethod('email');
                     setGlobalError(null);
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-[0.7rem] px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  className={`flex items-center justify-center gap-2 rounded-control px-3 py-2.5 text-sm font-semibold transition-colors ${
                     method === 'email'
                       ? 'bg-night-accent text-night-accent-ink'
                       : 'text-night-muted hover:text-night-text'
@@ -207,7 +200,7 @@ export default function AuthScreen() {
                     setMethod('phone');
                     setGlobalError(null);
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-[0.7rem] px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  className={`flex items-center justify-center gap-2 rounded-control px-3 py-2.5 text-sm font-semibold transition-colors ${
                     method === 'phone'
                       ? 'bg-night-accent text-night-accent-ink'
                       : 'text-night-muted hover:text-night-text'
@@ -255,9 +248,24 @@ export default function AuthScreen() {
               loading={googleLoading}
               onClick={handleGoogleSignIn}
             >
-              <span aria-hidden="true" className="font-display font-bold text-night-text">
-                G
-              </span>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
               Continue with Google
             </VeyroButton>
 
@@ -304,10 +312,10 @@ function RoleCard({
       className={`rounded-panel border p-4 text-left transition-colors ${
         active
           ? 'border-night-accent bg-[#B8F23A]/10'
-          : 'border-night-border bg-night-glass hover:border-night-muted'
+          : 'border-night-border bg-night-canvas hover:border-night-muted'
       }`}
     >
-      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${active ? 'bg-night-accent text-night-accent-ink' : 'bg-night-glass-strong text-night-text'}`}>
+      <span className={`flex h-9 w-9 items-center justify-center rounded-control ${active ? 'bg-night-accent text-night-accent-ink' : 'bg-night-glass-strong text-night-text'}`}>
         {icon}
       </span>
       <span className="mt-3 flex items-center justify-between gap-2">

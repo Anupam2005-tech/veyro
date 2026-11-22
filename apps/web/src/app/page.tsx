@@ -16,6 +16,7 @@ export default function HomePage() {
       theme="night"
       header={
         <PublicHeader
+          announcement="Veyro Release 1 · Demo data where labelled"
           links={[
             { label: 'How it works', href: '#how-it-works' },
             { label: 'Booking', href: '#booking-modes' },
