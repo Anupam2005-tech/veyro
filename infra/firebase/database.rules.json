@@ -1,7 +1,26 @@
 {
   "rules": {
     ".read": false,
-    ".write": false
+    ".write": false,
+    "trips": {
+      "$tripId": {
+        "location": {
+          ".read": false,
+          ".write": false
+        },
+        "presence": {
+          ".read": false,
+          ".write": false
+        }
+      }
+    },
+    "drivers": {
+      "$driverId": {
+        "presence": {
+          ".read": false,
+          ".write": false
+        }
+      }
+    }
   }
 }
-

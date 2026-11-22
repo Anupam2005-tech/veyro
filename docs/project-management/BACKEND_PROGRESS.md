@@ -15,7 +15,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Status | Meaning |
 |---|---|
-| NOT_STARTED | No code exists |
+| | No code exists |
 | IN_PROGRESS | Active development |
 | REVIEW | Code written, awaiting review |
 | DONE | Reviewed, tested, merged |
@@ -29,15 +29,15 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Awaiting review and merge. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
-| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | NOT_STARTED | Anupam | BE-FND-001 | dotenv locally |
-| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | NOT_STARTED | Anupam | BE-FND-002 | Shared singleton instance |
-| BE-FND-004 | Global error middleware + AppError class hierarchy | NOT_STARTED | Anupam | BE-FND-001 | Safe client responses |
-| BE-FND-005 | Request context middleware (requestId tracking) | NOT_STARTED | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |
-| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | NOT_STARTED | Anupam | BE-FND-004 | Canonical envelope format |
-| BE-FND-007 | CORS configuration | NOT_STARTED | Anupam | BE-FND-001 | Whitelisted origins only |
-| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | NOT_STARTED | Anupam | BE-FND-001 | Non-sensitive status check |
-| BE-FND-009 | express-validator middleware setup | NOT_STARTED | Anupam | BE-FND-001 | Array details format |
-| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | NOT_STARTED | Anupam | BE-FND-001 | Interactive API documentation |
+| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | | Anupam | BE-FND-001 | dotenv locally |
+| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | | Anupam | BE-FND-002 | Shared singleton instance |
+| BE-FND-004 | Global error middleware + AppError class hierarchy | | Anupam | BE-FND-001 | Safe client responses |
+| BE-FND-005 | Request context middleware (requestId tracking) | | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |
+| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | | Anupam | BE-FND-004 | Canonical envelope format |
+| BE-FND-007 | CORS configuration | | Anupam | BE-FND-001 | Whitelisted origins only |
+| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | | Anupam | BE-FND-001 | Non-sensitive status check |
+| BE-FND-009 | express-validator middleware setup | | Anupam | BE-FND-001 | Array details format |
+| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | | Anupam | BE-FND-001 | Interactive API documentation |
 
 ---
 
@@ -45,10 +45,10 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-001 | Firebase Auth middleware (`authenticate.ts`) | NOT_STARTED | Anupam | BE-FND-003 | Verify Bearer ID token |
-| BE-002 | Role middleware (`require-role.ts`) | NOT_STARTED | Anupam | BE-001 | CUSTOMER, DRIVER, ADMIN |
-| BE-003 | Auth module — `POST /api/v1/auth/session` profile bootstrap | NOT_STARTED | Anupam | BE-001 | Sync Firebase Auth with Firestore |
-| BE-004 | App Check middleware (verify limited-use token) | NOT_STARTED | Anupam | BE-FND-003 | `X-Firebase-AppCheck` header |
+| BE-001 | Firebase Auth middleware (`authenticate.ts`) | | Anupam | BE-FND-003 | Verify Bearer ID token |
+| BE-002 | Role middleware (`require-role.ts`) | | Anupam | BE-001 | CUSTOMER, DRIVER, ADMIN |
+| BE-003 | Auth module — `POST /api/v1/auth/session` profile bootstrap | | Anupam | BE-001 | Sync Firebase Auth with Firestore |
+| BE-004 | App Check middleware (verify limited-use token) | | Anupam | BE-FND-003 | `X-Firebase-AppCheck` header |
 
 ---
 
@@ -56,12 +56,12 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-005 | Customer module (CRUD, profile, status) | `customers/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-001 | |
-| BE-006 | Vehicle module (CRUD, compatibility attributes) | `vehicles/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-005 | Category, transmission |
-| BE-007 | Driver module (profile, capabilities, rates, service areas) | `drivers/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-001 | HOURLY active, PER_KM stored |
-| BE-008 | Application module (submission, review, document metadata) | `applications/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-007 | PENDING_REVIEW state |
-| BE-009 | Document upload completion endpoint | `applications/` | NOT_STARTED | Team 1 — Sid / Nishan | BE-008 | Storage path validation |
-| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-007 | Presence and availability checks. Final booking eligibility belongs to BE-012 |
+| BE-005 | Customer module (CRUD, profile, status) | `customers/` | | Team 1 — Sid / Nishan | BE-001 | |
+| BE-006 | Vehicle module (CRUD, compatibility attributes) | `vehicles/` | | Team 1 — Sid / Nishan | BE-005 | Category, transmission |
+| BE-007 | Driver module (profile, capabilities, rates, service areas) | `drivers/` | | Team 1 — Sid / Nishan | BE-001 | HOURLY active, PER_KM stored |
+| BE-008 | Application module (submission, review, document metadata) | `applications/` | | Team 1 — Sid / Nishan | BE-007 | PENDING_REVIEW state |
+| BE-009 | Document upload completion endpoint | `applications/` | | Team 1 — Sid / Nishan | BE-008 | Storage path validation |
+| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | REVIEW | Pranesh (Team 3 — Bipul / Pranesh) | BE-007 | Feature: T3-BE010; updated: 2026-11-22; reviewer: Bipul + Team 2 security review pending; change/paths: `apps/api/src/modules/availability/availability.types.ts`, `availability.service.ts`, `availability.validator.ts`, `apps/api/test/availability.test.cjs`; evidence: `pnpm --filter @veyro/contracts build` + `pnpm --filter @veyro/api type-check` passed, `pnpm --filter @veyro/api build` passed, `node --test availability+hourly-fare+admin-decision-rules` 14 passed (5 new availability); blocker/next: needs BE-007 driver persistence contract and BE-001 auth for route wiring + Team 2 security review; no OpenSpec change approved for Team 3 yet. Final booking eligibility belongs to BE-012 |
 
 ---
 
@@ -70,10 +70,10 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
 | BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate and immutable in-memory quote snapshot verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
-| BE-012 | Booking module — creation, state machine | `bookings/` | NOT_STARTED | Anupam | BE-011 | Atomic state transitions |
-| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Firestore transaction |
-| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | NOT_STARTED | Anupam | BE-012 | Pickup-12h to pickup-2h |
-| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | NOT_STARTED | Anupam | BE-012 | DEC-05 slabs |
+| BE-012 | Booking module — creation, state machine | `bookings/` | | Anupam | BE-011 | Atomic state transitions |
+| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | | Anupam | BE-012 | Firestore transaction |
+| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | | Anupam | BE-012 | Pickup-12h to pickup-2h |
+| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | | Anupam | BE-012 | DEC-05 slabs |
 
 ---
 
@@ -81,11 +81,11 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-016 | Trip module — state machine, arrival confirmation | `trips/` | NOT_STARTED | Anupam | BE-012 | Geofence verification |
-| BE-017 | Waiting timer and no-show logic | `trips/` | NOT_STARTED | Anupam | BE-016 | 15m free, 30m max, ₹50/₹150 |
-| BE-018 | Start/End OTP (generate, hash, verify, consume) | `trips/` | NOT_STARTED | Anupam | BE-016 | Separate, single-use codes |
-| BE-019 | GPS location endpoint + RTDB write | `trips/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-016 | Stale cutoff 30s |
-| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-016 | Authenticated read-only view |
+| BE-016 | Trip module — state machine, arrival confirmation | `trips/` | | Anupam | BE-012 | Geofence verification |
+| BE-017 | Waiting timer and no-show logic | `trips/` | | Anupam | BE-016 | 15m free, 30m max, ₹50/₹150 |
+| BE-018 | Start/End OTP (generate, hash, verify, consume) | `trips/` | | Anupam | BE-016 | Separate, single-use codes |
+| BE-019 | GPS location endpoint + RTDB write | `trips/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `location.controller|routes.ts` wired in `app.ts`, 401 without verified auth (BE-001), assignment via BE-016; RTDB write via Admin SDK pending; api build/type-check + 13 Team3 tests passed |
+| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `share-link.controller|routes.ts` wired in `app.ts`, 401 without verified session; persistence + ownership via BE-001/BE-016 pending |
 
 ---
 
@@ -100,7 +100,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
 | BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
 | BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
-| BE-028 | Notification module (Firestore records + FCM) | `notifications/` | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-001 | Push fallback to in-app |
+| BE-028 | Notification module (Firestore records + FCM) | `notifications/` | REVIEW | Team 3 — Bipul / Pranesh | BE-001 | T3 complete 2026-11-22; service + `notification.controller|routes.ts` wired in `app.ts` (`/tokens`, `/delivery-check`); persistence + FCM send pending BE-001; web `firebase-messaging-sw.js` placeholder added |
 | BE-029 | Audit module (append-only Admin action log) | `audit/` | BLOCKED | Pritam | BE-001 | T2-P1, 21 Nov 2026. Internal service and create-only repository implemented, including rejection of profile/document objects as audit state. API build/type-check, fresh startup, health HTTP 200, strict OpenSpec validation, four unit tests and the Firestore emulator atomic append/duplicate-ID rollback test passed. [OpenSpec checklist](../../openspec/changes/add-admin-audit-log/tasks.md). Next: wire verified identity, Admin authorization and shared Firestore (BE-001, BE-002, BE-FND-003), then verify unauthorized HTTP requests do not write. Reviewer: Anupam. |
 
 ---
@@ -122,8 +122,8 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 |---|---|---|---|---|---|
 | BE-034 | Scheduled booking/offer expiry function | NOT_STARTED | Anupam | BE-013, BE-014 | 2nd-gen Cloud Function |
 | BE-035 | Scheduled broadcast lifecycle function | NOT_STARTED | Anupam | BE-014 | Idempotent broadcast transitions |
-| BE-036 | RTDB presence/location cleanup function | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-019 | Prune inactive trip trails |
-| BE-037 | Firestore-trigger notification handlers | NOT_STARTED | Team 3 — Bipul / Pranesh | BE-028 | FCM delivery dispatcher |
+| BE-036 | RTDB presence/location cleanup function | REVIEW | Team 3 — Bipul / Pranesh | BE-019 | T3 complete 2026-11-22; pure selector + `functions/src/team3.ts:pruneStalePresence` (5-min schedule); actual RTDB delete pending Admin SDK init (BE-FND-003) + runtime identity |
+| BE-037 | Firestore-trigger notification handlers | REVIEW | Team 3 — Bipul / Pranesh | BE-028 | T3 complete 2026-11-22; `functions/src/team3.ts:dispatchNotifications` on `notificationQueue/{eventId}` with idempotent builder; Firestore write + FCM send pending Admin SDK init |
 | BE-038 | Unit tests — fare, waiting, cancellation, OTP, suspension | NOT_STARTED | Pritam (coordination) | M2–M4 modules | Jest unit suite |
 | BE-039 | Integration tests — auth, roles, Firestore transactions | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Supertest + emulator |
 | BE-040 | Security tests — access across accounts, RTDB and share tokens | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Team 3 tests RTDB and share tokens |
@@ -135,7 +135,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
 | INF-001 | Firestore Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Restrictive client rules |
-| INF-002 | RTDB Security Rules (deny-by-default) | NOT_STARTED | Team 3 — Bipul / Pranesh | FND-013 | Location path scoping |
+| INF-002 | RTDB Security Rules (deny-by-default) | REVIEW | Bipul (Team 3 — Bipul / Pranesh) | FND-013 | Feature: T3-INF002; updated: 2026-11-22; reviewer: Pranesh + Team 2 security review pending; change/paths: `infra/firebase/database.rules.json`; evidence: JSON parse valid, root + `trips/$tripId/location|presence` + `drivers/$driverId/presence` all `.read/.write false`; no client writes, server Admin SDK bypasses rules; blocker/next: narrow per-trip read grants await BE-019 path + BE-001 auth claims + BE-016 trip state; emulator cross-account tests pending |
 | INF-003 | Storage Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Private document paths |
 | INF-004 | Firestore composite indexes | NOT_STARTED | Anupam | BE-012 | `firestore.indexes.json` |
 | INF-005 | Firebase Emulator Suite configuration | NOT_STARTED | Anupam | FND-014 | Local testing harness |

@@ -1,6 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import { sendSuccess, sendError } from './shared/http/response.js';
+import { availabilityRouter } from './modules/availability/availability.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
+import { tripLocationRouter } from './modules/trips/location.routes.js';
+import { shareLinkRouter } from './modules/share-links/share-link.routes.js';
+import { notificationRouter } from './modules/notifications/notification.routes.js';
 
 export function createApp(): express.Application {
   const app = express();
@@ -37,6 +42,13 @@ export function createApp(): express.Application {
       'Veyro API is healthy and operational'
     );
   });
+
+  // Team 3 — Maps/realtime/supporting backend (auth wiring pending BE-001).
+  app.use('/api/v1/drivers/availability', availabilityRouter());
+  app.use('/api/v1/trips/:tripId/location', tripLocationRouter());
+  app.use('/api/v1', shareLinkRouter());
+  app.use('/api/v1/notifications', notificationRouter());
+  app.use('/api/v1/admin', adminRouter());
 
   // 404 Not Found handler
   app.use((req, res) => {
