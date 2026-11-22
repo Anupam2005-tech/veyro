@@ -28,6 +28,9 @@ importers:
       firebase-admin:
         specifier: ^12.2.0
         version: 12.7.0
+      swagger-ui-dist:
+        specifier: 5.17.14
+        version: 5.17.14
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17
@@ -1637,6 +1640,9 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  swagger-ui-dist@5.17.14:
+    resolution: {integrity: sha512-CVbSfaLpstV65OnSjbXfVd6Sta3q3F7Cj/yYuvHMp1P90LztOLs6PfUnKEVAeiIVQt9u2SaPwv0LiH/OyMjHRw==}
 
 snapshots:
 
@@ -3271,3 +3277,5 @@ snapshots:
 
   yocto-queue@0.1.0:
     optional: true
+
+  swagger-ui-dist@5.17.14: {}

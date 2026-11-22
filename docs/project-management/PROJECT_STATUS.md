@@ -11,7 +11,7 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-006 and its shared HTTP contract change |
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Review BE-FND-008–010 and the OpenAPI contract |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
@@ -25,7 +25,11 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | BE-FND-003 Firebase Admin initialization | REVIEW | API build, type-check and singleton tests passed |
 | BE-FND-004 Global error handling | REVIEW | Build and type-check passed. All 27 API tests passed with Firestore emulation. Pushed in 1aa7f33. |
 | BE-FND-005 Request context | REVIEW | Build, type-check and all 29 API tests passed with Firestore emulation. Pushed in 1e5e457. |
-| BE-FND-006 Response helpers | REVIEW | API build, type-check and all 30 API tests passed with Firestore emulation. |
+| BE-FND-006 Response helpers | REVIEW | API build, type-check and all 30 API tests passed with Firestore emulation. Pushed in 4c6f49d. |
+| BE-FND-007 CORS configuration | REVIEW | Exact origin matching verified on actual and preflight requests. All 31 API tests passed. |
+| BE-FND-008 Public API liveness | REVIEW | Existing health payload preserved and cache prevention verified over HTTP. |
+| BE-FND-009 Request validation | REVIEW | Valid sanitized input and multiple invalid fields verified through a test route. |
+| BE-FND-010 Interactive API contract | REVIEW | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 

@@ -17,7 +17,7 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 | Person | Active feature | Status | Reviewer | Next action |
 |---|---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Pritam | Review BE-FND-006 and its shared HTTP contract change |
+| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Pritam | Review BE-FND-008–010 and the OpenAPI contract |
 | Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Anupam | Prepare the Admin API contract while waiting for T2-A2 and Team 1 interfaces |
 
 When a feature starts, update this table and the corresponding rows in [Backend Progress](BACKEND_PROGRESS.md).
