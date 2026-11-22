@@ -1,3 +1,5 @@
+'use client';
+
 import { PlacesAutocomplete } from '@/maps/PlacesAutocomplete';
 
 export default function CustomerPage() {
