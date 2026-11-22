@@ -84,8 +84,8 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-016 | Trip module — state machine, arrival confirmation | `trips/` | NOT_STARTED | Anupam | BE-012 | Geofence verification |
 | BE-017 | Waiting timer and no-show logic | `trips/` | NOT_STARTED | Anupam | BE-016 | 15m free, 30m max, ₹50/₹150 |
 | BE-018 | Start/End OTP (generate, hash, verify, consume) | `trips/` | NOT_STARTED | Anupam | BE-016 | Separate, single-use codes |
-| BE-019 | GPS location endpoint + RTDB write | `trips/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 oneshot 2026-11-22; paths `trips/location.types|service|validator.ts`, test `trip-location.test.cjs`; validate coords/accuracy/timestamp, assigned-driver check, implausible jumps, 30s stale flag, RTDB path builders; HTTP wiring awaits BE-001/BE-016; 22 tests passed |
-| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 oneshot 2026-11-22; `share-links/share-link.types|service.ts`, test `share-link.test.cjs`; random 32B token, SHA-256 hash only, expiry at trip completion/cap/revoke, constant-time verify, auth+token required; HTTP wiring awaits BE-001/BE-016 |
+| BE-019 | GPS location endpoint + RTDB write | `trips/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `location.controller|routes.ts` wired in `app.ts`, 401 without verified auth (BE-001), assignment via BE-016; RTDB write via Admin SDK pending; api build/type-check + 13 Team3 tests passed |
+| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `share-link.controller|routes.ts` wired in `app.ts`, 401 without verified session; persistence + ownership via BE-001/BE-016 pending |
 
 ---
 
@@ -100,7 +100,7 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 | BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
 | BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
 | BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
-| BE-028 | Notification module (Firestore records + FCM) | `notifications/` | REVIEW | Team 3 — Bipul / Pranesh | BE-001 | T3 oneshot 2026-11-22; `notifications/notification.types|service.ts`, test `team3-notifications-cleanup.test.cjs`; idempotent event→record, FCM token shape checks, PUSH vs in-app fallback, no fake SENT; consumes Team 2 events, delivery never rolls back booking |
+| BE-028 | Notification module (Firestore records + FCM) | `notifications/` | REVIEW | Team 3 — Bipul / Pranesh | BE-001 | T3 complete 2026-11-22; service + `notification.controller|routes.ts` wired in `app.ts` (`/tokens`, `/delivery-check`); persistence + FCM send pending BE-001; web `firebase-messaging-sw.js` placeholder added |
 | BE-029 | Audit module (append-only Admin action log) | `audit/` | BLOCKED | Pritam | BE-001 | T2-P1, 21 Nov 2026. Internal service and create-only repository implemented, including rejection of profile/document objects as audit state. API build/type-check, fresh startup, health HTTP 200, strict OpenSpec validation, four unit tests and the Firestore emulator atomic append/duplicate-ID rollback test passed. [OpenSpec checklist](../../openspec/changes/add-admin-audit-log/tasks.md). Next: wire verified identity, Admin authorization and shared Firestore (BE-001, BE-002, BE-FND-003), then verify unauthorized HTTP requests do not write. Reviewer: Anupam. |
 
 ---
@@ -122,8 +122,8 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 |---|---|---|---|---|---|
 | BE-034 | Scheduled booking/offer expiry function | NOT_STARTED | Anupam | BE-013, BE-014 | 2nd-gen Cloud Function |
 | BE-035 | Scheduled broadcast lifecycle function | NOT_STARTED | Anupam | BE-014 | Idempotent broadcast transitions |
-| BE-036 | RTDB presence/location cleanup function | REVIEW | Team 3 — Bipul / Pranesh | BE-019 | T3 oneshot 2026-11-22; `trips/location-cleanup.service.ts` pure selector + tests; prunes ended trips + >60s inactive nodes; scheduled Function wiring pending runtime identity |
-| BE-037 | Firestore-trigger notification handlers | REVIEW | Team 3 — Bipul / Pranesh | BE-028 | T3 oneshot 2026-11-22; idempotent `buildNotificationRecord` + `decidePushDelivery` in `notifications/notification.service.ts`; duplicate events return null, retries safe; Firestore trigger wiring pending BE-028 persistence |
+| BE-036 | RTDB presence/location cleanup function | REVIEW | Team 3 — Bipul / Pranesh | BE-019 | T3 complete 2026-11-22; pure selector + `functions/src/team3.ts:pruneStalePresence` (5-min schedule); actual RTDB delete pending Admin SDK init (BE-FND-003) + runtime identity |
+| BE-037 | Firestore-trigger notification handlers | REVIEW | Team 3 — Bipul / Pranesh | BE-028 | T3 complete 2026-11-22; `functions/src/team3.ts:dispatchNotifications` on `notificationQueue/{eventId}` with idempotent builder; Firestore write + FCM send pending Admin SDK init |
 | BE-038 | Unit tests — fare, waiting, cancellation, OTP, suspension | NOT_STARTED | Pritam (coordination) | M2–M4 modules | Jest unit suite |
 | BE-039 | Integration tests — auth, roles, Firestore transactions | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Supertest + emulator |
 | BE-040 | Security tests — access across accounts, RTDB and share tokens | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Team 3 tests RTDB and share tokens |

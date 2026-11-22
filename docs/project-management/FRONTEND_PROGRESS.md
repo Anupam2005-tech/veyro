@@ -102,7 +102,7 @@
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
 | FE-034 | Google Maps provider adapter | — | REVIEW | Member 3 (Team 3) | FND-006 | T3 oneshot 2026-11-22; `apps/web/src/maps/maps-adapter.ts` — `MapsAdapter` contract + stub, key via `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` only; web type-check passed; loader/quotas pending deployment config |
-| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | IN_PROGRESS | Member 3 (Team 3) | FE-034, FE-018 | T3 oneshot 2026-11-22; adapter `routePreview/geocode` contract + `DriverMarker` type ready; full Places UI blocked on Maps key + Team 1 FE-018 booking studio |
+| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | REVIEW | Member 3 (Team 3) | FE-034, FE-018 | T3 complete 2026-11-22; `PlacesAutocomplete.tsx` + `DriverMarkersList` with stub/live adapter, no key bundled; web type-check passed; full Places UI pending Maps key + Team 1 FE-018 |
 | FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Member 3 (Team 3) | FE-034, FE-027 | T3 oneshot 2026-11-22; adapter + stale helpers ready for Team 1 VIEW-06/13; web type-check passed; live subscription wiring awaits BE-019 RTDB + Team 1 cockpits |
 
 ---
