@@ -3,14 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
   font-family: var(--font-body);
+  background: #f7f7f8;
+  color: #111827;
+  font-feature-settings: 'cv11', 'ss01';
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.leaflet-container {
+  font-family: var(--font-body);
+}

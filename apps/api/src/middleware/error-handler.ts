@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import type { ApiFieldError } from '@veyro/contracts';
 import { sendError } from '../shared/http/response.js';
 import { AppError } from '../shared/errors/errors.js';
 
@@ -10,9 +11,16 @@ export function errorHandler(
   _next: NextFunction,
 ): Response {
   if (err instanceof AppError) {
-    return sendError(res, err.message, err.code, err.statusCode);
+    const details = (err as AppError & { details?: ApiFieldError[] }).details ?? [];
+    return sendError(res, err.message, err.code, err.statusCode, details);
   }
-  console.error('[Veyro API] Unexpected error');
+  if (err && typeof err === 'object' && (err as { type?: string }).type === 'entity.too.large') {
+    return sendError(res, 'Upload is too large.', 'PAYLOAD_TOO_LARGE', 413);
+  }
+  if (err && typeof err === 'object' && (err as { type?: string }).type === 'entity.parse.failed') {
+    return sendError(res, 'Request body is not valid JSON.', 'VALIDATION_ERROR', 400);
+  }
+  console.error('[Veyro API] Unexpected error', err instanceof Error ? err.message : err);
   return sendError(res, 'Something went wrong.', 'INTERNAL_ERROR', 500);
 }
 

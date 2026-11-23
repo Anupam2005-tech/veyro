@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Tests will run with Jest\""
+    "test": "tsc -b && node --test test/*.cjs",
+    "reset-data": "node -e \"require('fs').rmSync('.data',{recursive:true,force:true})\""
   },
   "dependencies": {
     "@veyro/contracts": "workspace:*",
@@ -25,6 +26,11 @@
     "@types/node": "^20.14.9",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
+  },
+  "exports": {
+    "./app": "./dist/app.js",
+    "./trips/location-cleanup.service": "./dist/modules/trips/location-cleanup.service.js",
+    "./notifications/notification.service": "./dist/modules/notifications/notification.service.js",
+    "./package.json": "./package.json"
   }
 }
-

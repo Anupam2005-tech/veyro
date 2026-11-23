@@ -84,7 +84,7 @@ export function describeDelivery(status: PushStatus, demoMode: boolean): string 
     return 'Sent';
   }
   if (status === 'SENT' && demoMode) {
-    return 'Demo — no external message sent';
+    return 'Not sent (test mode)';
   }
   if (status === 'SKIPPED_IN_APP') {
     return 'Available in-app';

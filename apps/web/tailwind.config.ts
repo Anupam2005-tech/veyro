@@ -8,38 +8,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Veyro Night tokens (public landing / auth)
-        night: {
-          canvas: '#030407',
-          surface: '#0B0E17',
-          glass: 'rgba(170, 176, 196, 0.08)',
-          'glass-strong': 'rgba(170, 176, 196, 0.14)',
-          border: 'rgba(170, 176, 196, 0.22)',
-          text: '#F2F4FA',
-          muted: '#AAB0C4',
-          accent: '#B8F23A',
-          'accent-hover': '#C9F762',
-          'accent-ink': '#030407',
-          sassy: '#FF2E93',
-        },
-        // Veyro Studio Light tokens (authenticated app)
+        // Veyro light design tokens (used across the whole app)
         studio: {
-          bg: '#F8F9FC',
+          bg: '#F7F7F8',
           surface: '#FFFFFF',
-          obsidian: '#090B10',
-          ink: '#090B10',
-          muted: '#525866',
-          tint: '#EEF2F8',
-          border: '#E2E6F0',
-          'input-border': '#71788A',
-          lime: '#B8F23A',
-          sassy: '#FF2E93',
+          obsidian: '#111827',
+          ink: '#111827',
+          muted: '#6B7280',
+          tint: '#F3F4F6',
+          border: '#E5E7EB',
+          'input-border': '#D1D5DB',
+          brand: '#0F766E',
+          'brand-hover': '#115E59',
+          'brand-soft': '#E6F4F1',
+          sassy: '#DC2626',
         },
       },
       fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
     },
   },

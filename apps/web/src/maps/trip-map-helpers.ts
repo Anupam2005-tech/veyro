@@ -45,7 +45,7 @@ export function describePermission(state: PermissionState): string {
     case 'granted':
       return 'Location on';
     case 'denied':
-      return 'Location blocked — enable permission to go online';
+      return 'Location is blocked. Allow location access to go online.';
     case 'prompt':
       return 'Location permission needed';
     case 'unavailable':

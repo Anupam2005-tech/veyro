@@ -1,23 +1,33 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { createBooking, acceptBooking, cancellationFee } = require('../dist/modules/bookings/booking.service.js');
+const { cancellationFee, broadcastWindow, assertScheduledLeadTime, driverNoShowDeadline } = require('../dist/modules/bookings/booking.service.js');
 const { confirmArrival, waitingCharge } = require('../dist/modules/trips/trip.service.js');
 const { generateOtp, verifyOtp } = require('../dist/modules/trips/otp.service.js');
 const { createPaymentOrder, applyWebhookEvent, mayCreateBooking } = require('../dist/modules/payments/payment.service.js');
 const { submitReport, resolveReport, shouldSuspend, recordDemoSos } = require('../dist/modules/safety/safety.service.js');
 
-test('instant booking accepts once before expiry', () => {
+test('scheduled broadcast window and lead time', () => {
   const now = new Date('2026-11-22T10:00:00Z');
-  const booking = createBooking({ id: 'b1', customerUid: 'c1', type: 'INSTANT', vehicleId: 'v1', pickupAt: now, now });
-  const assigned = acceptBooking(booking, 'd1', now);
-  assert.equal(assigned.status, 'ASSIGNED');
-  assert.throws(() => acceptBooking(assigned, 'd2', now), /offered/);
+  const pickup = new Date('2026-11-23T10:00:00Z');
+  const w = broadcastWindow(pickup, now);
+  assert.equal(w.start.toISOString(), '2026-11-22T22:00:00.000Z');
+  assert.equal(w.end.toISOString(), '2026-11-23T08:00:00.000Z');
+  const soon = new Date('2026-11-22T16:00:00Z');
+  assert.equal(broadcastWindow(soon, now).start.toISOString(), now.toISOString());
+  assert.throws(() => assertScheduledLeadTime(new Date('2026-11-22T12:00:00Z'), now), /4 hours/);
+  assert.doesNotThrow(() => assertScheduledLeadTime(pickup, now));
 });
 
-test('scheduled cancellation slabs and waiting charges', () => {
-  const pickup = new Date('2026-11-22T14:00:00Z');
-  assert.equal(cancellationFee({ type: 'SCHEDULED', pickupAt: pickup }, new Date('2026-11-22T10:00:00Z')), 0);
-  assert.equal(cancellationFee({ type: 'SCHEDULED', pickupAt: pickup }, new Date('2026-11-22T13:00:00Z')), 50);
+test('DEC-05 cancellation fees and DEC-06 waiting charges', () => {
+  const acceptedAt = new Date('2026-11-22T10:00:00Z');
+  const at = (m) => new Date(acceptedAt.getTime() + m * 60_000);
+  assert.equal(cancellationFee({ type: 'INSTANT', acceptedAt, arrivedAt: at(5) }, at(20)), 0);
+  assert.equal(cancellationFee({ type: 'SCHEDULED', acceptedAt: null, arrivedAt: null }, at(1)), 0);
+  assert.equal(cancellationFee({ type: 'SCHEDULED', acceptedAt, arrivedAt: null }, at(4)), 0);
+  assert.equal(cancellationFee({ type: 'SCHEDULED', acceptedAt, arrivedAt: null }, at(6)), 50);
+  assert.equal(cancellationFee({ type: 'SCHEDULED', acceptedAt, arrivedAt: at(30) }, at(31)), 100);
+  assert.equal(cancellationFee({ type: 'SCHEDULED', acceptedAt, arrivedAt: null }, at(60), 'DRIVER_NO_SHOW'), 0);
+  assert.equal(driverNoShowDeadline({ type: 'INSTANT', pickupAt: acceptedAt, promisedArrivalAt: at(10) }).toISOString(), at(30).toISOString());
   assert.equal(waitingCharge(new Date('2026-11-22T10:00:00Z'), new Date('2026-11-22T10:20:00Z')).feeInr, 50);
   const trip = confirmArrival({ id: 't1', bookingId: 'b1', driverUid: 'd1', status: 'ARRIVING', waitStartedAt: null });
   assert.equal(trip.status, 'WAITING');
