@@ -1,6 +1,8 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { createApp } from '@veyro/api/app';
 
+export { pruneStalePresence, dispatchNotifications } from './team3.js';
+
 const app = createApp();
 
 /**
