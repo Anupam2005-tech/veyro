@@ -1,6 +1,10 @@
 import type { Response } from 'express';
 import type { ApiSuccessResponse, ApiErrorResponse, ApiMeta, ApiFieldError } from '@veyro/contracts';
 
+function responseMeta(res: Response, extra?: Record<string, unknown>): ApiMeta {
+  return { ...extra, requestId: res.req.id ?? 'req_local_dev' };
+}
+
 export function sendSuccess<T>(
   res: Response,
   data: T,
@@ -8,17 +12,13 @@ export function sendSuccess<T>(
   statusCode = 200,
   metaExtra?: Record<string, unknown>
 ): Response {
-  const requestId = (res.req as { id?: string }).id ?? 'req_local_dev';
-  const meta: ApiMeta = {
-    requestId,
-    ...metaExtra,
-  };
+  if (statusCode === 204) return res.status(204).end();
 
-  const payload: ApiSuccessResponse<T> = {
+  const payload: ApiSuccessResponse<T | null> = {
     success: true,
     message,
-    data,
-    meta,
+    data: data ?? null,
+    meta: responseMeta(res, metaExtra),
   };
 
   return res.status(statusCode).json(payload);
@@ -32,20 +32,14 @@ export function sendError(
   details: ApiFieldError[] = [],
   metaExtra?: Record<string, unknown>
 ): Response {
-  const requestId = (res.req as { id?: string }).id ?? 'req_local_dev';
-  const meta: ApiMeta = {
-    requestId,
-    ...metaExtra,
-  };
-
   const payload: ApiErrorResponse = {
     success: false,
     message,
     error: {
       code: errorCode,
-      details,
+      details: details.map(({ field, message }) => ({ field, message })),
     },
-    meta,
+    meta: responseMeta(res, metaExtra),
   };
 
   return res.status(statusCode).json(payload);

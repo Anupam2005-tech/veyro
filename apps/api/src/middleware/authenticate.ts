@@ -1,32 +1,37 @@
-import type { NextFunction, Request, Response } from 'express';
-import { sendError } from '../shared/http/response.js';
+import type { RequestHandler } from 'express';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirebaseAdminApp } from '../config/firebase-admin.js';
+import { AppError } from '../shared/http/app-error.js';
 
-/**
- * Placeholder auth middleware (BE-001/BE-002).
- * Verifies `Authorization: Bearer <Firebase ID token>` via Admin SDK once
- * BE-FND-003 is bound. Until then, populates nothing and rejects protected
- * routes — controllers already return 401 without verified identity.
- * Never trust body-supplied uid/role.
- */
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
-  const header = req.headers.authorization ?? '';
-  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (!token) {
-    sendError(res, 'Authentication required.', 'AUTH_REQUIRED', 401);
-    return;
-  }
-  // TODO(BE-001): verifyIdToken via Admin SDK, load role/account state.
-  (res.locals as { bearerToken?: string }).bearerToken = token;
-  next();
-}
-
-export function requireRole(...allowed: readonly string[]) {
-  return (_req: Request, res: Response, next: NextFunction): void => {
-    const role = (res.locals as { role?: string }).role;
-    if (!role || !allowed.includes(role)) {
-      sendError(res, 'Not authorised.', 'FORBIDDEN', 403);
-      return;
+declare global {
+  namespace Express {
+    interface Request {
+      auth?: { readonly uid: string; readonly authTime?: number };
     }
-    next();
-  };
+  }
 }
+
+const invalidCredentialCodes = new Set([
+  'auth/argument-error', 'auth/invalid-id-token', 'auth/id-token-expired',
+  'auth/id-token-revoked', 'auth/user-disabled', 'auth/user-not-found',
+]);
+
+/** Mount before authorization and controllers on protected routes. */
+export const authenticate: RequestHandler = async (req, res, next) => {
+  const token = /^Bearer +([A-Za-z0-9._~-]+)$/i.exec(req.get('Authorization') ?? '')?.[1];
+  const unauthorized = () => {
+    res.set('WWW-Authenticate', 'Bearer');
+    next(new AppError(401, 'UNAUTHENTICATED', 'A valid sign-in is required.'));
+  };
+  if (!token || (req.headersDistinct?.authorization?.length ?? 0) > 1) return unauthorized();
+
+  try {
+    const decoded = await getAuth(getFirebaseAdminApp()).verifyIdToken(token, true);
+    req.auth = { uid: decoded.uid, authTime: decoded.auth_time };
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && typeof error.code === 'string' &&
+        invalidCredentialCodes.has(error.code)) return unauthorized();
+    return next(error);
+  }
+  next();
+};

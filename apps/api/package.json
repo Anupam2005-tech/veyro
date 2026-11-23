@@ -10,14 +10,16 @@
     "start": "node dist/server.js",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Tests will run with Jest\""
+    "test": "tsc -b && node --test test/*.test.cjs"
   },
   "dependencies": {
     "@veyro/contracts": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-validator": "^7.1.0"
+    "express-validator": "^7.1.0",
+    "firebase-admin": "^12.2.0",
+    "swagger-ui-dist": "5.17.14"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -25,6 +27,31 @@
     "@types/node": "^20.14.9",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
+  },
+  "exports": {
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./notifications": {
+      "types": "./dist/modules/notifications/notifications.d.ts",
+      "default": "./dist/modules/notifications/notifications.js"
+    },
+    "./safety": {
+      "types": "./dist/modules/safety/safety-service.d.ts",
+      "default": "./dist/modules/safety/safety-service.js"
+    },
+    "./booking-workers": {
+      "types": "./dist/modules/bookings/booking-workers.d.ts",
+      "default": "./dist/modules/bookings/booking-workers.js"
+    },
+    "./mobility": {
+      "types": "./dist/modules/mobility/mobility-service.d.ts",
+      "default": "./dist/modules/mobility/mobility-service.js"
+    },
+    "./firebase": {
+      "types": "./dist/config/firebase-admin.d.ts",
+      "default": "./dist/config/firebase-admin.js"
+    }
   }
 }
-

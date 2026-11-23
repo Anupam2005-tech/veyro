@@ -1,24 +1,16 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { RequestHandler } from 'express';
 import { validationResult } from 'express-validator';
-import { sendError } from '../shared/http/response.js';
+import { AppError } from '../shared/http/app-error.js';
 
-/** Collects express-validator errors into the canonical envelope. */
-export function validateRequest(req: Request, res: Response, next: NextFunction): void {
-  const errors = validationResult(req);
-  if (errors.isEmpty()) {
-    next();
-    return;
-  }
-  sendError(res, 'Invalid request.', 'VALIDATION_ERROR', 400);
-}
+/** Place after route validation chains and before the controller. */
+export const validateRequest: RequestHandler = (req, _res, next) => {
+  const result = validationResult(req);
+  if (result.isEmpty()) return next();
 
-/** Limited-use App Check token check (BE-004). Enforced once bound. */
-export function verifyAppCheck(req: Request, res: Response, next: NextFunction): void {
-  const token = req.headers['x-firebase-appcheck'];
-  if (!token || typeof token !== 'string' || !token.trim()) {
-    sendError(res, 'App Check required.', 'APP_CHECK_REQUIRED', 401);
-    return;
-  }
-  // TODO(BE-004): getAppCheck().verifyToken(token, { consume: true }).
-  next();
-}
+  const details = result.array().map(error => {
+    // Chain messages are public, developer-authored strings. Never copy input values.
+    const message = typeof error.msg === 'string' ? error.msg : 'Invalid input.';
+    return error.type === 'field' ? { field: error.path, message } : { message };
+  });
+  next(new AppError(400, 'VALIDATION_ERROR', 'Request validation failed.', details));
+};

@@ -1,31 +1,50 @@
+import { resolve } from 'node:path';
 import dotenv from 'dotenv';
 
-dotenv.config();
-
-function required(name: string, fallback = ''): string {
-  const value = process.env[name] ?? fallback;
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+function invalid(key: string): never {
+  throw new Error(`Invalid API configuration: ${key}`);
 }
 
-export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT) || 4000,
-  frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
-  firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? '',
-  firebaseDatabaseUrl: process.env.FIREBASE_DATABASE_URL ?? '',
-  firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET ?? '',
-  razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
-  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET ?? '',
-  razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? '',
-  googleMapsServerKey: process.env.GOOGLE_MAPS_SERVER_KEY ?? '',
-};
+export function parseConfig(env: NodeJS.ProcessEnv) {
+  const mode = env.NODE_ENV ?? 'development';
+  if (!['development', 'test', 'production'].includes(mode)) invalid('NODE_ENV');
 
-export function validateEnv(): void {
-  if (env.nodeEnv === 'production') {
-    required('FIREBASE_PROJECT_ID', env.firebaseProjectId);
-    required('FRONTEND_ORIGIN', env.frontendOrigin);
+  const rawPort = env.PORT ?? '4000';
+  const port = Number(rawPort);
+  if (!/^\d+$/.test(rawPort) || port < 1 || port > 65535) invalid('PORT');
+
+  const apiBasePath = env.API_BASE_PATH ?? '/api/v1';
+  if (apiBasePath !== '/api/v1') invalid('API_BASE_PATH');
+
+  const rawOrigin = env.FRONTEND_ORIGIN ?? (mode === 'production' ? '' : 'http://localhost:3000');
+  if (!/^https?:\/\/[^\s/?#@*\\]+\/?$/i.test(rawOrigin)) invalid('FRONTEND_ORIGIN');
+  let url: URL;
+  try {
+    url = new URL(rawOrigin);
+  } catch {
+    return invalid('FRONTEND_ORIGIN');
   }
+  if (url.hostname.includes('*') || (mode === 'production' && url.protocol !== 'https:')) {
+    invalid('FRONTEND_ORIGIN');
+  }
+
+  return { port, apiBasePath, frontendOrigin: url.origin };
+}
+
+export function loadConfig({ embedded = false }: { embedded?: boolean } = {}) {
+  if (process.env.NODE_ENV !== 'production') {
+    for (const file of [
+      resolve(process.cwd(), '.env'),
+      resolve(process.cwd(), 'apps/api/.env'),
+      resolve(__dirname, '../../.env'),
+      resolve(__dirname, '../.env'),
+      resolve(__dirname, '../../../.env'),
+    ]) {
+      const { error } = dotenv.config({ path: file });
+      if (error && (error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  // A hosting runtime owns the listener and may supply a Unix socket in PORT.
+  // Only server.ts consumes the standalone port setting.
+  return parseConfig(embedded ? { ...process.env, PORT: undefined } : process.env);
 }

@@ -1,6 +1,6 @@
 # Veyro — Backend Progress Tracker
 
-**Last updated:** 21 November 2026
+**Last updated:** 23 November 2026
 
 **Stack:** Node.js + Express.js + TypeScript, Firebase Admin SDK, Cloud Firestore, RTDB, Cloud Storage  
 **Spec reference:** `docs/veyro_backend.md` §2–17; `docs/veyro.md` §4–5, §6 (PROMPT 07)  
@@ -9,13 +9,21 @@
 
 ## Team 2 execution
 
-The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person to one active feature. Use this tracker for task status and evidence. Verify inherited statuses and the new BE-041–043 rows against the implementation before starting work. Confirm API ownership for Team 1 handoffs with Team 1 as specified in §12.2.
+| Team 2 rule | Current value |
+|---|---|
+| Feature execution | One active feature per person, including review |
+| Feature order and dependencies | [TEAM_2_PLAN.md](TEAM_2_PLAN.md) |
+| Task evidence | This tracker |
+| External ownership | Team 1 owns frontend, Team 3 owns Maps/GPS, presence, notifications and sharing |
+| Status note | Backend implementation is ready for review; owner-held policy and live integration gates are listed in the execution registers |
+
+Execution of all remaining Team 2 work is tracked in the [Team 2 completion register](../../openspec/changes/complete-team2-backend/tasks.md). Each item records implementation and verification separately from external dependencies. The latest owner authorization extends implementation across the remaining backend scope; original frontend ownership remains unchanged. [Core/mobility extension](../../openspec/changes/complete-core-mobility-backend/tasks.md).
 
 ## Legend
 
 | Status | Meaning |
 |---|---|
-| | No code exists |
+| NOT_STARTED | No code exists |
 | IN_PROGRESS | Active development |
 | REVIEW | Code written, awaiting review |
 | DONE | Reviewed, tested, merged |
@@ -28,16 +36,16 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Awaiting review and merge. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
-| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | | Anupam | BE-FND-001 | dotenv locally |
-| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | | Anupam | BE-FND-002 | Shared singleton instance |
-| BE-FND-004 | Global error middleware + AppError class hierarchy | | Anupam | BE-FND-001 | Safe client responses |
-| BE-FND-005 | Request context middleware (requestId tracking) | | Anupam | BE-FND-001 | Attach `req.id`, `X-Request-Id` |
-| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | | Anupam | BE-FND-004 | Canonical envelope format |
-| BE-FND-007 | CORS configuration | | Anupam | BE-FND-001 | Whitelisted origins only |
-| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | | Anupam | BE-FND-001 | Non-sensitive status check |
-| BE-FND-009 | express-validator middleware setup | | Anupam | BE-FND-001 | Array details format |
-| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | | Anupam | BE-FND-001 | Interactive API documentation |
+| BE-FND-001 | Express app scaffold (`app.ts`, `server.ts`) | REVIEW | Anupam | FND-007 | 21 Nov, T2-A1. Fixed TS2307 in the standalone API build. Build and type-check passed. Compiled server returned health 200 and unknown-route 404. Merged in PR #9; independent review evidence pending. [OpenSpec checklist](../../openspec/changes/build-api-scaffold/tasks.md) |
+| BE-FND-002 | Central config module (`config/env.ts`) with startup validation | REVIEW | Anupam | BE-FND-001 | 21 Nov. Standalone build, type-check and API configuration tests passed. [OpenSpec checklist](../../openspec/changes/validate-api-config/tasks.md). On team branch at 829c3f4, pending merge to main. |
+| BE-FND-003 | Firebase Admin SDK init (`config/firebase-admin.ts`) | REVIEW | Anupam | BE-FND-002 | 22 Nov. Default app reuse and managed configuration tested. API build and type-check passed. All 24 API tests passed with the Firestore emulator. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/initialize-firebase-admin/tasks.md) |
+| BE-FND-004 | Global error middleware + AppError class hierarchy | REVIEW | Anupam | BE-FND-001 | 22 Nov. Safe Express error responses, parser failures and missing routes verified. API build, type-check and all 27 emulator-backed suite tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/add-api-error-handler/tasks.md) |
+| BE-FND-005 | Request context middleware (requestId tracking) | REVIEW | Anupam | BE-FND-001 | Request, header and envelope IDs verified across health, parser errors, missing routes and preflight. Build, type-check and all 29 API tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/add-request-context/tasks.md) |
+| BE-FND-006 | Response helpers (`sendSuccess`, `sendError`) | REVIEW | Anupam | BE-FND-004 | Verified success and error envelopes, field details, pagination and 204 over HTTP. All 30 API tests passed. Pritam reviews the API changes; shared contract review pending under §12.7. [OpenSpec checklist](../../openspec/changes/verify-api-response-helpers/tasks.md) |
+| BE-FND-007 | CORS configuration | REVIEW | Anupam | BE-FND-001 | Matching, mismatched and absent origins verified on GET and OPTIONS. API build, type-check and all 31 tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/enforce-api-cors/tasks.md) |
+| BE-FND-008 | Health endpoint (`GET /api/v1/health`) | REVIEW | Anupam | BE-FND-001 | Existing health payload preserved and cache prevention verified over HTTP. [OpenSpec checklist](../../openspec/changes/verify-api-health/tasks.md) |
+| BE-FND-009 | express-validator middleware setup | REVIEW | Anupam | BE-FND-001 | Valid sanitized input and multiple invalid fields verified through a test route. [OpenSpec checklist](../../openspec/changes/add-api-request-validation/tasks.md) |
+| BE-FND-010 | OpenAPI/Swagger setup (`docs/openapi.yaml`, Swagger UI) | REVIEW | Anupam | BE-FND-001 | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. [OpenSpec checklist](../../openspec/changes/add-api-swagger-ui/tasks.md) |
 
 ---
 
@@ -45,10 +53,10 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-001 | Firebase Auth middleware (`authenticate.ts`) | | Anupam | BE-FND-003 | Verify Bearer ID token |
-| BE-002 | Role middleware (`require-role.ts`) | | Anupam | BE-001 | CUSTOMER, DRIVER, ADMIN |
-| BE-003 | Auth module — `POST /api/v1/auth/session` profile bootstrap | | Anupam | BE-001 | Sync Firebase Auth with Firestore |
-| BE-004 | App Check middleware (verify limited-use token) | | Anupam | BE-FND-003 | `X-Firebase-AppCheck` header |
+| BE-001 | Firebase Auth middleware (`authenticate.ts`) | REVIEW | Anupam | BE-FND-003 | Verified UID on a protected test route, revocation checks, 401 handling and disabled-account denial. All 44 API tests passed. Reviewer: Pritam. [OpenSpec checklist](../../openspec/changes/authenticate-api-requests/tasks.md) |
+| BE-002 | Role middleware (`require-role.ts`) | REVIEW | Anupam | BE-001 | Verified active Firestore roles, legacy single-role profiles and suspension denial. [OpenSpec checklist](../../openspec/changes/implement-identity-access/tasks.md) |
+| BE-003 | Auth module — `POST /api/v1/auth/session` profile bootstrap | REVIEW | Anupam | BE-001 | Verified concurrent profile creation, identity sync and existing grant preservation. [OpenSpec checklist](../../openspec/changes/implement-identity-access/tasks.md) |
+| BE-004 | App Check middleware (verify limited-use token) | REVIEW | Anupam | BE-FND-003 | Verified consume mode, invalid/expired token handling and replay denial with a verifier test double. Live App Check verification pending. [OpenSpec checklist](../../openspec/changes/implement-identity-access/tasks.md) |
 
 ---
 
@@ -56,12 +64,12 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-005 | Customer module (CRUD, profile, status) | `customers/` | | Team 1 — Sid / Nishan | BE-001 | |
-| BE-006 | Vehicle module (CRUD, compatibility attributes) | `vehicles/` | | Team 1 — Sid / Nishan | BE-005 | Category, transmission |
-| BE-007 | Driver module (profile, capabilities, rates, service areas) | `drivers/` | | Team 1 — Sid / Nishan | BE-001 | HOURLY active, PER_KM stored |
-| BE-008 | Application module (submission, review, document metadata) | `applications/` | | Team 1 — Sid / Nishan | BE-007 | PENDING_REVIEW state |
-| BE-009 | Document upload completion endpoint | `applications/` | | Team 1 — Sid / Nishan | BE-008 | Storage path validation |
-| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | REVIEW | Pranesh (Team 3 — Bipul / Pranesh) | BE-007 | Feature: T3-BE010; updated: 2026-11-22; reviewer: Bipul + Team 2 security review pending; change/paths: `apps/api/src/modules/availability/availability.types.ts`, `availability.service.ts`, `availability.validator.ts`, `apps/api/test/availability.test.cjs`; evidence: `pnpm --filter @veyro/contracts build` + `pnpm --filter @veyro/api type-check` passed, `pnpm --filter @veyro/api build` passed, `node --test availability+hourly-fare+admin-decision-rules` 14 passed (5 new availability); blocker/next: needs BE-007 driver persistence contract and BE-001 auth for route wiring + Team 2 security review; no OpenSpec change approved for Team 3 yet. Final booking eligibility belongs to BE-012 |
+| BE-005 | Customer module (CRUD, profile, status) | `customers/` | REVIEW | Team 1 — Sid / Nishan | BE-001 | Owned customer profile/onboarding and consent implemented. Physical account deletion remains policy-gated; a deletion-request endpoint records requests. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-006 | Vehicle module (CRUD, compatibility attributes) | `vehicles/` | REVIEW | Team 1 — Sid / Nishan | BE-005 | Owned vehicle create/list/update/delete implemented with server IDs and active-booking checks. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-007 | Driver module (profile, capabilities, rates, service areas) | `drivers/` | REVIEW | Team 1 — Sid / Nishan | BE-001 | Driver profile, rates, capabilities and private-coordinate-free online directory implemented. Sensitive changes force manual re-review. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-008 | Application module (submission, review, document metadata) | `applications/` | REVIEW | Team 1 — Sid / Nishan | BE-007 | Owner/generation-verified upload IDs feed application submission and idempotent retries. Compatibility routes use the same service; approved states cannot be reset by resubmit. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-009 | Document upload completion endpoint | `applications/` | REVIEW | Team 1 — Sid / Nishan | BE-008 | Private binary upload validates size/MIME/signature and records owner/generation. Admin-only immutable document download added. Storage emulator verified. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-010 | Availability module (online/offline, eligibility check) | `availability/` | REVIEW | Team 3 — Bipul / Pranesh | BE-007 | Presence leases, owned road-route creation, service-area/vehicle compatibility and pickup eligibility now produce booking adapter records. Live Maps testing and frontend contract alignment pending. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
 
 ---
 
@@ -69,11 +77,11 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | BLOCKED | Pritam | BE-006, BE-010 | T2-P2. Hourly estimate and immutable in-memory quote snapshot verified with fixtures. Await A2, Team 1 vehicle/driver, Team 3 availability/routing and the agreed persisted quote snapshot. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
-| BE-012 | Booking module — creation, state machine | `bookings/` | | Anupam | BE-011 | Atomic state transitions |
-| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | | Anupam | BE-012 | Firestore transaction |
-| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | | Anupam | BE-012 | Pickup-12h to pickup-2h |
-| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | | Anupam | BE-012 | DEC-05 slabs |
+| BE-011 | Quote module (fare estimate, snapshot) | `quotes/` | REVIEW | Pritam | BE-006, BE-010 | Profile/vehicle, road-route, presence and compatibility producer APIs now exist. Scheduled pickup eligibility refresh preserves frozen quotes. Actual Maps/device and web adapter integration pending. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-012 | Booking module — creation, state machine | `bookings/` | REVIEW | Anupam | BE-011 | Booking producers and protected transaction routes connected. Route/pickup binding, balance checks and active-vehicle guards enforced. Live journey integration pending. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-013 | Instant offer lifecycle (5-min expiry, atomic accept) | `bookings/` | REVIEW | Anupam | BE-012 | Protected accept/reject routes, eligible driver rate freeze, promise timestamp, reservations and driver/customer inbox records implemented and tested. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-014 | Scheduled booking lifecycle (broadcast timing, NEEDS_REBOOK) | `bookings/` | REVIEW | Anupam | BE-012 | Scheduled lifecycle now has broadcast/expiry workers, indexes and eligible-recipient inbox integration. NEEDS_REBOOK and immediate late-created broadcast are retained. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-015 | Cancellation module (policy calculation, reason recording) | `bookings/` | REVIEW | Anupam | BE-012 | Approved cancellation reasons adopted. Cancellation writes trip state, applicable payable, immutable fact and reservation release transactionally. Qualifying incidents remain separately pending. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
 
 ---
 
@@ -81,11 +89,11 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-016 | Trip module — state machine, arrival confirmation | `trips/` | | Anupam | BE-012 | Geofence verification |
-| BE-017 | Waiting timer and no-show logic | `trips/` | | Anupam | BE-016 | 15m free, 30m max, ₹50/₹150 |
-| BE-018 | Start/End OTP (generate, hash, verify, consume) | `trips/` | | Anupam | BE-016 | Separate, single-use codes |
-| BE-019 | GPS location endpoint + RTDB write | `trips/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `location.controller|routes.ts` wired in `app.ts`, 401 without verified auth (BE-001), assignment via BE-016; RTDB write via Admin SDK pending; api build/type-check + 13 Team3 tests passed |
-| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | T3 complete 2026-11-22; service + `share-link.controller|routes.ts` wired in `app.ts`, 401 without verified session; persistence + ownership via BE-001/BE-016 pending |
+| BE-016 | Trip module — state machine, arrival confirmation | `trips/` | REVIEW | Anupam | BE-012 | Trip initialization, owned reads, trusted-GPS and customer-confirmed arrival, protected routes and event notifications implemented. GPS evidence producer is implemented; actual device verification remains. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-017 | Waiting timer and no-show logic | `trips/` | REVIEW | Anupam | BE-016 | 15/30-minute waiting boundaries, replacement INR150 no-show payable and corroborated driver no-show implemented. Verified no-show evidence producer remains an integration dependency. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-018 | Start/End OTP (generate, hash, verify, consume) | `trips/` | BLOCKED | Anupam | BE-016 | Salted phase-bound OTP hashes, five-minute expiry, five attempts, 60-second cooldown and transactional single consumption implemented. Owner explicitly left secure display/delivery and recovery pending. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-019 | GPS location endpoint + RTDB write | `trips/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | Assigned-trip latest GPS in Firestore/RTDB, order/freshness/jump checks, geofence evidence and participant reads implemented. RTDB emulator verified; device calibration pending. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-020 | Share links module (token, hash, revoke, expiry) | `share-links/` | REVIEW | Team 3 — Bipul / Pranesh | BE-016 | Hash-only authenticated shares, minimal approximate views, owner revocation and terminal-trip expiry implemented and tested. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
 
 ---
 
@@ -93,15 +101,15 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-021 | Payment module — Razorpay order creation | `payments/` | BLOCKED | Pritam | BE-016, BE-042 | T2-P3. Await authoritative trip completion, payable fare and charge facts, stored attempt ownership and Test Mode order integration. |
-| BE-022 | Payment signature + webhook verification | `payments/` | BLOCKED | Pritam | BE-021 | T2-P3. Checkout and raw webhook signature checks implemented and three tests passed. Await stored payment attempts, raw-body HTTP wiring, and provider capture confirmation. [OpenSpec](../../openspec/changes/add-razorpay-signature-verification/tasks.md) |
-| BE-023 | Webhook deduplication + idempotent transitions | `payments/` | BLOCKED | Pritam | BE-022 | T2-P3. Await BE-021 stored attempts, BE-022 raw HTTP/capture wiring, and shared Firestore transactions for atomic provider-event deduplication. |
-| BE-024 | Outstanding balance gate | `payments/` | NOT_STARTED | Pritam | BE-043, BE-012 | Block new booking on balance |
-| BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | NOT_STARTED | Pritam | BE-001 | Reporter identity concealed |
-| BE-026 | SOS module (event recording, demo mode) | `sos/` | NOT_STARTED | Pritam | BE-016 | Demo SOS messaging |
-| BE-027 | 5th-incident suspension automation | `admin/` | NOT_STARTED | Pritam | BE-015, BE-017 | Driver no-show & customer cancel |
-| BE-028 | Notification module (Firestore records + FCM) | `notifications/` | REVIEW | Team 3 — Bipul / Pranesh | BE-001 | T3 complete 2026-11-22; service + `notification.controller|routes.ts` wired in `app.ts` (`/tokens`, `/delivery-check`); persistence + FCM send pending BE-001; web `firebase-messaging-sw.js` placeholder added |
-| BE-029 | Audit module (append-only Admin action log) | `audit/` | BLOCKED | Pritam | BE-001 | T2-P1, 21 Nov 2026. Internal service and create-only repository implemented, including rejection of profile/document objects as audit state. API build/type-check, fresh startup, health HTTP 200, strict OpenSpec validation, four unit tests and the Firestore emulator atomic append/duplicate-ID rollback test passed. [OpenSpec checklist](../../openspec/changes/add-admin-audit-log/tasks.md). Next: wire verified identity, Admin authorization and shared Firestore (BE-001, BE-002, BE-FND-003), then verify unauthorized HTTP requests do not write. Reviewer: Anupam. |
+| BE-021 | Payment module — Razorpay order creation | `payments/` | REVIEW | Pritam | BE-016, BE-042 | One Test Mode order per invoice across retries and browsers. Reconciliation finds or retries the original receipt after an uncertain create. |
+| BE-022 | Payment signature + webhook verification | `payments/` | REVIEW | Pritam | BE-021 | Checkout verification, signed webhooks and customer-owned status checks use current Razorpay data. Staging capture and webhook delivery remain pending. |
+| BE-023 | Webhook deduplication + idempotent transitions | `payments/` | REVIEW | Pritam | BE-022 | Local HTTP and Firestore regression covered failed attempts, late capture and concurrent verification paths producing one receipt and one capture journal. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md) |
+| BE-024 | Outstanding balance gate | `payments/` | REVIEW | Pritam | BE-043, BE-012 | Booking balance enforcement now consumes completion/cancellation/no-show payables and excludes active disputes inside the booking transaction. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-025 | Report module (submission, privacy, Admin resolution) | `reports/` | REVIEW | Pritam | BE-001 | Approved report categories adopted as versioned defaults. Private participant reports, Admin review/resolution and audit/inbox integration tested. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-026 | SOS module (event recording, demo mode) | `sos/` | REVIEW | Pritam | BE-016 | Demo SOS, cancellation audit and Admin console read endpoints implemented. GPS enrichment remains dependent on Team 3. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-027 | 5th-incident suspension automation | `admin/` | BLOCKED | Pritam | BE-015, BE-017 | Lifetime verified-incident counting, fifth-incident suspension and audit/inbox implemented. Owner left qualifying reasons/exclusions pending; generic cancellation does not auto-qualify. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-028 | Notification module (inbox, FCM and email) | `notifications/` | REVIEW | Team 3 — Bipul / Pranesh | BE-001 | Inbox and push plus a Resend outbox for account, profile, booking, trip, application and payment updates. Verified recipient checks, lease, idempotency and bounded retries. Staging delivery and Team 3 handoff pending. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md) |
+| BE-029 | Audit module (append-only Admin action log) | `audit/` | REVIEW | Pritam | BE-001 | Audit integration now covers report resolution, application decisions, driver controls, customer restoration, role grants and ledger corrections. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
 
 ---
 
@@ -109,10 +117,10 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Module | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | BLOCKED | Pritam | BE-008, BE-029 | T2-P1. Manual decision rules and rejection tests passed. Await A2, Team 1 application/document interfaces (BE-008/009), and transactional audit. U04 blocks automatic scoring. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
-| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | BLOCKED | Pritam | BE-007, BE-029 | T2-P1. Driver approval transitions tested. Await A2, Team 1 driver profile, transactional audit and eligibility/presence integration. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
-| BE-032 | Admin customer controls (view/restore) | `admin/` | BLOCKED | Pritam | BE-005, BE-029 | T2-P1. Suspended-to-active transition tested. Await A2, Team 1 customer profile and status contract, and transactional audit. [OpenSpec](../../openspec/changes/add-admin-decision-rules/tasks.md) |
-| BE-033 | Admin report resolution | `admin/` | NOT_STARTED | Pritam | BE-025, BE-029 | Resolution note required |
+| BE-030 | Admin application review (approve/reject/request-changes) | `admin/` | REVIEW | Pritam | BE-008, BE-029 | Admin pending queue, protected manual decisions, driver approval synchronization, audit and inbox implemented. Profile/application producers implemented; independent review and deployed private-download checks remain. Automatic rubric scoring remains outside current manual workflow. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-031 | Admin driver controls (deactivate/restore) | `admin/` | REVIEW | Pritam | BE-007, BE-029 | Admin driver read/deactivate/restore implemented; deactivation disables server availability. Authorized state transitions, audit and replay behavior tested. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-032 | Admin customer controls (view/restore) | `admin/` | REVIEW | Pritam | BE-005, BE-029 | Customer read/restoration requires Admin and a reason. Durable counters preserved; authorization, idempotency and audit tested. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-033 | Admin report resolution | `admin/` | REVIEW | Pritam | BE-025, BE-029 | Report resolution endpoint requires Admin role and note; report, audit and inbox commit atomically. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md) |
 
 ---
 
@@ -120,13 +128,13 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-034 | Scheduled booking/offer expiry function | NOT_STARTED | Anupam | BE-013, BE-014 | 2nd-gen Cloud Function |
-| BE-035 | Scheduled broadcast lifecycle function | NOT_STARTED | Anupam | BE-014 | Idempotent broadcast transitions |
-| BE-036 | RTDB presence/location cleanup function | REVIEW | Team 3 — Bipul / Pranesh | BE-019 | T3 complete 2026-11-22; pure selector + `functions/src/team3.ts:pruneStalePresence` (5-min schedule); actual RTDB delete pending Admin SDK init (BE-FND-003) + runtime identity |
-| BE-037 | Firestore-trigger notification handlers | REVIEW | Team 3 — Bipul / Pranesh | BE-028 | T3 complete 2026-11-22; `functions/src/team3.ts:dispatchNotifications` on `notificationQueue/{eventId}` with idempotent builder; Firestore write + FCM send pending Admin SDK init |
-| BE-038 | Unit tests — fare, waiting, cancellation, OTP, suspension | NOT_STARTED | Pritam (coordination) | M2–M4 modules | Jest unit suite |
-| BE-039 | Integration tests — auth, roles, Firestore transactions | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Supertest + emulator |
-| BE-040 | Security tests — access across accounts, RTDB and share tokens | NOT_STARTED | Anupam (coordination) | M1–M4 modules | Team 3 tests RTDB and share tokens |
+| BE-034 | Scheduled booking/offer expiry function | REVIEW | Anupam | BE-013, BE-014 | Minute-based Functions worker expires due instant/scheduled offers through existing idempotent transactions. Indexes declared; expiry replay tested. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-035 | Scheduled broadcast lifecycle function | REVIEW | Anupam | BE-014 | Minute-based broadcast worker scans due bookings and online drivers, applies authoritative eligibility, and writes addressed offers/inbox records once. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-036 | RTDB presence/location cleanup function | REVIEW | Team 3 — Bipul / Pranesh | BE-019 | Terminal trip cleanup trigger and 15-minute stale presence/location cleanup implemented with late-write RTDB fences. Deployment/invocation checks pending. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| BE-037 | Firestore-trigger notification handlers | REVIEW | Team 3 — Bipul / Pranesh | BE-028 | Inbox-created dispatch and bounded retry schedule implemented under BE-028. Deployment and live delivery verification pending. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md) |
+| BE-038 | Unit tests — fare, waiting, cancellation, OTP, suspension | REVIEW | Pritam (coordination) | M2–M4 modules | node:test covers hourly fares, cancellation, waiting boundaries, OTP attempts/consumption and suspension. Final suite evidence is recorded in complete-team2-backend. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-039 | Integration tests — auth, roles, Firestore transactions | REVIEW | Anupam (coordination) | M1–M4 modules | Auth/session/roles, booking and trip transactions, financial adjustments and rules have emulator coverage. External App Check/provider delivery verification remains pending. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-040 | Security tests — access across accounts, RTDB and share tokens | REVIEW | Anupam (coordination) | M1–M4 modules | Cross-owner profiles, private uploads, authenticated share view/revocation and RTDB denial now included alongside existing role and financial security tests. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
 
 ---
 
@@ -134,20 +142,32 @@ The [Team 2 plan](TEAM_2_PLAN.md) defines feature order and limits each person t
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| INF-001 | Firestore Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Restrictive client rules |
-| INF-002 | RTDB Security Rules (deny-by-default) | REVIEW | Bipul (Team 3 — Bipul / Pranesh) | FND-013 | Feature: T3-INF002; updated: 2026-11-22; reviewer: Pranesh + Team 2 security review pending; change/paths: `infra/firebase/database.rules.json`; evidence: JSON parse valid, root + `trips/$tripId/location|presence` + `drivers/$driverId/presence` all `.read/.write false`; no client writes, server Admin SDK bypasses rules; blocker/next: narrow per-trip read grants await BE-019 path + BE-001 auth claims + BE-016 trip state; emulator cross-account tests pending |
-| INF-003 | Storage Security Rules (deny-by-default) | NOT_STARTED | Anupam | FND-013 | Private document paths |
-| INF-004 | Firestore composite indexes | NOT_STARTED | Anupam | BE-012 | `firestore.indexes.json` |
-| INF-005 | Firebase Emulator Suite configuration | NOT_STARTED | Anupam | FND-014 | Local testing harness |
+| INF-001 | Firestore Security Rules (deny-by-default) | REVIEW | Anupam | FND-013 | Current backend-only Firestore deny-all rules verified against unsigned and signed-in clients; privileged API ownership is covered separately. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| INF-002 | RTDB Security Rules (deny-by-default) | REVIEW | Team 3 — Bipul / Pranesh | FND-013 | RTDB client deny-all policy tested against direct anonymous reads; scoped privileged operations tested through backend service. [Core/mobility checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md) |
+| INF-003 | Storage Security Rules (deny-by-default) | REVIEW | Anupam | FND-013 | Storage deny-all rules reject unsigned and authenticated direct listing/uploads. Backend-proxied private uploads are implemented; frontend integration remains with Team 1. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| INF-004 | Firestore composite indexes | REVIEW | Anupam | BE-012 | Booking due-window composite indexes and notification collection-group index declared. Cloud index deployment remains pending. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| INF-005 | Firebase Emulator Suite configuration | REVIEW | Anupam | FND-014 | Auth, Firestore, Storage and RTDB emulators verified under Node22, including direct rules-denial tests. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
 | INF-006 | Firebase App Hosting deployment config | NOT_STARTED | Team 1 — Sid / Nishan | FND-006, FND-014 | `apphosting.yaml` |
-| INF-007 | Cloud Functions deployment config | NOT_STARTED | Anupam | FND-008, FND-014 | Runtime service identity |
+| INF-007 | Cloud Functions deployment config | REVIEW | Anupam | FND-008, FND-014 | Generated deployment package has compiled API/docs, pinned dependencies and Node22 runtime. Independent dependency install and Node22 loading verified; cloud deployment/IAM/secret bindings pending. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
 
 ## Additional Team 2 scope
 
-These tasks add explicit tracking for requirements already in §12.3. `NOT_STARTED` here means execution has not been activated in this plan; confirm existing code before implementation.
+These tasks add explicit tracking for requirements already in §12.3. Implementation and remaining owner-held dependencies are recorded separately below.
 
 | Task ID | Description | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|
-| BE-041 | Provider linking, conflict recovery and controlled Admin grants | NOT_STARTED | Anupam | BE-001–004 | T2-A2; security review required |
-| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | BLOCKED | Pritam | BE-011; BE-016/017 for integration | T2-P2. Final hourly base fare from frozen rate and elapsed OTP time implemented. Seven fare and quote snapshot tests plus API build/type-check passed. The initial fare slice passed health HTTP 200. Await persisted snapshot and A5/A6 trip timing and charge facts. Reviewer: Anupam. [OpenSpec](../../openspec/changes/add-hourly-fare-calculation/tasks.md) |
-| BE-043 | Ledger, earnings, disputes and audited adjustments | NOT_STARTED | Pritam | BE-023, BE-042, BE-015/017 | T2-P4; ledger invariants and duplicate-event tests |
+| BE-041 | Provider linking, conflict recovery and controlled Admin grants | BLOCKED | Anupam | BE-001–004 | Verified-UID provider inspection and lead-only audited role-grant API implemented. Owner will supply ADMIN_GRANTER_UID later; client credential linking/conflict recovery remains a Team 1 handoff. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-042 | Authoritative final fare service and frozen policy/rate snapshots | REVIEW | Pritam | BE-011; BE-016/017 for integration | Successful End OTP computes rounded final hourly fare from frozen rate and server timing, adds one waiting fee and creates payable/earnings atomically. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+| BE-043 | Ledger, earnings, disputes and audited adjustments | BLOCKED | Pritam | BE-023, BE-042, BE-015/017 | Payables, accrued/paid earnings, capture journals, completed-trip disputes and audited unpaid corrections implemented. No-trip disputes, no-show allocation and captured-payment refund settlement remain policy/provider dependencies. [Execution register](../../openspec/changes/complete-team2-backend/tasks.md) |
+
+## Frontend integration follow-up — 23 November 2026
+
+| Task IDs | Result | Remaining gate |
+|---|---|---|
+| BE-005–010, BE-019–020 | Canonical frontend producers wired, atomic owned profile saves, private photo/document proxies, shared privacy enforcement and active-trip offline guard | Runtime/device tests and independent review |
+| BE-011–018 | Canonical quotes/actions wired; assigned-offer retry and interrupted initialization recovery added | Secure OTP display/recovery remains explicitly held |
+| BE-021–043 | Test Mode checkout, earnings decomposition, audited review states and scoped screen read models | Actual capture/webhook, lead UID and held policies |
+| INF-004/007 | Named-database selection synchronized across API/Functions/triggers; required indexes declared; emulator fixtures explicitly use default database | Deploy rules/indexes to the configured live database; verify IAM/secrets |
+| BE-038–040 | Final expanded regression results recorded in [frontend execution register](../../openspec/changes/complete-frontend-integration/tasks.md) | Independent security/financial review and merge |
+
+The sign-in regression preserves suspended status; signing in cannot restore an account or rewrite its roles. Raw provider exceptions are not written to application logs.

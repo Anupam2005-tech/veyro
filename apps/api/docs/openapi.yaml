@@ -1,0 +1,4223 @@
+openapi: 3.0.3
+info:
+  title: Veyro API
+  version: 1.0.0
+  description: Implemented HTTP operations. Planned domain routes are listed separately for contract review.
+servers:
+  - url: ../../..
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Check API liveness
+      description: Public, read-only liveness probe. No roles, request body, filters or pagination. Does not check external services.
+      security: []
+      parameters:
+        - in: header
+          name: X-Request-Id
+          required: false
+          description: Optional caller-supplied correlation ID.
+          schema: {type: string, pattern: '^[A-Za-z0-9._-]{1,128}$'}
+          example: demo-health
+      responses:
+        '200':
+          description: API process is serving requests.
+          headers:
+            X-Request-Id: {schema: {type: string}, description: Correlation ID included in response metadata.}
+            Cache-Control: {schema: {type: string, enum: [no-store]}}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message, data, meta]
+                properties:
+                  success: {type: boolean, enum: [true]}
+                  message: {type: string}
+                  data:
+                    type: object
+                    required: [status, service, version, timestamp]
+                    properties:
+                      status: {type: string, enum: [UP]}
+                      service: {type: string, enum: [veyro-api]}
+                      version: {type: string}
+                      timestamp: {type: string, format: date-time}
+                  meta:
+                    type: object
+                    required: [requestId]
+                    properties:
+                      requestId: {type: string}
+              example:
+                success: true
+                message: Veyro API is healthy and operational
+                data: {status: UP, service: veyro-api, version: 1.0.0, timestamp: '2026-11-22T12:00:00.000Z'}
+                meta: {requestId: demo-health}
+        default:
+          description: Shared API errors include invalid JSON (400, INVALID_JSON), oversized input (413, PAYLOAD_TOO_LARGE), unsupported encoding (415, UNSUPPORTED_MEDIA_TYPE) and unexpected failures (500, INTERNAL_ERROR).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/auth/session:
+    post:
+      operationId: bootstrapSession
+      summary: Create or synchronize the signed-in user's profile
+      description: Requires a Firebase ID token and a fresh limited-use App Check token per request. Retries with a fresh token reuse the same profile. No prior product role is required.
+      security:
+        - firebaseAuth: []
+          firebaseAppCheck: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleIntent: {type: string, nullable: true, enum: [customer, driver, null]}
+            example: {roleIntent: customer}
+      responses:
+        '200':
+          description: Active profile for the authenticated UID.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message, data, meta]
+                properties:
+                  success: {type: boolean, enum: [true]}
+                  message: {type: string}
+                  data:
+                    type: object
+                    required: [uid, role, roles, fullName, phone, onboardingComplete, updatedAt]
+                    properties:
+                      uid: {type: string}
+                      role: {type: string, enum: [CUSTOMER, DRIVER, ADMIN]}
+                      roles: {type: array, items: {type: string, enum: [CUSTOMER, DRIVER, ADMIN]}}
+                      fullName: {type: string}
+                      phone: {type: string}
+                      onboardingComplete: {type: boolean}
+                      updatedAt: {type: string, format: date-time}
+                  meta:
+                    type: object
+                    required: [requestId]
+                    properties:
+                      requestId: {type: string}
+              example:
+                success: true
+                message: Session ready.
+                data: {uid: demo-user, role: CUSTOMER, roles: [CUSTOMER], fullName: '', phone: '', onboardingComplete: false, updatedAt: '2026-11-22T12:00:00Z'}
+                meta: {requestId: demo-session}
+        '400':
+          description: Unsupported role intent or malformed JSON.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '401':
+          description: Missing or invalid Firebase authentication (UNAUTHENTICATED).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '403':
+          description: Invalid or consumed App Check token (APP_CHECK_FAILED), or inactive profile (PROFILE_UNAVAILABLE).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+        '500':
+          description: Unexpected provider or storage error (INTERNAL_ERROR).
+          content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}
+  /api/v1/payments/orders:
+    post:
+      summary: Create or resume the single Test Mode order for an owned payable
+      operationId: postApiV1PaymentsOrders
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - invoiceId
+              properties:
+                invoiceId:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/payments/status:
+    post:
+      summary: Check an owned invoice against the current Razorpay payment state
+      operationId: postApiV1PaymentsStatus
+      description: Checks the linked order without creating another one. A provider-confirmed capture can settle the invoice.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invoiceId]
+              properties:
+                invoiceId:
+                  type: string
+      responses:
+        '200':
+          description: Current payment state in the standard success envelope.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [status]
+                    properties:
+                      status:
+                        type: string
+                        enum: [READY, PENDING, FAILED, CAPTURED, DISPUTED, REVIEW_REQUIRED]
+        '400':
+          description: Invalid invoice ID.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Invoice unavailable or not owned by the caller.
+        '409':
+          description: Order creation is being reconciled or payment requires review.
+        '503':
+          description: Payment provider unavailable.
+  /api/v1/payments/verify:
+    post:
+      summary: Verify Checkout signature and fetch captured payment status
+      operationId: postApiV1PaymentsVerify
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - attemptId
+              - razorpay_order_id
+              - razorpay_payment_id
+              - razorpay_signature
+              properties:
+                attemptId:
+                  type: string
+                razorpay_order_id:
+                  type: string
+                razorpay_payment_id:
+                  type: string
+                razorpay_signature:
+                  type: string
+  /api/v1/payments/webhooks/razorpay:
+    post:
+      summary: Verify original webhook bytes and process provider-confirmed payments
+      operationId: postApiV1PaymentsWebhooksRazorpay
+      security: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: X-Razorpay-Signature
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Razorpay-Event-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/v1/reports:
+    post:
+      summary: Submit a private report about the caller’s trip
+      operationId: postApiV1Reports
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tripId
+              - category
+              - description
+              properties:
+                tripId:
+                  type: string
+                category:
+                  type: string
+                description:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/reports/{id}:
+    get:
+      summary: Read the caller’s own report
+      operationId: getApiV1ReportsId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/reports:
+    get:
+      summary: Read up to 50 open reports
+      operationId: getApiV1AdminReports
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+  /api/v1/admin/reports/{id}:
+    get:
+      summary: Read report identity and context
+      operationId: getApiV1AdminReportsId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/reports/{id}/resolve:
+    post:
+      summary: Resolve or dismiss a report with audit and reporter notification
+      operationId: postApiV1AdminReportsIdResolve
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              - note
+              properties:
+                status:
+                  type: string
+                note:
+                  type: string
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/audit/{id}:
+    get:
+      summary: Read an immutable Admin audit record
+      operationId: getApiV1AdminAuditId
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      description: Requires an active ADMIN profile. Changes create an append-only audit
+        record.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/sos:
+    post:
+      summary: Record a Demo SOS for an active trip
+      operationId: postApiV1Sos
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tripId
+              properties:
+                tripId:
+                  type: string
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+  /api/v1/sos/{id}/cancel:
+    post:
+      summary: Cancel a Demo SOS with an audit record
+      operationId: postApiV1SosIdCancel
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/notifications:
+    get:
+      summary: Read up to 50 caller-owned inbox records in an authorized workspace
+      operationId: getApiV1Notifications
+      parameters:
+      - name: role
+        in: query
+        schema:
+          type: string
+          enum: [CUSTOMER, DRIVER, ADMIN]
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+  /api/v1/notifications/{id}/read:
+    post:
+      summary: Mark an owned notification read in its workspace
+      operationId: postApiV1NotificationsIdRead
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [CUSTOMER, DRIVER, ADMIN]
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/notifications/device:
+    post:
+      summary: Bind a push token to one owner and workspace and return its opaque channel
+      operationId: postApiV1NotificationsDevice
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, DRIVER, ADMIN]
+  /api/v1/notifications/device/remove:
+    post:
+      summary: Remove a caller-owned push token
+      operationId: postApiV1NotificationsDeviceRemove
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed in the standard success envelope.
+        '400':
+          description: Request or provider signature is invalid.
+        '401':
+          description: Firebase authentication required.
+        '403':
+          description: App Check, account or role authorization denied.
+        '404':
+          description: Resource unavailable or not owned by the caller.
+        '409':
+          description: State conflict, outstanding balance or reconciliation required.
+        '503':
+          description: Provider or configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
+  /api/v1/bookings/quotes:
+    post:
+      operationId: postApiV1BookingsQuotes
+      summary: Create a quote from verified route, vehicle and driver facts
+      description: Optional driverId selects an instant driver. Omit it for scheduled
+        offers. Server reads the route and all fare policy versions.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - vehicleId
+              - routeId
+              - maxHourlyRateInr
+              properties:
+                vehicleId:
+                  type: string
+                routeId:
+                  type: string
+                maxHourlyRateInr:
+                  type: number
+  /api/v1/bookings:
+    post:
+      operationId: postApiV1Bookings
+      summary: Create one booking for an owned quote
+      description: Optional pickupAt is a Unix millisecond timestamp 4 hours to 30 days
+        ahead. Reusing a quote and pickup is idempotent.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - quoteId
+              properties:
+                quoteId:
+                  type: string
+  /api/v1/bookings/{id}:
+    get:
+      operationId: getApiV1BookingsId
+      summary: Read an owned or assigned booking
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/bookings/{id}/cancel:
+    post:
+      operationId: postApiV1BookingsIdCancel
+      summary: Cancel a booking using its approved frozen policy
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+  /api/v1/driver-offers/{id}/accept:
+    post:
+      operationId: postApiV1Driver-OffersIdAccept
+      summary: Atomically accept an addressed booking offer
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/driver-offers/{id}/reject:
+    post:
+      operationId: postApiV1Driver-OffersIdReject
+      summary: Reject an addressed instant offer
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}:
+    get:
+      operationId: getApiV1TripsId
+      summary: Read the caller’s assigned trip
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}/initialize:
+    post:
+      operationId: postApiV1TripsIdInitialize
+      summary: Initialize the trip from an assigned booking
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}/arrival:
+    post:
+      operationId: postApiV1TripsIdArrival
+      summary: Confirm assigned-driver arrival with trusted GPS evidence
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}/arrival/confirm:
+    post:
+      operationId: postApiV1TripsIdArrivalConfirm
+      summary: Customer-confirmed arrival fallback
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}/start:
+    post:
+      operationId: postApiV1TripsIdStart
+      summary: Consume the Start OTP and start server trip timing
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              properties:
+                code:
+                  type: string
+  /api/v1/trips/{id}/complete:
+    post:
+      operationId: postApiV1TripsIdComplete
+      summary: Consume the End OTP and create final fare, payable and earnings
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              properties:
+                code:
+                  type: string
+  /api/v1/trips/{id}/customer-no-show:
+    post:
+      operationId: postApiV1TripsIdCustomer-No-Show
+      summary: Record verified 30-minute customer no-show and replacement charge
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/trips/{id}/driver-no-show:
+    post:
+      operationId: postApiV1TripsIdDriver-No-Show
+      summary: Record a corroborated driver no-show after the frozen promise deadline
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/ledger/payables:
+    get:
+      operationId: getApiV1LedgerPayables
+      summary: Read up to 100 caller-owned payables
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ledger/earnings:
+    get:
+      operationId: getApiV1LedgerEarnings
+      summary: Read up to 100 assigned-driver earning records
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ledger/payables/{id}/dispute:
+    post:
+      operationId: postApiV1LedgerPayablesIdDispute
+      summary: Open a completed-trip dispute linked to an owned report
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reportId
+              properties:
+                reportId:
+                  type: string
+  /api/v1/ledger/admin/{id}/resolve:
+    post:
+      operationId: postApiV1LedgerAdminIdResolve
+      summary: Admin resolves a dispute with an audit record
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - note
+              properties:
+                note:
+                  type: string
+  /api/v1/ledger/admin/{id}/adjust:
+    post:
+      operationId: postApiV1LedgerAdminIdAdjust
+      summary: Admin corrects an unpaid invoice before provider order creation
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - deltaPaise
+              - reason
+              properties:
+                deltaPaise:
+                  type: integer
+                reason:
+                  type: string
+  /api/v1/auth/providers:
+    get:
+      operationId: getApiV1AuthProviders
+      summary: Verify linked providers for the authenticated Firebase UID
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/auth/role-grants:
+    post:
+      operationId: postApiV1AuthRole-Grants
+      summary: Project lead grants a product role with an audit record
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - uid
+              - role
+              - reason
+              properties:
+                uid:
+                  type: string
+                role:
+                  type: string
+                reason:
+                  type: string
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+  /api/v1/payments/reconcile:
+    post:
+      operationId: postApiV1PaymentsReconcile
+      summary: Reconcile an uncertain attempt with its unique provider receipt
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - invoiceId
+              properties:
+                invoiceId:
+                  type: string
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+  /api/v1/admin/applications:
+    get:
+      operationId: getApiV1AdminApplications
+      summary: Read up to 50 pending driver applications
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admin/applications/{id}:
+    get:
+      operationId: getApiV1AdminApplicationsId
+      summary: Admin reads a application record
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/customers/{id}:
+    get:
+      operationId: getApiV1AdminCustomersId
+      summary: Admin reads a customer record
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/drivers/{id}:
+    get:
+      operationId: getApiV1AdminDriversId
+      summary: Admin reads a driver record
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/admin/driver-applications/{id}/decision:
+    post:
+      operationId: postApiV1AdminDriver-ApplicationsIdDecision
+      summary: Admin manually reviews an application and synchronizes driver approval
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              - reason
+              properties:
+                action:
+                  type: string
+                reason:
+                  type: string
+  /api/v1/admin/drivers/{id}/control:
+    post:
+      operationId: postApiV1AdminDriversIdControl
+      summary: Admin deactivates or restores a driver
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              - reason
+              properties:
+                action:
+                  type: string
+                reason:
+                  type: string
+  /api/v1/admin/customers/{id}/restore:
+    post:
+      operationId: postApiV1AdminCustomersIdRestore
+      summary: Admin restores a suspended customer
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+  /api/v1/admin/sos:
+    get:
+      operationId: getApiV1AdminSos
+      summary: Admin reads up to 50 Demo SOS events
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admin/sos/{id}:
+    get:
+      operationId: getApiV1AdminSosId
+      summary: Admin reads one Demo SOS event
+      description: Requires bearer authentication and a fresh limited-use App Check
+        token.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Account, role or resource authorization denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Record unavailable or not owned by caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: State, verification, balance or idempotency conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Unsupported policy or invalid business transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          description: Verification regeneration cooldown.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Required integration or secret is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/customers/me:
+    patch:
+      summary: Update own profile and vehicles atomically; server roles/status/balance
+        remain protected
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  maxLength: 100
+                phone:
+                  type: string
+                vehicles:
+                  type: array
+                  maxItems: 20
+                  description: Atomic full owned list. Existing foreign IDs are rejected;
+                    new IDs are server generated; active vehicles cannot be edited or
+                    deleted.
+                  items:
+                    type: object
+                emergencyContacts:
+                  type: array
+                  maxItems: 5
+                  items:
+                    type: object
+                notifications:
+                  type: object
+                  description: Boolean bookingUpdates, tripStatus, safetyAlerts and serviceMessages.
+                privacy:
+                  type: object
+                  description: Boolean tripSharing, matchingProfile and analytics. Disabling
+                    sharing revokes active links.
+    get:
+      operationId: getApiV1CustomersMe
+      summary: Read own product profile
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/customers/me/deletion-request:
+    post:
+      operationId: postApiV1CustomersMeDeletion-Request
+      summary: Record a deletion request for retention-policy review
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/drivers/me/deletion-request:
+    post:
+      operationId: postApiV1DriversMeDeletionRequest
+      summary: Request deletion review for the signed-in driver account
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: An idempotent deletion request is awaiting retention-policy review.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+  /api/v1/customers/onboarding:
+    post:
+      operationId: postApiV1CustomersOnboarding
+      summary: Save own customer contact, consent and optional primary vehicle
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: &id001
+                  type: string
+                phone: *id001
+                consentTerms: &id002
+                  type: boolean
+                consentPrivacy: *id002
+                vehicle:
+                  type: object
+                  properties: &id003
+                    make: *id001
+                    model: *id001
+                    category: *id001
+                    transmission: *id001
+                    fuelType: *id001
+                  nullable: true
+              required:
+              - fullName
+              - phone
+              - consentTerms
+              - consentPrivacy
+  /api/v1/vehicles:
+    get:
+      operationId: getApiV1Vehicles
+      summary: List own vehicles
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+    post:
+      operationId: postApiV1Vehicles
+      summary: Create an owned vehicle
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id003
+              required:
+              - make
+              - model
+              - category
+              - transmission
+              - fuelType
+  /api/v1/vehicles/{id}:
+    post:
+      operationId: postApiV1VehiclesId
+      summary: Update an owned inactive vehicle
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id003
+              required:
+              - make
+              - model
+              - category
+              - transmission
+              - fuelType
+    delete:
+      operationId: deleteApiV1VehiclesId
+      summary: Delete an owned inactive vehicle
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/drivers:
+    get:
+      operationId: getApiV1Drivers
+      summary: List online approved driver candidates with cursor pagination and eligibility
+        pending
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/drivers/profile:
+    get:
+      operationId: getApiV1DriversProfile
+      summary: Read own driver profile
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+    post:
+      operationId: postApiV1DriversProfile
+      summary: Save own driver profile; identity/capability/area changes require review
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: *id001
+                phone: *id001
+                serviceAreas: *id001
+                hourlyRateInr: &id006
+                  type: number
+                experienceYears:
+                  type: integer
+                  minimum: 0
+                categories:
+                  type: array
+                  items: *id001
+                transmissions:
+                  type: array
+                  items: *id001
+                languages:
+                  type: array
+                  items: *id001
+                serviceAreaBounds:
+                  type: object
+                  properties:
+                    southWest: &id004
+                      type: object
+                      required:
+                      - lat
+                      - lng
+                      properties:
+                        lat:
+                          type: number
+                          minimum: -90
+                          maximum: 90
+                        lng:
+                          type: number
+                          minimum: -180
+                          maximum: 180
+                    northEast: *id004
+                  required:
+                  - southWest
+                  - northEast
+              required:
+              - fullName
+              - phone
+              - serviceAreas
+              - hourlyRateInr
+              - experienceYears
+              - categories
+              - transmissions
+              - languages
+              - serviceAreaBounds
+  /api/v1/driver-applications/me:
+    post:
+      operationId: postApiV1Driver-ApplicationsMe
+      summary: Submit server-verified document IDs for manual review
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: &id005
+                documents:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    type: object
+                    required:
+                    - id
+                    properties:
+                      id: *id001
+              required:
+              - documents
+    get:
+      operationId: getApiV1Driver-ApplicationsMe
+      summary: Read own application status
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/drivers/applications:
+    post:
+      operationId: postApiV1DriversApplications
+      summary: Submit server-verified document IDs for manual review
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id005
+              required:
+              - documents
+  /api/v1/drivers/applications/me:
+    get:
+      operationId: getApiV1DriversApplicationsMe
+      summary: Read own application status
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/drivers/applications/resubmit:
+    post:
+      operationId: postApiV1DriversApplicationsResubmit
+      summary: Resubmit verified existing documents after requested changes
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+  /api/v1/driver-applications/documents:
+    post:
+      operationId: postApiV1Driver-ApplicationsDocuments
+      summary: Upload private JPEG, PNG or PDF bytes, up to 10000000 bytes
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: query
+        name: kind
+        required: true
+        schema:
+          type: string
+          enum:
+          - LICENCE
+          - GOVERNMENT_ID
+          - PROFILE_PHOTO
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+  /api/v1/admin/applications/{id}/documents/{uploadId}:
+    get:
+      operationId: getApiV1AdminApplicationsIdDocumentsUploadid
+      summary: Admin downloads an immutable private document generation as an attachment
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: uploadId
+        required: true
+        schema:
+          type: string
+  /api/v1/availability:
+    get:
+      operationId: getApiV1Availability
+      summary: Read own effective online state and freshness
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+    post:
+      operationId: postApiV1Availability
+      summary: Publish own foreground presence or go offline
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                online: *id002
+                position: *id004
+                renew:
+                  type: boolean
+                  description: Renew an existing online shift. Cannot reopen a shift after going offline.
+              required:
+              - online
+  /api/v1/mobility/routes:
+    post:
+      operationId: postApiV1MobilityRoutes
+      summary: Produce a verified server road-route record
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicleId: *id001
+                points:
+                  type: array
+                  minItems: 2
+                  maxItems: 27
+                  items: *id004
+                radiusKm: *id006
+                expanded: *id002
+                pickupAt:
+                  type: integer
+                  nullable: true
+              required:
+              - vehicleId
+              - points
+  /api/v1/mobility/eligibility:
+    post:
+      operationId: postApiV1MobilityEligibility
+      summary: Verify current pickup-road eligibility for a chosen driver
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                driverId: *id001
+                routeId: *id001
+              required:
+              - driverId
+              - routeId
+  /api/v1/locations/{id}:
+    post:
+      operationId: postApiV1LocationsId
+      summary: Publish assigned active-trip GPS with freshness/order checks
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                position: *id004
+                accuracy:
+                  type: number
+                  minimum: 0
+                observedAt:
+                  type: integer
+              required:
+              - position
+              - accuracy
+              - observedAt
+    get:
+      operationId: getApiV1LocationsId
+      summary: Read assigned active-trip location without a public RTDB path
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/shares:
+    post:
+      operationId: postApiV1Shares
+      summary: Create a random token for an owned active trip
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tripId: *id001
+              required:
+              - tripId
+  /api/v1/shares/view:
+    get:
+      operationId: getApiV1SharesView
+      summary: Authenticated recipient reads a minimal approximate active-trip view
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: header
+        name: X-Trip-Share
+        required: true
+        schema: *id001
+  /api/v1/shares/{id}/revoke:
+    post:
+      operationId: postApiV1SharesIdRevoke
+      summary: Owner revokes the stored token hash
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed with the standard success envelope.
+        '400':
+          description: Invalid request or unverified document reference.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Role or account authorization denied.
+        '404':
+          description: Resource unavailable or not accessible.
+        '409':
+          description: State, ownership, freshness, reservation or verification conflict.
+        '413':
+          description: Upload exceeds size limit.
+        '503':
+          description: Storage, routing or realtime configuration unavailable.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/views/bookings:
+    get:
+      summary: List participant booking contexts (up to 100)
+      description: Implemented frontend integration. Requires active Customer or Driver.
+        Responses use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/trips/{id}:
+    get:
+      summary: Read an owned booking/trip context
+      description: Implemented frontend integration. Requires active Customer or assigned
+        Driver. Responses use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/views/driver-profile:
+    get:
+      summary: Read own profile, application, presence and active trip
+      description: Implemented frontend integration. Requires active Driver. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/offers:
+    get:
+      summary: Read open offers addressed to the approved driver
+      description: Requires an active driver account. The response only includes
+        route, vehicle and offer details needed before acceptance. If the collection-group
+        index is unavailable, the API checks addressed offers under active bookings.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/admin/overview:
+    get:
+      summary: Read live counts and application queue (up to 100)
+      description: Implemented frontend integration. Requires active Admin. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/admin/applications/{id}:
+    get:
+      summary: Read joined application, verified document metadata and audit
+      description: Implemented frontend integration. Requires active Admin. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/views/admin/customers:
+    get:
+      summary: List customer status records (up to 100)
+      description: Implemented frontend integration. Requires active Admin. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/admin/customers/{id}:
+    get:
+      summary: Read customer status, verified incidents and audit
+      description: Implemented frontend integration. Requires active Admin. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+  /api/v1/views/favourites:
+    post:
+      summary: Save or remove an owned favourite driver
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - driverId
+              - favourite
+              properties:
+                driverId:
+                  type: string
+                favourite:
+                  type: boolean
+  /api/v1/views/trips/{id}/rating:
+    post:
+      summary: Rate an owned completed trip once; identical retries are safe
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                note:
+                  type: string
+                  maxLength: 2000
+  /api/v1/customers/me/avatar:
+    post:
+      summary: Save a private immutable account photo up to 10,000,000 bytes
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+    get:
+      summary: Download own private account photo through authenticated proxy
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Private JPEG or PNG bytes.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+    delete:
+      summary: Remove photo reference; physical erasure follows retention review
+      description: Implemented frontend integration. Requires active Customer. Responses
+        use the standard envelope. Private data is not cached.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Operation completed; joined records exclude OTP vaults and unrelated
+            private data.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Role, profile or privacy policy denied.
+        '404':
+          description: Owned or authorized record unavailable.
+        '409':
+          description: Reservation, idempotency or state conflict.
+  /api/v1/views/earnings:
+    get:
+      summary: Read own earning records with waiting and adjustment facts
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Standard success envelope with own earning records, waitingPaise
+            and adjustmentPaise. Allocation-pending records are identified by null netPaise.
+        '403':
+          description: Active Driver role required.
+components:
+  securitySchemes:
+    firebaseAuth: {type: http, scheme: bearer, bearerFormat: Firebase ID token}
+    firebaseAppCheck: {type: apiKey, in: header, name: X-Firebase-AppCheck}
+  schemas:
+    ApiError:
+      type: object
+      required: [success, message, error, meta]
+      properties:
+        success: {type: boolean, enum: [false]}
+        message: {type: string}
+        error:
+          type: object
+          required: [code, details]
+          properties:
+            code: {type: string}
+            details:
+              type: array
+              items:
+                type: object
+                required: [message]
+                properties:
+                  field: {type: string}
+                  message: {type: string}
+        meta:
+          type: object
+          required: [requestId]
+          properties:
+            requestId: {type: string}

@@ -1,36 +1,78 @@
 import express from 'express';
 import cors from 'cors';
-import { sendSuccess, sendError } from './shared/http/response.js';
-import { availabilityRouter } from './modules/availability/availability.routes.js';
-import { adminRouter } from './modules/admin/admin.routes.js';
-import { tripLocationRouter } from './modules/trips/location.routes.js';
-import { shareLinkRouter } from './modules/share-links/share-link.routes.js';
-import { notificationRouter } from './modules/notifications/notification.routes.js';
+import { loadConfig } from './config/env.js';
+import { getFirebaseAdminApp } from './config/firebase-admin.js';
+import { sendSuccess } from './shared/http/response.js';
+import { RouteNotFoundError } from './shared/http/app-error.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { createDocsRouter } from './middleware/api-docs.js';
+import { requestContext } from './middleware/request-context.js';
 
-export function createApp(): express.Application {
+import { authenticate } from './middleware/authenticate.js';
+import { requireAppCheck } from './middleware/require-app-check.js';
+import { bootstrapSession } from './modules/auth/session.js';
+
+import { createPaymentRouter, razorpayWebhook } from './modules/payments/payment-routes.js';
+import { createSafetyRouter } from './modules/safety/safety-routes.js';
+import { requireRole } from './middleware/require-role.js';
+
+import { createTripRouter } from './modules/trips/trip-routes.js';
+
+import { createAdminRouter } from './modules/admin/admin-routes.js';
+
+import { createIdentityRouter } from './modules/auth/identity-routes.js';
+
+import { createBookingRouter } from './modules/bookings/booking-routes.js';
+
+import { createLedgerRouter } from './modules/ledger/ledger-routes.js';
+
+import { createProfileRouter } from './modules/profiles/profile-routes.js';
+import { createMobilityRouter } from './modules/mobility/mobility-routes.js';
+import { createScreenRouter } from './modules/views/screen-routes.js';
+
+export function createApp(config = loadConfig({ embedded: true })): express.Application {
+  getFirebaseAdminApp();
   const app = express();
 
+  app.use(requestContext);
   app.use(cors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
+    // A list makes cors match the request origin before granting browser access.
+    origin: [config.frontendOrigin],
     credentials: true,
+    exposedHeaders: ['X-Request-Id'],
   }));
 
+  app.post(`${config.apiBasePath}/payments/webhooks/razorpay`,
+    express.raw({ type: 'application/json', limit: '256kb' }), razorpayWebhook);
   app.use(express.json());
 
-  // Attach request tracing id
-  app.use((req, res, next) => {
-    const incomingId = req.headers['x-request-id'];
-    const requestId = typeof incomingId === 'string' && incomingId.length > 0
-      ? incomingId
-      : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  app.post(`${config.apiBasePath}/auth/session`, authenticate, requireAppCheck, bootstrapSession);
+  app.use(`${config.apiBasePath}/views`, authenticate, requireAppCheck, createScreenRouter());
 
-    (req as { id?: string }).id = requestId;
-    res.setHeader('X-Request-Id', requestId);
-    next();
-  });
+  app.use(`${config.apiBasePath}/payments`, authenticate, requireAppCheck, requireRole('CUSTOMER'), createPaymentRouter());
+  app.use(`${config.apiBasePath}/trips`, authenticate, requireAppCheck, requireRole('CUSTOMER', 'DRIVER'), createTripRouter());
+  app.use(`${config.apiBasePath}/admin`, createAdminRouter());
+  for (const path of ['/bookings', '/driver-offers']) {
+    app.use(`${config.apiBasePath}${path}`, authenticate, requireAppCheck, requireRole('CUSTOMER', 'DRIVER'));
+  }
+  app.use(config.apiBasePath, createBookingRouter());
+  app.use(`${config.apiBasePath}/ledger`, authenticate, requireAppCheck, createLedgerRouter());
+  for (const path of ['/customers', '/vehicles', '/drivers', '/driver-applications', '/availability', '/mobility', '/locations', '/shares']) {
+    app.use(`${config.apiBasePath}${path}`, authenticate, requireAppCheck);
+  }
+  app.use(config.apiBasePath, createProfileRouter());
+  app.use(config.apiBasePath, createMobilityRouter());
+  const safety = createSafetyRouter();
+  for (const path of ['/reports', '/admin/reports', '/admin/audit', '/sos', '/notifications']) {
+    app.use(`${config.apiBasePath}${path}`, authenticate, requireAppCheck, requireRole('CUSTOMER', 'DRIVER', 'ADMIN'));
+  }
+  app.use(config.apiBasePath, safety);
+
+  app.use(`${config.apiBasePath}/auth`, authenticate, requireAppCheck, createIdentityRouter());
 
   // Health check endpoint
-  app.get('/api/v1/health', (_req, res) => {
+  app.get(`${config.apiBasePath}/health`, (_req, res) => {
+    res.set('Cache-Control', 'no-store');
     return sendSuccess(
       res,
       {
@@ -43,23 +85,12 @@ export function createApp(): express.Application {
     );
   });
 
-  // Team 3 — Maps/realtime/supporting backend (auth wiring pending BE-001).
-  app.use('/api/v1/drivers/availability', availabilityRouter());
-  app.use('/api/v1/trips/:tripId/location', tripLocationRouter());
-  app.use('/api/v1', shareLinkRouter());
-  app.use('/api/v1/notifications', notificationRouter());
-  app.use('/api/v1/admin', adminRouter());
+  if (process.env.ENABLE_API_DOCS === 'true' && process.env.NODE_ENV !== 'production') {
+    app.use(`${config.apiBasePath}/docs`, createDocsRouter());
+  }
 
-  // 404 Not Found handler
-  app.use((req, res) => {
-    return sendError(
-      res,
-      `Cannot ${req.method} ${req.originalUrl}`,
-      'ROUTE_NOT_FOUND',
-      404
-    );
-  });
+  app.use((_req, _res, next) => next(new RouteNotFoundError()));
+  app.use(errorHandler);
 
   return app;
 }
-

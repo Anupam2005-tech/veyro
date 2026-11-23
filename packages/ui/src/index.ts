@@ -1,6 +1,26 @@
-/**
- * Shared UI Primitives placeholder
- * Components defined in PROMPT 00 (VeyroButton, StatusBadge, etc.) will be exported here.
- */
-export const UI_PACKAGE_VERSION = '0.0.0';
-
+export * from './components/accordion';
+export * from './components/app-shell';
+export * from './components/button';
+export * from './components/checkbox-field';
+export * from './components/confirm-dialog';
+export * from './components/demo-badge';
+export * from './components/driver-offer-card';
+export * from './components/fare-breakdown';
+export * from './components/field';
+export * from './components/file-dropzone';
+export * from './components/form-alert';
+export * from './components/input';
+export * from './components/map-bottom-sheet';
+export * from './components/otp-input';
+export * from './components/otp-vault-card';
+export * from './components/progress';
+export * from './components/public-header';
+export * from './components/safety-action-button';
+export * from './components/skeleton';
+export * from './components/states';
+export * from './components/status-badge';
+export * from './components/stepper';
+export * from './components/trip-pill';
+export * from './components/vehicle-pass';
+export * from './components/wordmark-footer';
+export * from './lib/utils';

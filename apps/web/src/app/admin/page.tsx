@@ -1,11 +1,16 @@
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import AdminOverview from '@/components/admin/admin-overview';
+
+export const metadata: Metadata = {
+  title: 'Admin overview — Veyro',
+  description: 'Review driver applications and operational KPIs.',
+};
+
 export default function AdminPage() {
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-6">
-      <h1 className="text-2xl font-bold">Admin</h1>
-      <p className="text-sm opacity-70">
-        Application queue, reports, and safety controls. All actions require an
-        audit reason and append to the Admin audit log.
-      </p>
-    </main>
+    <Suspense fallback={<div className="min-h-screen bg-studio-bg" />}>
+      <AdminOverview />
+    </Suspense>
   );
 }

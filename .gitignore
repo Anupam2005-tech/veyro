@@ -5,6 +5,7 @@ node_modules/
 # Build output
 dist/
 .next/
+.next-review/
 .turbo/
 out/
 
@@ -55,6 +56,7 @@ yarn-error.log*
 service-account*.json
 *-service-account.json
 .appcheck-debug-token
+rzp-test-key.csv
 
 # Graphify generated output
 graphify-out/
