@@ -31,12 +31,20 @@ export function parseConfig(env: NodeJS.ProcessEnv) {
   return { port, apiBasePath, frontendOrigin: url.origin };
 }
 
-export function loadConfig() {
+export function loadConfig({ embedded = false }: { embedded?: boolean } = {}) {
   if (process.env.NODE_ENV !== 'production') {
-    for (const file of ['../../.env', '../../../../.env']) {
-      const { error } = dotenv.config({ path: resolve(__dirname, file) });
+    for (const file of [
+      resolve(process.cwd(), '.env'),
+      resolve(process.cwd(), 'apps/api/.env'),
+      resolve(__dirname, '../../.env'),
+      resolve(__dirname, '../.env'),
+      resolve(__dirname, '../../../.env'),
+    ]) {
+      const { error } = dotenv.config({ path: file });
       if (error && (error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
-  return parseConfig(process.env);
+  // A hosting runtime owns the listener and may supply a Unix socket in PORT.
+  // Only server.ts consumes the standalone port setting.
+  return parseConfig(embedded ? { ...process.env, PORT: undefined } : process.env);
 }

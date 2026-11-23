@@ -27,5 +27,31 @@
     "@types/node": "^20.14.9",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
+  },
+  "exports": {
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./notifications": {
+      "types": "./dist/modules/notifications/notifications.d.ts",
+      "default": "./dist/modules/notifications/notifications.js"
+    },
+    "./safety": {
+      "types": "./dist/modules/safety/safety-service.d.ts",
+      "default": "./dist/modules/safety/safety-service.js"
+    },
+    "./booking-workers": {
+      "types": "./dist/modules/bookings/booking-workers.d.ts",
+      "default": "./dist/modules/bookings/booking-workers.js"
+    },
+    "./mobility": {
+      "types": "./dist/modules/mobility/mobility-service.d.ts",
+      "default": "./dist/modules/mobility/mobility-service.js"
+    },
+    "./firebase": {
+      "types": "./dist/config/firebase-admin.d.ts",
+      "default": "./dist/config/firebase-admin.js"
+    }
   }
 }

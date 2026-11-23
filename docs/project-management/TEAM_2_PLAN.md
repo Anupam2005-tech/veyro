@@ -1,6 +1,6 @@
 # Team 2 — Anupam and Pritam feature plan
 
-**Last updated:** 22 November 2026
+**Last updated:** 23 November 2026
 
 This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status and evidence in [Backend Progress](BACKEND_PROGRESS.md) and shared milestones and blockers in [Project Status](PROJECT_STATUS.md).
 
@@ -17,8 +17,10 @@ This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status a
 
 | Person | Active feature | Status | Reviewer | Next action |
 |---|---|---|---|---|
-| Anupam | T2-A1 — Backend foundation and local runtime | IN_PROGRESS | Pritam | Review BE-FND-008–010 and the OpenAPI contract |
-| Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Anupam | Prepare the Admin API contract while waiting for T2-A2 and Team 1 interfaces |
+| Anupam | Team 2 remaining-backend completion | REVIEW / BLOCKED | Pritam | Review Team 2 implementation; owner-held OTP/lead UID and partner/live integrations remain |
+| Pritam | Payments, Admin and safety implementation review | REVIEW / BLOCKED | Anupam | Review delivered services; live payment/webhook checks and owner-held policies remain |
+
+The user requested BE-021–029 across existing owners on 22 November. M4 code is locally reviewable alongside the pending identity changes. Owner assignments remain as recorded; review payment/security interfaces with Pritam and notification delivery with Team 3. [M4 checklist](../../openspec/changes/implement-payments-safety/tasks.md).
 
 When a feature starts, update this table and the corresponding rows in [Backend Progress](BACKEND_PROGRESS.md).
 
@@ -27,17 +29,21 @@ When a feature starts, update this table and the corresponding rows in [Backend 
 | Feature | Owner | Status | Task IDs | Depends on | Handoff condition |
 |---|---|---|---|---|---|
 | T2-A1 — Foundation and local runtime | Anupam | REVIEW | BE-FND-001–010, INF-005, INF-007 | Readiness reconciliation and foundation approval | Build, type-check, local startup, emulator and shared-file evidence recorded |
-| T2-A2 — Identity and authorization | Anupam | NOT_STARTED | BE-001–004, BE-041, INF-001, INF-003 | T2-A1 | Auth/App Check, role checks and cross-user denial tests pass |
-| T2-A3 — Instant booking and assignment | Anupam | NOT_STARTED | BE-012–013 | T2-A2, T2-P2, Team 1 interfaces and Team 3 availability | Concurrent acceptance and reservation tests pass |
-| T2-A4 — Scheduled booking lifecycle | Anupam | NOT_STARTED | BE-014, BE-034–035 | T2-A3 | Timing, expiry and retry-safe job tests pass |
-| T2-A5 — Trip lifecycle and OTP | Anupam | NOT_STARTED | BE-016, BE-018 | T2-A3 and Team 3 location contract | Transition, OTP expiry and replay tests pass |
-| T2-A6 — Waiting, no-show and cancellation | Anupam | NOT_STARTED | BE-015, BE-017 | T2-A4 and T2-A5 | Policy boundaries and duplicate-safe incident facts pass |
-| T2-P1 — Admin approval and audit | Pritam | BLOCKED | BE-029–032 | T2-A2 and Team 1 application interfaces | Secure review, audit and control tests pass |
-| T2-P2 — Fare calculation | Pritam | BLOCKED | BE-011, BE-042 | T2-A2 and domain interfaces | Quote and final-fare boundary tests pass |
-| T2-P3 — Payment verification | Pritam | BLOCKED | BE-021–023 | T2-P2, T2-A5 and T2-A6 | Signature, duplicate and retry tests pass |
-| T2-P4 — Ledger and disputes | Pritam | NOT_STARTED | BE-043 | T2-P3 and T2-A6 | Ledger invariants and audited adjustments pass |
-| T2-P5 — Booking balance gate | Pritam | NOT_STARTED | BE-024 | T2-P4 and T2-A3 | Balance restriction and concurrency tests pass |
-| T2-P6 — Reports, safety and SOS | Pritam | NOT_STARTED | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |
+| T2-A2 — Identity and authorization | Anupam | REVIEW / BLOCKED | BE-001–004, BE-041, INF-001, INF-003 | T2-A1 | Auth/App Check, role checks and cross-user denial tests pass |
+| T2-A3 — Instant booking and assignment | Anupam | REVIEW | BE-012–013 | T2-A2, T2-P2, Team 1 interfaces and Team 3 availability | Concurrent acceptance and reservation tests pass |
+| T2-A4 — Scheduled booking lifecycle | Anupam | REVIEW | BE-014, BE-034–035 | T2-A3 | Timing, expiry and retry-safe job tests pass |
+| T2-A5 — Trip lifecycle and OTP | Anupam | REVIEW | BE-016, BE-018 | T2-A3 and Team 3 location contract | Transition, OTP expiry and replay tests pass |
+| T2-A6 — Waiting, no-show and cancellation | Anupam | REVIEW / BLOCKED | BE-015, BE-017 | T2-A4 and T2-A5 | Policy boundaries and duplicate-safe incident facts pass |
+| T2-P1 — Admin approval and audit | Pritam | REVIEW | BE-029–032 | T2-A2 and Team 1 application interfaces | Secure review, audit and control tests pass |
+| T2-P2 — Fare calculation | Pritam | REVIEW | BE-011, BE-042 | T2-A2 and domain interfaces | Quote and final-fare boundary tests pass |
+| T2-P3 — Payment verification | Pritam | REVIEW | BE-021–023 | T2-P2, T2-A5 and T2-A6 | Signature, duplicate and retry tests pass |
+| T2-P4 — Ledger and disputes | Pritam | REVIEW / BLOCKED | BE-043 | T2-P3 and T2-A6 | Ledger invariants and audited adjustments pass |
+| T2-P5 — Booking balance gate | Pritam | REVIEW | BE-024 | T2-P4 and T2-A3 | Balance restriction and concurrency tests pass |
+| T2-P6 — Reports, safety and SOS | Pritam | REVIEW | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |
+
+Remaining Team 2 work is tracked task by task in the [completion register](../../openspec/changes/complete-team2-backend/tasks.md). Review status covers local implementation; the register identifies owner-held policies, partner data and live integration dependencies.
+
+See the [22 November code audit](PROJECT_STATUS.md#code-and-openspec-audit--22-november-2026) for the historical implementation snapshot; use the 23 November checkpoint and execution registers for current gaps.
 
 ## Anupam — ordered feature queue
 
@@ -134,3 +140,9 @@ Reassess the split after the first milestone. If one person is overloaded, agree
 5. Milestone/blocker changes: update `PROJECT_STATUS.md`. Supply verified technical notes/screenshots/test evidence to Dip. Frontend status is maintained by Team 1.
 
 Task-note format: `Feature: T2-...; updated: YYYY-MM-DD; reviewer: ...; change/paths: ...; evidence: ...; blocker/next: ...`.
+
+## Cross-team backend extension — 23 November 2026
+
+The owner authorized completing the remaining backend scope across teams. Original pairings and frontend ownership remain unchanged. Profile/vehicle/application, private upload, road eligibility, GPS, sharing and cleanup implementations are recorded in the [core/mobility execution checklist](../../openspec/changes/complete-core-mobility-backend/tasks.md). All implementation rows remain REVIEW until independent review and merge; external configuration, device validation and explicitly deferred owner policies remain tracked release gates.
+
+The owner subsequently authorized the frontend integration pass. Its task evidence and held release gates are tracked in [complete-frontend-integration](../../openspec/changes/complete-frontend-integration/tasks.md); original frontend ownership and independent review requirements remain unchanged.

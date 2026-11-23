@@ -14,11 +14,12 @@
     "lint": "pnpm -r lint",
     "type-check": "pnpm -r type-check",
     "test": "pnpm -r test",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "build:functions": "node scripts/package-functions.cjs",
+    "admin:promote": "node scripts/make-admin.cjs"
   },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   }
 }
-

@@ -11,13 +11,16 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "source": ".firebase/functions-package",
       "codebase": "default",
       "ignore": [
         "node_modules",
         ".git",
         "firebase-debug.log",
         "firestore-debug.log"
+      ],
+      "predeploy": [
+        "node scripts/package-functions.cjs"
       ]
     }
   ],
@@ -44,4 +47,3 @@
     "singleProjectMode": true
   }
 }
-
