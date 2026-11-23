@@ -39,3 +39,19 @@ test('production startup exits before listening with missing or insecure origin'
     assert.doesNotMatch(result.stdout, /listening/);
   }
 });
+
+test('embedded app accepts a hosting socket while standalone config still validates PORT', () => {
+  const script = `
+    const assert = require('node:assert/strict');
+    const { loadConfig } = require('./dist/config/env.js');
+    const { createApp } = require('./dist/app.js');
+    assert.throws(() => loadConfig(), /Invalid API configuration: PORT/);
+    assert.equal(typeof createApp(), 'function');
+  `;
+  const result = spawnSync(process.execPath, ['-e', script], {
+    cwd: require('node:path').resolve(__dirname, '..'),
+    env: { NODE_ENV: 'production', PORT: '/tmp/functions.sock', FRONTEND_ORIGIN: 'https://app.example' },
+    encoding: 'utf8', timeout: 5000,
+  });
+  assert.equal(result.status, 0, result.stderr);
+});

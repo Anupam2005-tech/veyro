@@ -1,6 +1,6 @@
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
-export const DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
+export const DOCUMENT_MAX_BYTES = 10_000_000;
 const DOCUMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
 const DOCUMENT_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
@@ -42,7 +42,7 @@ export function validateDocumentFile(file: File): string | null {
   }
 
   if (file.size > DOCUMENT_MAX_BYTES) {
-    return 'Files must be 5 MB or smaller.';
+    return 'Files must be 10 MB or smaller.';
   }
 
   if (file.size === 0) {

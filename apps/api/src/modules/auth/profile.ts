@@ -1,5 +1,5 @@
-import { getFirestore, type DocumentData } from 'firebase-admin/firestore';
-import { getFirebaseAdminApp } from '../../config/firebase-admin.js';
+import type { DocumentData } from 'firebase-admin/firestore';
+import { getFirebaseAdminApp, getFirestore } from '../../config/firebase-admin.js';
 import { AppError } from '../../shared/http/app-error.js';
 
 export type Role = 'CUSTOMER' | 'DRIVER' | 'ADMIN';

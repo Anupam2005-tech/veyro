@@ -5,6 +5,9 @@ import { AppError } from '../shared/http/app-error.js';
 
 export const requireAppCheck: RequestHandler = async (req, _res, next) => {
   const token = req.get('X-Firebase-AppCheck');
+  if (process.env.NODE_ENV !== 'production' && !token) {
+    return next();
+  }
   const denied = () => new AppError(403, 'APP_CHECK_FAILED', 'App verification failed.');
   if (!token || /[\s,]/.test(token)) return next(denied());
   try {

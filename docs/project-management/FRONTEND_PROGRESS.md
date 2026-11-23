@@ -1,6 +1,6 @@
 # Veyro — Frontend Progress Tracker
 
-**Last updated:** 22 November 2026
+**Last updated:** 23 November 2026
 **Stack:** Next.js App Router + React + TypeScript + Tailwind CSS + shadcn/ui + Radix UI  
 **Spec reference:** `docs/veyro.md` §2–3, §6 (PROMPT 00–06, 08)  
 
@@ -31,33 +31,33 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-001 | CSS variables and Tailwind theme (Night + Studio Light) | — | REVIEW | Member 1 | FND-006 | CSS vars + Tailwind tokens in `apps/web`; shared preset extended in `packages/config` |
-| FE-002 | Typography setup (Syne, Inter, JetBrains Mono) | — | REVIEW | Member 1 | FE-001 | `next/font/google` wired in root layout with fallback stacks |
-| FE-003 | AppShell, public header, authenticated nav, bottom nav | — | REVIEW | Member 1 | FE-001 | AppShell, PublicHeader and mobile bottom-nav slot built; authenticated nav content pending FE-014+ |
-| FE-004 | VeyroButton variants (lime, obsidian, secondary, destructive) | — | REVIEW | Member 1 | FE-001 | Includes ghost + loading + `asChild`, in `@veyro/ui` |
-| FE-005 | StatusBadge, EmptyState, ErrorState, LoadingState | — | REVIEW | Member 1 | FE-001 | Icon + text + colour status semantics |
-| FE-006 | HolographicVehiclePass | — | REVIEW | Member 1 | FE-001 | Obsidian holographic card with vehicle details |
-| FE-007 | DynamicTripPill, OtpVaultCard | — | REVIEW | Member 1 | FE-001 | OTP display/input states with reveal control and labels |
-| FE-008 | DriverOfferCard, FareBreakdown, MapBottomSheet | — | REVIEW | Member 1 | FE-001 | Radix Dialog bottom sheet; breakdown separates exclusions |
-| FE-009 | ConfirmDialog, SafetyActionButton | — | REVIEW | Member 1 | FE-001 | Radix ConfirmDialog; SOS shows demo-mode wording |
-| FE-010 | `/design-system` gallery page | `/design-system` | REVIEW | Member 1 | FE-004..FE-009 | Both themes demonstrated; 200 in dev smoke test |
+| FE-001 | CSS variables and Tailwind theme (Night + Studio Light) | — | REVIEW | Team 1 — Sid / Nishan | FND-006 | CSS vars + Tailwind tokens in `apps/web`; shared preset extended in `packages/config` |
+| FE-002 | Typography setup (Syne, Inter, JetBrains Mono) | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | `next/font/google` wired in root layout with fallback stacks |
+| FE-003 | AppShell, public header, authenticated nav, bottom nav | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | AppShell, PublicHeader and mobile bottom-nav slot built; authenticated nav content pending FE-014+ |
+| FE-004 | VeyroButton variants (lime, obsidian, secondary, destructive) | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | Includes ghost + loading + `asChild`, in `@veyro/ui` |
+| FE-005 | StatusBadge, EmptyState, ErrorState, LoadingState | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | Icon + text + colour status semantics |
+| FE-006 | HolographicVehiclePass | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | Obsidian holographic card with vehicle details |
+| FE-007 | DynamicTripPill, OtpVaultCard | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | OTP display/input states with reveal control and labels |
+| FE-008 | DriverOfferCard, FareBreakdown, MapBottomSheet | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | Radix Dialog bottom sheet; breakdown separates exclusions |
+| FE-009 | ConfirmDialog, SafetyActionButton | — | REVIEW | Team 1 — Sid / Nishan | FE-001 | Radix ConfirmDialog; SOS shows demo-mode wording |
+| FE-010 | `/design-system` gallery page | `/design-system` | REVIEW | Team 1 — Sid / Nishan | FE-004..FE-009 | Both themes demonstrated; 200 in dev smoke test |
 
 ### Landing page (PROMPT 01)
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-011 | Hero section with CTAs | VIEW-01 `/` | REVIEW | Member 1 | FE-001 | Animated SVG route ribbon, static + reduced-motion fallback; CTAs to `/auth?role=customer` and `/auth?role=driver` |
-| FE-012 | How-it-works, instant vs scheduled, vehicle explainer | VIEW-01 `/` | REVIEW | Member 1 | FE-011 | Approved 5-min / 4h–30d / 15 km copy; no assignment-before-acceptance claim |
-| FE-013 | Fare/safety, trip verification, FAQ, footer | VIEW-01 `/` | REVIEW | Member 1 | FE-011 | Approved policy constants only; demo SOS wording; Radix FAQ; legal routes added |
+| FE-011 | Hero section with CTAs | VIEW-01 `/` | REVIEW | Team 1 — Sid / Nishan | FE-001 | Animated SVG route ribbon, static + reduced-motion fallback; CTAs to `/auth?role=customer` and `/auth?role=driver` |
+| FE-012 | How-it-works, instant vs scheduled, vehicle explainer | VIEW-01 `/` | REVIEW | Team 1 — Sid / Nishan | FE-011 | Approved 5-min / 4h–30d / 15 km copy; no assignment-before-acceptance claim |
+| FE-013 | Fare/safety, trip verification, FAQ, footer | VIEW-01 `/` | REVIEW | Team 1 — Sid / Nishan | FE-011 | Approved policy constants only; demo SOS wording; Radix FAQ; legal routes added |
 
 ### Authentication & onboarding (PROMPT 02)
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-014 | `/auth` — role selection, email-link, phone OTP, Google | VIEW-02 `/auth` | REVIEW | Member 2 | FE-001, BE-001 | Veyro Night. Firebase JS SDK 13.3.0 wired with real Auth + labelled demo fallback; email-link callback route added. tsc, eslint, build and route smoke passed. |
-| FE-015 | Provider linking, error/loading states | VIEW-02 `/auth` | REVIEW | Member 2 | FE-014 | Account-exists linking, popup/redirect fallback, resend cooldown, field/error states, safe return URL. Verified with lint/build/smoke. |
-| FE-016 | `/onboarding/customer` — profile + optional vehicle | VIEW-03 | REVIEW | Member 2 | FE-014, BE-005 | Studio Light. Required name/phone/consent, optional vehicle, demo persistence adapter. tsc, eslint, build and `/onboarding/customer` smoke passed. |
-| FE-017 | `/onboarding/driver` — 4-step flow with doc upload | VIEW-04 | REVIEW | Member 4 | FE-014, BE-008 | Studio Light. Four steps, HOURLY only, disabled PER_KM, private Storage upload path with validation/progress, PENDING_REVIEW submit. Verified. |
+| FE-014 | `/auth` — role selection, email-link, phone OTP, Google | VIEW-02 `/auth` | REVIEW | Team 1 — Sid / Nishan | FE-001, BE-001 | Live session failures are surfaced; demo mode requires an explicit environment flag. Every API request sends Auth and a fresh limited-use App Check token. |
+| FE-015 | Provider linking, error/loading states | VIEW-02 `/auth` | REVIEW | Team 1 — Sid / Nishan | FE-014 | Existing linking/conflict UI retained; user changes remount private screen state. Actual configured-provider and App Check verification remains a release check. |
+| FE-016 | `/onboarding/customer` — profile + optional vehicle | VIEW-03 | REVIEW | Team 1 — Sid / Nishan | FE-014, BE-005 | Owned canonical onboarding and optional vehicle flow wired; missing vehicle blocks booking with a profile link. |
+| FE-017 | `/onboarding/driver` — 4-step flow with doc upload | VIEW-04 | REVIEW | Team 1 — Sid / Nishan | FE-014, BE-008 | Private uploads and reviewed pickup coverage. Service-area search uses live Google Places in connected builds and supports multiple removable selections. |
 
 ---
 
@@ -67,19 +67,19 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-018 | Booking studio — location, route, map | VIEW-05 `/customer` | REVIEW | Member 2 | FE-001, BE-011 | Studio Light map-first layout with draggable pins, debounced road-route preview, route failure gate and Google/demo provider adapter. tsc, eslint, build and `/customer` smoke passed. |
-| FE-019 | Vehicle pass, driver search/cards | VIEW-05 `/customer` | REVIEW | Member 2 | FE-018 | Vehicle pass uses category + transmission only; eligible-driver cards, filters, sorting, radius expansion and scheduled count-only mode added. Verified. |
-| FE-020 | Quote/confirm flow, instant vs scheduled | VIEW-05 `/customer` | REVIEW | Member 2 | FE-019, BE-012 | HOURLY-only server-shaped quote, frozen quote snapshot, policy version, exclusions, unpaid-balance gate and 5-minute/12h–2h timelines. Demo adapter labelled. |
-| FE-021 | Booking hub — upcoming, active, past | VIEW-08 `/customer/bookings` | REVIEW | Member 2 | FE-020 | Booking groups, frozen quote display, cancellation reason dialog and empty/loading/error states added. tsc, eslint, build and `/customer/bookings` smoke passed. |
-| FE-022 | Customer profile, vehicles, emergency contacts | VIEW-09 `/customer/profile` | REVIEW | Member 2 | FE-016 | Editable profile, vehicle list and emergency contacts with validation and demo persistence. tsc, eslint, build and `/customer/profile` smoke passed. |
+| FE-018 | Booking studio — location, route, map | VIEW-05 `/customer` | REVIEW | Team 1 — Sid / Nishan | FE-001, BE-011 | Canonical server road preview/geometry, ordered waypoints, draggable pins, modern Places suggestions and explicit error states. |
+| FE-019 | Vehicle pass, driver search/cards | VIEW-05 `/customer` | REVIEW | Team 1 — Sid / Nishan | FE-018 | Approved directory plus server eligibility; filters, explicit radius expansion and scheduled count/cap. Live driver coordinates are not fabricated. |
+| FE-020 | Quote/confirm flow, instant vs scheduled | VIEW-05 `/customer` | REVIEW | Team 1 — Sid / Nishan | FE-019, BE-012 | Server quote ID/fare, scheduled rate cap and null selected driver, pickup binding, stale-input/expiry confirmation guards; failures never create demo bookings. |
+| FE-021 | Booking hub — upcoming, active, past | VIEW-08 `/customer/bookings` | REVIEW | Team 1 — Sid / Nishan | FE-020 | Participant read models and polling; queued/broadcasting/expired/NEEDS_REBOOK states preserved. Approved cancellation codes wired. |
+| FE-022 | Customer profile, vehicles, emergency contacts | VIEW-09 `/customer/profile` | REVIEW | Team 1 — Sid / Nishan | FE-016 | Validated atomic profile/vehicle saves, ownership and reservation locks, server IDs, emergency contacts, private avatar proxy and deletion-review intake. |
 
 ### Driver dashboard (PROMPT 05)
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-023 | Driver application status page | VIEW-11 `/driver/status` | REVIEW | Member 4 | FE-017 | All five statuses with Admin reason, resubmit, private document list and demo state previews. tsc, eslint, build and route smoke passed. |
-| FE-024 | Online/offline toggle, GPS state, offer cards | VIEW-12 `/driver` | REVIEW | Member 4 | FE-023, BE-010 | Online eligibility checks, GPS freshness/permission, instant five-minute offer timer, scheduled broadcast details and accept/decline states with demo fixtures. |
-| FE-025 | Driver profile, rates, capabilities | VIEW-15 `/driver/profile` | REVIEW | Member 4 | FE-023 | Editable driver profile, private document metadata, read-only rate with future-booking copy and safety incident summary. |
+| FE-023 | Driver application status page | VIEW-11 `/driver/status` | REVIEW | Team 1 — Sid / Nishan | FE-017 | Canonical application status/reason/resubmission; live query parameters cannot activate demo state previews. |
+| FE-024 | Online/offline toggle, GPS state, offer cards | VIEW-12 `/driver` | REVIEW | Team 1 — Sid / Nishan | FE-023, BE-010 | Foreground GPS on online toggle, 15-second presence renewal, open-offer polling, scheduled decline and retry-safe acceptance/trip initialization. |
+| FE-025 | Driver profile, rates, capabilities | VIEW-15 `/driver/profile` | REVIEW | Team 1 — Sid / Nishan | FE-023 | Owned profile and future hourly-rate/transmission edits; capability/identity/coverage changes require review. Existing rates remain frozen for assigned work. |
 
 ---
 
@@ -89,27 +89,27 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-026 | Trip cockpit — all states | VIEW-06 `/customer/trips/[id]` | REVIEW | Member 2 | FE-020, BE-016 | Awaiting, en route, arrived/waiting, active and completed states with labelled demo state previews. |
-| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | REVIEW | Member 3 | FE-026, BE-019 | Active-trip location marker, 30-second stale freeze, last-updated timestamp and interruption warning. |
-| FE-028 | OTP display (start + end) | VIEW-06 `/customer/trips/[id]` | REVIEW | Member 2 | FE-026 | Separate revealable start and end codes; never logged or placed in a URL. |
-| FE-029 | SOS action (demo mode wording) | VIEW-06 `/customer/trips/[id]` | REVIEW | Member 2 | FE-026, BE-026 | One-tap demo SOS with per-contact unconfirmed states and explicit no-external-message wording. |
-| FE-030 | Trip sharing (create, revoke) | VIEW-10 `/share/[token]` | REVIEW | Member 2 | FE-026, BE-020 | Random token, hashed demo storage, auth-required read-only view, expiry and customer revoke control. |
-| FE-031 | Receipt, rating, report | VIEW-07 `/customer/trips/[id]/summary` | REVIEW | Member 2 | FE-026, BE-021 | Estimate vs final, pricing mode, billable time/distance, exclusions, rating and predefined report form. |
+| FE-026 | Trip cockpit — all states | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-020, BE-016 | Owned booking/trip read models, server actions, polling and customer-confirmed arrival fallback. Demo-only previews remain separate. |
+| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-019 | Latest authorized GPS, 30-second stale state, frozen last-known marker and visible timestamps; device calibration remains pending. |
+| FE-028 | OTP display (start + end) | VIEW-06 `/customer/trips/[id]` | BLOCKED | Team 1 — Sid / Nishan | FE-026 | Owner explicitly held secure OTP display/delivery/recovery. Live UI shows pending setup and no invented code; demo vaults are explicitly gated. |
+| FE-029 | SOS action (demo mode wording) | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-026 | Canonical idempotent Demo SOS intake; truthful no-external-dispatch notice. Live external emergency delivery remains outside Release 1. |
+| FE-030 | Trip sharing (create, revoke) | VIEW-10 `/share/[token]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-020 | Hash-ID revoke, token only in X-Trip-Share API header, authenticated minimal read, polling and end/revocation denial; replacing links revokes previous tokens. |
+| FE-031 | Receipt, rating, report | VIEW-07 `/customer/trips/[id]/summary` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-021 | Server fare/payment mapping, completed-trip rating and approved report taxonomy. Only verified capture is displayed as paid. |
 
 ### Driver trip (PROMPT 05)
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-032 | Driver trip cockpit — map, arrival, OTP numpads | VIEW-13 `/driver/trips/[id]` | REVIEW | Member 4 | FE-024, BE-016 | Route map, next-turn banner, re-centre, Maps fallback, arrival, waiting policy, no-show request and separate six-digit OTP inputs. |
-| FE-033 | Driver earnings ledger | VIEW-14 `/driver/earnings` | REVIEW | Member 4 | FE-032, BE-021 | Clearly labelled demo ledger with gross, waiting credits, commission, adjustments, net and rate-effective copy. |
+| FE-032 | Driver trip cockpit — map, arrival, OTP numpads | VIEW-13 `/driver/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-024, BE-016 | Canonical arrival/start/complete/no-show actions, phase code payloads, foreground GPS relay and polling. OTP display remains owner-held. |
+| FE-033 | Driver earnings ledger | VIEW-14 `/driver/earnings` | REVIEW | Team 1 — Sid / Nishan | FE-032, BE-021 | Own ledger read model includes waiting/adjustment facts; pending allocations excluded. Live payout/settlement policy remains pending. |
 
 ### Maps integration
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-034 | Google Maps provider adapter | — | REVIEW | Member 3 | FND-006 | Provider interface with Google script/Places/Directions/Geocoder implementation and labelled demo fallback. Live Google path activates only with `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`. |
-| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | REVIEW | Member 3 | FE-034, FE-018 | Custom place search, 400ms debounced route preview, draggable pins, reverse geocoding and demo driver markers wired into the booking studio. |
-| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Member 3 | FE-034, FE-027 | Shared RouteMap used in both cockpits with driver marker, route line and stale-state freeze. |
+| FE-034 | Google Maps provider adapter | — | REVIEW | Team 1 — Sid / Nishan | FND-006 | Modern Places autocomplete with session tokens and selection-only details; live road previews use server Routes API instead of legacy browser Directions. |
+| FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | REVIEW | Team 1 — Sid / Nishan | FE-034, FE-018 | Keyboard-operable suggestions, canonical waypoint ordering, explicit search expansion, no synthetic live driver markers. |
+| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Team 1 — Sid / Nishan | FE-034, FE-027 | Google Map driver overlays update without rebuilding the map; stale markers are distinct. Real map/device calibration remains pending. |
 
 ---
 
@@ -119,17 +119,17 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-037 | Razorpay checkout integration | VIEW-07 | REVIEW | Member 2 | FE-031, BE-021 | Test Mode only. Demo checkout updates payment state to verification pending; no live gateway key is configured. |
-| FE-038 | Outstanding balance gate | VIEW-05 | REVIEW | Member 2 | FE-037, BE-024 | Demo preview via `?balance=1`; disputed amount under review excluded from blocking balance. |
+| FE-037 | Razorpay checkout integration | VIEW-07 | REVIEW | Team 1 — Sid / Nishan | FE-031, BE-021 | Uses the server amount and reuses the invoice's order. Receipts show confirmed, failed and pending states with a status check. Staging Test Mode capture/webhook remains pending. |
+| FE-038 | Outstanding balance gate | VIEW-05 | REVIEW | Team 1 — Sid / Nishan | FE-037, BE-024 | Balance comes from confirmed, non-disputed payables; settlement uses the actual unpaid invoice. Demo balance previews cannot affect live screens. |
 
 ### Admin (PROMPT 06)
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-039 | Admin overview, KPI cards, application queue | VIEW-16 `/admin` | REVIEW | Member 5 | FE-001, BE-030 | KPI cards plus searchable/status-filterable application queue. |
-| FE-040 | Application review — document viewer, approve/reject | VIEW-17 `/admin/applications/[id]` | REVIEW | Member 5 | FE-039, BE-030 | Private document metadata with presigned-only copy, mandatory reason decisions and audit trail. |
-| FE-041 | Reports directory, resolution | VIEW-18 `/admin/reports` | REVIEW | Member 5 | FE-039, BE-033 | Report list with status filter, detail panel, Under Review/Resolve/Dismiss with required notes and confirmation dialogs. |
-| FE-042 | Driver/customer safety controls (suspend/restore) | VIEW-17 | REVIEW | Member 5 | FE-040, BE-031 | Driver deactivate/restore with mandatory audit reason and incident context. Customer restore endpoint remains backend-dependent. |
+| FE-039 | Admin overview, KPI cards, application queue | VIEW-16 `/admin` | REVIEW | Team 1 — Sid / Nishan | FE-001, BE-030 | Authorized joined application queue and real count queries; no nonexistent /admin/overview call. |
+| FE-040 | Application review — document viewer, approve/reject | VIEW-17 `/admin/applications/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-039, BE-030 | Immutable authorized document preview/download, reviewed coverage, canonical decisions, stable retry keys and reasoned audit. |
+| FE-041 | Reports directory, resolution | VIEW-18 `/admin/reports` | REVIEW | Team 1 — Sid / Nishan | FE-039, BE-033 | Canonical report DTOs and UNDER_REVIEW/RESOLVED/DISMISSED transitions; each stage is audited and notified once. |
+| FE-042 | Driver/customer safety controls (suspend/restore) | VIEW-17 | REVIEW | Team 1 — Sid / Nishan | FE-040, BE-031 | Canonical driver control and customer restore, active Admin checks, mandatory reasons and stable retry identity. |
 
 
 ---
@@ -138,10 +138,10 @@
 
 | Task ID | Description | Status | Owner | Notes |
 |---|---|---|---|---|
-| FE-043 | Accessibility audit (keyboard, focus, contrast, labels) | REVIEW | Member 1 | Static WCAG pass: focus/error tokens, skip link, icon labels, form semantics, combobox/tab semantics, map pin keyboard support, reduced motion; screen-reader pass pending. |
-| FE-044 | Responsive checks (320px–desktop) | REVIEW | Member 1 | OTP/vehicle/marker layouts made 320px-safe; real-device 320/360/390/tablet/desktop pass pending. |
-| FE-045 | PWA manifest, service worker, install prompt | REVIEW | Member 1 | Manifest, offline fallback, production service worker registration and install affordance wired with existing icons. |
-| FE-046 | Performance (LCP ≤2.5s, JS budget ≤220KB gzipped) | REVIEW | All | Lazy motion/map/Firebase chunks; build First Load JS max 183 kB; real Android/4G LCP still pending. |
+| FE-043 | Accessibility audit (keyboard, focus, contrast, labels) | REVIEW | Team 1 — Sid / Nishan | Automated accessible-name and dialog keyboard checks; focus restoration fixed. Full screen-reader/contrast audit remains a release check. |
+| FE-044 | Responsive checks (320px–desktop) | REVIEW | Team 1 — Sid / Nishan | 96 browser checks passed at 320/390/768/1440px with zero overflow/runtime errors/unnamed buttons; shared Admin header fixed at 768px. |
+| FE-045 | PWA manifest, service worker, install prompt | REVIEW | Team 1 — Sid / Nishan | Manifest, offline fallback, production service worker registration and install affordance wired with existing icons. |
+| FE-046 | Performance (LCP ≤2.5s, JS budget ≤220KB gzipped) | REVIEW | All | Production build passes; final First Load JS measurement below. Real Android/4G LCP remains unmeasured. |
 
 ---
 
@@ -185,14 +185,14 @@ Not yet verified: real screen-reader walkthrough, focus return after dialog clos
 
 | Task ID | Description | View/Route | Status | Notes |
 |---|---|---|---|---|
-| FE-047 | Favourite driver save and favourites booking tab | VIEW-07, VIEW-08 | REVIEW | Device-local favourites saved from completed-trip receipts and surfaced in `/customer/bookings`; backend persistence remains out of scope. |
-| FE-048 | Notification and privacy controls | VIEW-09 `/customer/profile` | REVIEW | Typed preferences saved with the customer profile adapter and labelled demo behaviour. |
-| FE-049 | Customer status detail and audited restore | VIEW-17 `/admin/customers`, `/admin/customers/[id]` | REVIEW | Suspension reason, cancellation incident history and mandatory restore audit reason; real restore still needs the approval backend endpoint. |
-| FE-050 | Driver report form | VIEW-13 `/driver/trips/[id]` | REVIEW | Completed-trip report submission reuses the approved categories and anonymous copy. |
-| FE-051 | Admin driver lookup and incident timeline | VIEW-18 `/admin/reports`, VIEW-17 review | REVIEW | Driver search across application ID/name/phone and incident history on application review. |
-| FE-052 | Application list route and nav fixes | `/admin/applications`, AdminShell | REVIEW | Removed hardcoded navigation IDs and added an application directory. |
-| FE-053 | Dynamic driver active-trip nav and driver contact placeholder | DriverShell, `/driver/trips/[id]` | REVIEW | Active trip link derives from driver profile; call/message remain visibly unavailable pending backend handoff. |
-| FE-054 | Outstanding-fare settlement and payment states | `/customer`, receipt | REVIEW | Sticky Settle Previous Fare action with confirmation, plus refund-pending and review-required payment copy. |
+| FE-047 | Favourite driver save and favourites booking tab | VIEW-07, VIEW-08 | REVIEW | Favourites are now saved through the authenticated backend, with an owned profile list. |
+| FE-048 | Notification and privacy controls | VIEW-09 `/customer/profile` | REVIEW | Validated preference persistence; sharing opt-out revokes links and configured push categories respect opt-outs. Optional analytics/personalisation remain inactive in R1. |
+| FE-049 | Customer status detail and audited restore | VIEW-17 `/admin/customers`, `/admin/customers/[id]` | REVIEW | Authorized customer list/detail, verified incident history and audited restore connected. |
+| FE-050 | Driver report form | VIEW-13 `/driver/trips/[id]` | REVIEW | Driver report uses approved categories, participant authorization and a retry-stable idempotency key. |
+| FE-051 | Admin driver lookup and incident timeline | VIEW-18 `/admin/reports`, VIEW-17 review | REVIEW | Joined driver/application and verified incident records replace preview-only histories. |
+| FE-052 | Application list route and nav fixes | `/admin/applications`, AdminShell | REVIEW | Application list and navigation use canonical records; tablet navigation overflow fixed. |
+| FE-053 | Dynamic driver active-trip nav and driver contact placeholder | DriverShell, `/driver/trips/[id]` | REVIEW | Active trip derives from owned booking state. Driver/customer contact details remain unavailable pending an approved contact-sharing contract. |
+| FE-054 | Outstanding-fare settlement and payment states | `/customer`, receipt | REVIEW | Payable ID, retry, verified status, and balance refresh after capture. Cancellation charges no longer depend on reading a completed-trip receipt. Refund operations remain provider/policy-gated. |
 
 Scope: user-requested UI gaps inside existing routes. No backend, Functions, infra or contract files were modified.
 
@@ -202,3 +202,36 @@ Evidence: `tsc --noEmit` passed for `apps/web` and `packages/ui`; ESLint passed 
 
 Not yet verified: real backend persistence for favourites/preferences, customer restore and driver reports; live Razorpay settlement verification; real-device LCP and manual a11y/responsive walkthroughs. Statuses are `REVIEW`, not `DONE`, pending independent review and merge.
 
+
+## Canonical frontend integration — 23 November 2026
+
+The owner authorized a complete frontend/backend integration review. This checkpoint supersedes earlier demo-only handoff notes. Source remains REVIEW until independent review and merge. Original frontend ownership stays with Sid/Nishan.
+
+| Work | Status | Evidence / remaining gate |
+|---|---|---|
+| FE-014–027, FE-029–042, FE-047–054 | REVIEW | Canonical requests/read models, validated mutations, polling, private files and Test Mode checkout implemented |
+| FE-028 | BLOCKED | Secure customer OTP delivery/recovery intentionally held by owner |
+| Notification inbox and deletion review | REVIEW | Added actual inbox/read controls in all shells and customer deletion-request intake; no external message or immediate erasure claim |
+| FE-043–044 | REVIEW | 96 responsive/runtime checks pass; dialog focus/Escape/trap, keyboard autocomplete and synthetic booking flow pass; full screen-reader walkthrough remains pending |
+| FE-045 | REVIEW | Existing PWA preserves public shell/static-only caching; private API data is not cached |
+| FE-046 | REVIEW | Build budget checked locally; real-device LCP/4G remains pending |
+
+Use the [frontend integration execution register](../../openspec/changes/complete-frontend-integration/tasks.md) for exact final verification and release gates.
+
+| Additional integration evidence | Result |
+|---|---|
+| Backend / frontend regression | 86 backend + 15 frontend tests passed, zero failures/skips |
+| Browser matrix | 96 main checks + 24 latest-build follow-ups passed; no redirects, overflow, runtime exceptions or unnamed visible buttons |
+| Keyboard / booking workflow | Dialog trap/Escape/focus return, autocomplete selection and synthetic instant booking passed |
+| Push opt-in | Deferred SDK/device registration, explicit permission choice, opt-out/sign-out cleanup and generic worker notification; unconfigured/denied permission keeps inbox usable |
+| Standalone runtime | Packaged Functions HTTP200 under Node22; eight exports loaded |
+
+[Detailed verification and reproducible commands](verification/2026-11-23-frontend-integration.md). Full screen-reader and real-device/provider release checks remain pending.
+
+| Driver follow-up | Status | Result |
+|---|---|---|
+| FE-017 pickup zone | REVIEW | Search for any supported address or locality, or use current location. The selected point and radius define coverage. |
+| FE-023 approval | REVIEW | Approved drivers leave application status for the dashboard. Admin decision controls appear only while an application is pending. |
+| Driver availability and offers | REVIEW | The dashboard loads approval and availability independently of offers. The offers route reads addressed open bookings if the collection-group index is missing. |
+| Driver profile menu | REVIEW | Logo-led navbar with profile/fare editing, privacy, sign-out and deletion request. Rate edits persist on the backend. |
+| Driver visibility and notifications | REVIEW | Foreground driver screens renew approved availability. Customer search checks fresh presence and booking criteria. Customer, Driver and Admin inboxes and push enrolment are scoped to the workspace. |

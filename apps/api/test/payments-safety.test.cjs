@@ -1,3 +1,4 @@
+if (process.env.FIRESTORE_EMULATOR_HOST) process.env.FIRESTORE_DATABASE_ID = '(default)';
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { randomUUID, createHmac } = require('node:crypto');
@@ -9,7 +10,7 @@ const { once } = require('node:events');
 const { getFirebaseAdminApp } = require('../dist/config/firebase-admin.js');
 const { PaymentService, enforceBookingBalance } = require('../dist/modules/payments/payment-service.js');
 const { SafetyService } = require('../dist/modules/safety/safety-service.js');
-const { deliverNotification } = require('../dist/modules/notifications/notifications.js');
+const { deliverNotification, registerNotificationDevice } = require('../dist/modules/notifications/notifications.js');
 const { createApp } = require('../dist/app.js');
 
 const emulator = process.env.FIRESTORE_EMULATOR_HOST;
@@ -36,7 +37,7 @@ test('payment attempts and settlement serialize retries, capture and balance enf
   const order = await service.order(uid, invoiceId, 'request');
   assert.equal(calls, 1);
   assert.ok(race.some(r => r.status === 'fulfilled'));
-  await assert.rejects(service.order(uid, invoiceId, 'different'), { code: 'PAYMENT_IN_PROGRESS' });
+  assert.deepEqual(await service.order(uid, invoiceId, 'different'), order);
   const payment = { id: 'pay_test', order_id: order.orderId, amount: 10000, currency: 'INR', status: 'captured' };
   await assert.rejects(service.settle({ ...payment, amount: 200 }, randomUUID()), { code: 'PAYMENT_MISMATCH' });
   await Promise.all([service.settle(payment, 'event-' + invoiceId), service.settle(payment, 'event-' + invoiceId)]);
@@ -57,9 +58,95 @@ test('payment attempts and settlement serialize retries, capture and balance enf
   await retryInvoice.set({ customerId: uid, amountPaise: 200, currency: 'INR', status: 'CONFIRMED', isUnderActiveDispute: false });
   const first = await service.order(uid, retryInvoice.id, 'first');
   await service.settle({ ...payment, id: 'pay_failed', order_id: first.orderId, amount: 200, status: 'failed' }, 'failed-' + retryInvoice.id);
-  await assert.rejects(service.order(uid, retryInvoice.id, 'first'), { code: 'PAYMENT_ATTEMPT_FAILED' });
+  assert.deepEqual(await service.order(uid, retryInvoice.id, 'first'), first);
   const second = await service.order(uid, retryInvoice.id, 'second');
-  assert.notEqual(first.orderId, second.orderId);
+  assert.deepEqual(second, first);
+  // Legacy failed attempts may have lost their invoice lock before this change.
+  await retryInvoice.collection('locks').doc('activeAttempt').delete();
+  await db.collection('paymentAttempts').doc(first.attemptId).update({ state: 'FAILED' });
+  assert.deepEqual(await service.order(uid, retryInvoice.id, 'legacy-retry'), first);
+  assert.equal((await retryInvoice.collection('locks').doc('activeAttempt').get()).get('attemptId'), first.attemptId);
+  await service.settle({ ...payment, id: 'pay_failed', order_id: first.orderId, amount: 200 }, 'late-' + retryInvoice.id);
+  assert.equal((await retryInvoice.get()).get('status'), 'CAPTURED');
+
+  // Once a lost request can be retried, it uses the original attempt's receipt
+  // even if this browser has never seen the first request's idempotency key.
+  const lostAttempt = (await db.collection('paymentAttempts').where('invoiceId', '==', uncertain.id).get()).docs[0];
+  await lostAttempt.ref.update({ createLeaseUntil: 0 });
+  const recovery = new PaymentService(db, {
+    ...provider, async findOrders(receipt) { assert.equal(receipt, lostAttempt.id.slice(0, 40)); return []; },
+    async createOrder(amount, receipt) {
+      assert.equal(receipt, lostAttempt.id.slice(0, 40));
+      return provider.createOrder(amount);
+    },
+  });
+  const recovered = await recovery.reconcile(uid, uncertain.id, 'new-browser');
+  assert.equal(recovered.attemptId, lostAttempt.id);
+  assert.equal((await recovery.order(uid, uncertain.id, 'new-browser')).orderId, recovered.orderId);
+});
+
+test('checkout, status and signed Razorpay webhooks converge on one capture and receipt', {
+  skip: emulator ? false : 'Requires Firestore emulator',
+}, async t => {
+  const admin = getFirebaseAdminApp(), db = getFirestore(admin);
+  const customer = randomUUID(), other = randomUUID(), invoiceId = randomUUID();
+  for (const uid of [customer, other]) await db.collection('users').doc(uid).set({ roles: ['CUSTOMER'], status: 'ACTIVE' });
+  const invoice = db.collection('payables').doc(invoiceId);
+  await invoice.set({ customerId: customer, amountPaise: 500, currency: 'INR', status: 'CONFIRMED' });
+  t.mock.method(getAuth(admin), 'verifyIdToken', async token => ({ uid: token }));
+  t.mock.method(getAppCheck(admin), 'verifyToken', async () => ({ alreadyConsumed: false }));
+  const env = { RAZORPAY_KEY_ID: 'rzp_test_fixture', RAZORPAY_KEY_SECRET: 'fixture-key', RAZORPAY_WEBHOOK_SECRET: 'fixture-webhook' };
+  const original = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  Object.assign(process.env, env);
+  t.after(() => {
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  });
+  const order = { id: 'order_' + randomUUID().replaceAll('-', ''), amount: 500, currency: 'INR' };
+  const payment = { id: 'pay_fixture', order_id: order.id, amount: 500, currency: 'INR', status: 'authorized' };
+  const fetch = globalThis.fetch;
+  t.mock.method(globalThis, 'fetch', async (url, init) => {
+    const p = new URL(url);
+    if (p.hostname !== 'api.razorpay.com') return fetch(url, init);
+    if (p.pathname === '/v1/orders') return Response.json(order);
+    if (p.pathname === '/v1/orders/' + order.id + '/payments') return Response.json({ count: 1, items: [payment] });
+    assert.equal(p.pathname, '/v1/payments/' + payment.id);
+    return Response.json(payment);
+  });
+  const server = createApp().listen(0, '127.0.0.1'); await once(server, 'listening');
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = 'http://127.0.0.1:' + server.address().port + '/api/v1/payments';
+  const post = (route, body, uid = customer, headers = {}) => fetch(base + route, { method: 'POST',
+    headers: { authorization: 'Bearer ' + uid, 'X-Firebase-AppCheck': 'fixture', 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body) });
+  assert.equal((await post('/status', { invoiceId }, other)).status, 404);
+  assert.equal((await (await post('/status', { invoiceId })).json()).data.status, 'READY');
+  const created = await post('/orders', { invoiceId }, customer, { 'Idempotency-Key': 'checkout-fixture' });
+  assert.equal(created.status, 200);
+  const { attemptId } = (await created.json()).data;
+  const verification = { attemptId, razorpay_order_id: order.id, razorpay_payment_id: payment.id,
+    razorpay_signature: createHmac('sha256', env.RAZORPAY_KEY_SECRET).update(order.id + '|' + payment.id).digest('hex') };
+  assert.equal((await (await post('/verify', verification)).json()).data.status, 'PENDING');
+  assert.equal((await (await post('/status', { invoiceId })).json()).data.status, 'PENDING');
+  assert.equal((await invoice.collection('receipts').get()).size, 0);
+  const webhook = (event, eventId) => {
+    const body = { event, payload: { payment: { entity: { id: payment.id, order_id: order.id } } } };
+    return post('/webhooks/razorpay', body, customer, { 'X-Razorpay-Event-Id': eventId,
+      'X-Razorpay-Signature': createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET).update(JSON.stringify(body)).digest('hex') });
+  };
+  assert.equal((await webhook('payment.captured', 'capture')).status, 503);
+  payment.status = 'failed';
+  assert.equal((await webhook('payment.failed', 'failure')).status, 200);
+  assert.equal((await (await post('/status', { invoiceId })).json()).data.status, 'FAILED');
+  assert.equal((await (await post('/orders', { invoiceId }, customer, { 'Idempotency-Key': 'another-tab' })).json()).data.orderId, order.id);
+  payment.status = 'captured';
+  const responses = await Promise.all([webhook('payment.captured', 'capture'), webhook('payment.captured', 'capture'),
+    webhook('payment.failed', 'failure'), post('/status', { invoiceId }), post('/verify', verification)]);
+  for (const response of responses) assert.equal(response.status, 200);
+  assert.equal((await invoice.get()).get('status'), 'CAPTURED');
+  assert.equal((await invoice.collection('receipts').get()).size, 1);
+  assert.equal((await db.collection('ledgerEntries').doc('capture-' + attemptId).get()).get('paymentId'), payment.id);
 });
 
 test('reports, SOS, suspension and push delivery preserve ownership and atomic audit facts', {
@@ -83,8 +170,8 @@ test('reports, SOS, suspension and push delivery preserve ownership and atomic a
   assert.equal((await inbox.get()).get('pushStatus'), 'QUEUED');
   await deliverNotification(db, uid, inbox.id);
   assert.equal((await inbox.get()).get('pushStatus'), 'IN_APP_ONLY');
-  await db.collection('users').doc(uid).update({ fcmTokens: ['fixture-token'] });
-  const sender = t.mock.method(getMessaging(admin), 'sendEachForMulticast', async () => ({
+  await registerNotificationDevice(db, uid, 'fixture-token', 'CUSTOMER');
+  const sender = t.mock.method(getMessaging(admin), 'sendEach', async () => ({
     responses: [{ success: true }], successCount: 1, failureCount: 0,
   }));
   await Promise.all([deliverNotification(db, uid, inbox.id), deliverNotification(db, uid, inbox.id)]);

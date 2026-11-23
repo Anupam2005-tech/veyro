@@ -573,6 +573,7 @@ export function setDriverOnlineDemo(uid: string, online: boolean): DriverProfile
 export function getDriverProfileDemo(user: AuthUser): DriverProfileDetails {
   const stored = getDemoProfile(user.uid);
   const application = getDemoApplication(user.uid);
+  const saved = stored as Partial<DriverProfileDetails> | null;
   const state = getDriverState(user.uid);
   const activeTrip = listTripsDemo(user.uid).find((trip) => trip.state === 'ACTIVE');
   return {
@@ -585,12 +586,12 @@ export function getDriverProfileDemo(user: AuthUser): DriverProfileDetails {
     adminReason: stored?.adminReason,
     documents: stored?.documents ?? [],
     updatedAt: stored?.updatedAt ?? new Date().toISOString(),
-    experienceYears: application?.input.experienceYears ?? '8',
-    languages: application?.input.languages ?? ['English', 'Hindi', 'Kannada'],
-    categories: application?.input.categories ?? ['Sedan', 'MPV', 'SUV'],
-    transmissions: application?.input.transmissions ?? ['AUTOMATIC', 'MANUAL'],
-    serviceAreas: application?.input.serviceAreas ?? 'Bengaluru — Indiranagar, Koramangala, Whitefield',
-    hourlyRateInr: Number(application?.input.hourlyRate ?? 349),
+    experienceYears: application?.input.experienceYears ?? saved?.experienceYears ?? '8',
+    languages: application?.input.languages ?? saved?.languages ?? ['English', 'Hindi', 'Kannada'],
+    categories: application?.input.categories ?? saved?.categories ?? ['Sedan', 'MPV', 'SUV'],
+    transmissions: application?.input.transmissions ?? saved?.transmissions ?? ['AUTOMATIC', 'MANUAL'],
+    serviceAreas: application?.input.serviceAreas ?? saved?.serviceAreas ?? 'Bengaluru — Indiranagar, Koramangala, Whitefield',
+    hourlyRateInr: Number(application?.input.hourlyRate ?? saved?.hourlyRateInr ?? 349),
     online: state.online,
     gpsFresh: state.gpsFresh,
     locationPermission: state.locationPermission,
@@ -604,14 +605,16 @@ export function saveDriverProfileDemo(
   input: DriverProfileUpdate
 ): DriverProfileDetails {
   const current = getDriverProfileDemo(user);
-  saveDemoProfile({
+  const updated = {
     ...current,
-    role: 'DRIVER',
+    ...input,
+    role: 'DRIVER' as const,
     fullName: input.fullName,
     phone: input.phone,
     onboardingComplete: true,
     updatedAt: new Date().toISOString(),
-  });
+  };
+  saveDemoProfile(updated);
   const application = getDemoApplication(user.uid);
   if (application) {
     const store = storage();
@@ -626,6 +629,8 @@ export function saveDriverProfileDemo(
           experienceYears: input.experienceYears,
           languages: input.languages,
           categories: input.categories,
+          hourlyRate: String(input.hourlyRateInr ?? current.hourlyRateInr),
+          transmissions: input.transmissions ?? current.transmissions,
           serviceAreas: input.serviceAreas,
         },
       })
@@ -1068,7 +1073,7 @@ function seedReports(): ReportRecord[] {
       tripId: 'VEY-DEMO-2041',
       reporterRole: 'CUSTOMER',
       reporterName: 'Aarav Sharma',
-      category: 'SAFETY',
+      category: 'SAFETY_CONCERN',
       description: 'Driver took an unexpected shortcut after pickup.',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       status: 'OPEN',
@@ -1078,7 +1083,7 @@ function seedReports(): ReportRecord[] {
       tripId: 'VEY-DEMO-1987',
       reporterRole: 'DRIVER',
       reporterName: 'Neha Kulkarni',
-      category: 'PAYMENT',
+      category: 'FARE_OR_PAYMENT',
       description: 'Payment confirmation was not visible after trip completion.',
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'UNDER_REVIEW',
@@ -1088,7 +1093,7 @@ function seedReports(): ReportRecord[] {
       tripId: 'VEY-DEMO-1962',
       reporterRole: 'CUSTOMER',
       reporterName: 'Meera Iyer',
-      category: 'BEHAVIOUR',
+      category: 'DRIVER_CONDUCT',
       description: 'Reported a communication issue after the trip.',
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'RESOLVED',

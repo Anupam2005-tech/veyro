@@ -40,6 +40,18 @@
     "./safety": {
       "types": "./dist/modules/safety/safety-service.d.ts",
       "default": "./dist/modules/safety/safety-service.js"
+    },
+    "./booking-workers": {
+      "types": "./dist/modules/bookings/booking-workers.d.ts",
+      "default": "./dist/modules/bookings/booking-workers.js"
+    },
+    "./mobility": {
+      "types": "./dist/modules/mobility/mobility-service.d.ts",
+      "default": "./dist/modules/mobility/mobility-service.js"
+    },
+    "./firebase": {
+      "types": "./dist/config/firebase-admin.d.ts",
+      "default": "./dist/config/firebase-admin.js"
     }
   }
 }

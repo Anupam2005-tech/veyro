@@ -2,32 +2,35 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import driverIllustration from '../../../public/img5.jpeg';
 import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
-  BadgeCheck,
-  CarFront,
+  Check,
   CheckCircle2,
-  FileCheck2,
-  Globe2,
-  IndianRupee,
   LockKeyhole,
-  Sparkles,
+  MapPin,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Field,
   FileDropzone,
   FormAlert,
   Input,
-  Stepper,
-  Textarea,
   VeyroButton,
 } from '@veyro/ui';
-import { saveDriverApplication } from '@/lib/api/client';
+import {
+  currentPosition,
+  saveDriverApplication,
+  uploadApplicationDocument,
+} from '@/lib/api/client';
 import type { DriverDocumentMeta } from '@/lib/api/types';
+import { getMapsProvider, type Coordinate, type PlaceOption, type PlaceSuggestion } from '@/lib/maps';
+import { ServiceAreaPicker, serviceAreaNames } from './service-area-picker';
 import { isDemoDataMode } from '@/lib/env';
-import { uploadDriverDocument, type DriverDocumentKind } from '@/lib/firebase/storage';
+import { type DriverDocumentKind } from '@/lib/firebase/storage';
 import { publicPolicy } from '@/lib/public-policy';
 import { useSession } from '@/lib/auth/session-provider';
 import {
@@ -35,9 +38,8 @@ import {
   validateE164Phone,
   validateRequired,
 } from '@/lib/validation';
-import { StudioOnboardingShell } from './studio-onboarding-shell';
 
-const steps = ['Personal', 'Capabilities', 'Rates', 'Documents'] as const;
+const steps = ['Personal', 'Fleet', 'Rates', 'Verify'] as const;
 const languages = ['English', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Marathi', 'Kannada'] as const;
 const categories = ['Hatchback', 'Sedan', 'SUV', 'MPV', 'Luxury'] as const;
 const transmissions = ['Automatic', 'Manual'] as const;
@@ -46,19 +48,30 @@ const documentKinds: DriverDocumentKind[] = ['LICENCE', 'GOVERNMENT_ID', 'PROFIL
 const documentLabels: Record<DriverDocumentKind, { label: string; hint: string }> = {
   LICENCE: {
     label: 'Driving licence',
-    hint: 'JPG, PNG or PDF up to 5 MB. Private to Veyro review.',
+    hint: 'JPG, PNG or PDF · Max 10 MB',
   },
   GOVERNMENT_ID: {
     label: 'Government ID',
-    hint: 'JPG, PNG or PDF up to 5 MB. Private to Veyro review.',
+    hint: 'JPG, PNG or PDF · Max 10 MB',
   },
   PROFILE_PHOTO: {
     label: 'Profile photo',
-    hint: 'A clear face photo. JPG or PNG up to 5 MB.',
+    hint: 'Clear face photo · JPG or PNG',
   },
 };
 
 type Errors = Record<string, string>;
+
+function normalizePhone(value: string): string {
+  const trimmed = value.trim().replace(/[\s-]/g, '');
+  if (/^[6-9]\d{9}$/.test(trimmed)) {
+    return `+91${trimmed}`;
+  }
+  if (/^0[6-9]\d{9}$/.test(trimmed)) {
+    return `+91${trimmed.slice(1)}`;
+  }
+  return trimmed;
+}
 
 interface DocumentState {
   file: File | null;
@@ -85,7 +98,13 @@ export default function DriverOnboarding() {
   const [spokenLanguages, setSpokenLanguages] = React.useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
   const [selectedTransmissions, setSelectedTransmissions] = React.useState<string[]>([]);
-  const [serviceAreas, setServiceAreas] = React.useState('');
+  const [servicePlaces, setServicePlaces] = React.useState<PlaceSuggestion[]>([]);
+  const serviceAreas = serviceAreaNames(servicePlaces);
+  const [coveragePlace, setCoveragePlace] = React.useState<PlaceOption | null>(null);
+  const coverageCenter = coveragePlace?.position ?? null;
+  const coverageRequest = React.useRef(0);
+  const [coverageRadius, setCoverageRadius] = React.useState('');
+  const [locatingCoverage, setLocatingCoverage] = React.useState(false);
   const [hourlyRate, setHourlyRate] = React.useState('');
   const [perKmRate, setPerKmRate] = React.useState('');
   const [documents, setDocuments] = React.useState<Record<DriverDocumentKind, DocumentState>>({
@@ -94,18 +113,55 @@ export default function DriverOnboarding() {
     PROFILE_PHOTO: emptyDocument,
   });
   const [errors, setErrors] = React.useState<Errors>({});
+
+  async function chooseCoverage(suggestion?: PlaceSuggestion, useGps = false) {
+    const request = ++coverageRequest.current;
+    setCoveragePlace(null);
+    setLocatingCoverage(Boolean(suggestion || useGps));
+    setErrors(current => ({ ...current, coverage: '' }));
+    if (!suggestion && !useGps) return;
+    try {
+      const provider = getMapsProvider();
+      let selected: PlaceOption;
+      if (useGps) {
+        const p = await currentPosition();
+        const position = { lat: p.coords.latitude, lng: p.coords.longitude };
+        selected = { id: 'current-location', label: 'Current location', address: '', position };
+      } else if (suggestion?.position) {
+        selected = { ...suggestion, position: suggestion.position };
+      } else if (suggestion && provider.resolvePlace) {
+        selected = await provider.resolvePlace(suggestion);
+      } else {
+        throw new Error('Location could not be resolved.');
+      }
+      if (request === coverageRequest.current) setCoveragePlace(selected);
+    } catch {
+      if (request === coverageRequest.current) setErrors(current => ({ ...current,
+        coverage: useGps ? 'Current location is unavailable. Search for an address instead.' : 'Could not locate this address. Try another suggestion.',
+      }));
+    } finally {
+      if (request === coverageRequest.current) setLocatingCoverage(false);
+    }
+  }
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const hydrated = React.useRef(false);
 
   React.useEffect(() => {
-    if (!profile || hydrated.current) {
+    if (hydrated.current) {
       return;
     }
-    hydrated.current = true;
-    setFullName(profile.fullName === 'New Driver' ? '' : profile.fullName);
-    setPhone(profile.phone ?? '');
-  }, [profile]);
+    const initialName =
+      profile?.fullName && profile.fullName !== 'New Driver'
+        ? profile.fullName
+        : user?.displayName ?? '';
+    const initialPhone = profile?.phone || user?.phoneNumber || '';
+    if (initialName || initialPhone) {
+      hydrated.current = true;
+      if (initialName) setFullName(initialName);
+      if (initialPhone) setPhone(normalizePhone(initialPhone));
+    }
+  }, [profile, user]);
 
   function toggleValue(
     values: string[],
@@ -120,7 +176,11 @@ export default function DriverOnboarding() {
 
     if (step === 0) {
       const nameError = validateRequired(fullName, 'your full name');
-      const phoneError = validateE164Phone(phone);
+      const normalizedPhone = normalizePhone(phone);
+      if (normalizedPhone !== phone) {
+        setPhone(normalizedPhone);
+      }
+      const phoneError = validateE164Phone(normalizedPhone);
       const experience = Number(experienceYears);
       if (nameError) next.fullName = nameError;
       if (phoneError) next.phone = phoneError;
@@ -133,13 +193,18 @@ export default function DriverOnboarding() {
     if (step === 1) {
       if (selectedCategories.length === 0) next.categories = 'Choose at least one category.';
       if (selectedTransmissions.length === 0) next.transmissions = 'Choose at least one transmission.';
-      const areasError = validateRequired(serviceAreas, 'your service areas');
-      if (areasError) next.serviceAreas = areasError;
+      if (!servicePlaces.length) next.serviceAreas = 'Choose at least one service area from the suggestions.';
+      if (
+        !isDemoDataMode &&
+        (!coverageCenter || !Number.isFinite(Number(coverageRadius)) || Number(coverageRadius) <= 0)
+      ) {
+        next.coverage = 'Choose the centre and radius of your pickup area.';
+      }
     }
 
     if (step === 2) {
       const rate = Number(hourlyRate);
-      if (!hourlyRate.trim() || !Number.isFinite(rate) || rate <= 0) {
+      if (!hourlyRate.trim() || !Number.isFinite(rate) || rate < 0) {
         next.hourlyRate = 'Enter a valid hourly rate.';
       }
       if (perKmRate.trim() && (!Number.isFinite(Number(perKmRate)) || Number(perKmRate) < 0)) {
@@ -207,37 +272,19 @@ export default function DriverOnboarding() {
     }
 
     try {
-      const task = uploadDriverDocument(user!.uid, kind, file);
-      task.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          setDocuments((current) => ({
-            ...current,
-            [kind]: { ...current[kind], progress, uploading: true },
-          }));
-        },
-        (uploadError) => {
-          setDocuments((current) => ({
-            ...current,
-            [kind]: {
-              ...current[kind],
-              uploading: false,
-              error: uploadError.message || 'Upload failed. Try again.',
-            },
-          }));
-        },
-        () => {
-          setDocuments((current) => ({
-            ...current,
-            [kind]: {
-              ...current[kind],
-              uploading: false,
-              progress: 100,
-              meta: { ...metaBase, storagePath: task.snapshot.ref.fullPath },
-            },
-          }));
-        }
+      const uploaded = await uploadApplicationDocument(user!, kind, file);
+      setDocuments((current) =>
+        current[kind].file !== file
+          ? current
+          : {
+              ...current,
+              [kind]: {
+                ...current[kind],
+                uploading: false,
+                progress: 100,
+                meta: { ...metaBase, ...uploaded, kind },
+              },
+            }
       );
     } catch (caught) {
       setDocuments((current) => ({
@@ -254,6 +301,11 @@ export default function DriverOnboarding() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user) {
+      if (isDemoDataMode) {
+        setSubmitted(true);
+        return;
+      }
+      setSubmitError('Please sign in to submit your chauffeur application.');
       return;
     }
     if (!validateStep()) {
@@ -270,7 +322,32 @@ export default function DriverOnboarding() {
         languages: spokenLanguages,
         categories: selectedCategories,
         transmissions: selectedTransmissions,
-        serviceAreas: serviceAreas.trim(),
+        serviceAreas: isDemoDataMode ? serviceAreas : '',
+        ...(isDemoDataMode ? {} : { serviceAreaPlaceIds: servicePlaces.map(place => place.id) }),
+        ...(coverageCenter
+          ? {
+              serviceAreaBounds: {
+                southWest: {
+                  lat: Math.max(-90, coverageCenter.lat - Number(coverageRadius) / 111.32),
+                  lng: Math.max(
+                    -180,
+                    coverageCenter.lng -
+                      Number(coverageRadius) /
+                        (111.32 * Math.max(0.01, Math.cos((coverageCenter.lat * Math.PI) / 180)))
+                  ),
+                },
+                northEast: {
+                  lat: Math.min(90, coverageCenter.lat + Number(coverageRadius) / 111.32),
+                  lng: Math.min(
+                    180,
+                    coverageCenter.lng +
+                      Number(coverageRadius) /
+                        (111.32 * Math.max(0.01, Math.cos((coverageCenter.lat * Math.PI) / 180)))
+                  ),
+                },
+              },
+            }
+          : {}),
         hourlyRate,
         perKmRate,
         documents: documentKinds
@@ -290,98 +367,139 @@ export default function DriverOnboarding() {
 
   const estimate = Number(hourlyRate) > 0 ? Math.round(Number(hourlyRate) * 2.5) : 0;
 
+  const stepMotion = {
+    initial: reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    exit: reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 },
+    transition: { duration: 0.18, ease: 'easeOut' as const },
+  };
+
   return (
-    <StudioOnboardingShell
-      title="Driver onboarding"
-      subtitle="Apply to drive on Veyro"
-      stepLabel={submitted ? 'Submitted' : `Step ${step + 1} of ${steps.length}`}
-    >
-      <div className="mx-auto max-w-content px-4 py-8 sm:px-6 lg:px-8">
-        {!submitted ? <Stepper steps={steps} current={step} className="mb-6" /> : null}
+    <div data-theme="studio" className="driver-form-surface flex min-h-screen flex-col bg-[#F5F6F1] text-[#0E1013] antialiased">
+      {/* Header — logo only */}
+      <header className="sticky top-0 z-40 bg-[#F5F6F1]/80 backdrop-blur-xl">
+        <div className="flex h-16 w-full items-center px-6 sm:px-10 lg:px-12">
+          <Link
+            href="/"
+            aria-label="Veyro home"
+            className="inline-flex items-center rounded-md transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1013]/30"
+          >
+            <Image
+              src="/brand/veyro-light-logo-trimmed.png"
+              alt="Veyro"
+              width={104}
+              height={28}
+              priority
+              className="h-6 w-auto object-contain sm:h-7"
+            />
+          </Link>
+        </div>
+      </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10 lg:items-start">
-          <aside className="space-y-4">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-studio-muted">
-                Driver application
-              </p>
-              <h1 className="mt-3 font-display text-4xl font-extrabold leading-tight text-studio-ink">
-                Drive your own car. On your terms.
-              </h1>
-              <p className="mt-4 text-sm leading-relaxed text-studio-muted">
-                Four focused steps. Your documents stay private and are reviewed before you can go
-                online.
-              </p>
-            </div>
-
-            <div className="rounded-card border border-studio-border bg-studio-surface p-5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-studio-tint">
-                <LockKeyhole aria-hidden="true" className="h-5 w-5 text-studio-ink" />
-              </span>
-              <p className="mt-3 font-display text-base font-bold text-studio-ink">
-                Private document vault
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-studio-muted">
-                Uploads are scoped to your account only. Veyro never exposes public document URLs.
-              </p>
-            </div>
-
-            {isDemoDataMode ? (
-              <FormAlert tone="info" title="Demo data">
-                Uploads and application state are simulated in this browser. No backend record is
-                created.
-              </FormAlert>
-            ) : null}
-          </aside>
-
-          <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-8">
-            {loading ? (
-              <div className="space-y-4">
-                <div className="h-6 w-48 animate-pulse motion-reduce:animate-none rounded bg-studio-tint" />
-                <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
-                <div className="h-12 animate-pulse motion-reduce:animate-none rounded-panel bg-studio-tint" />
+      <div className="flex min-h-[calc(100vh-64px)] w-full flex-1 flex-col lg:flex-row">
+        {/* ============================ FORM ============================ */}
+        <section className="flex w-full flex-col px-6 pb-6 pt-2 sm:px-12 lg:w-[48%] lg:px-14 xl:px-24">
+          <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-6">
+            {/* Mobile banner */}
+            <div className="mb-8 flex items-center gap-3.5 rounded-2xl bg-white p-3 shadow-[0_1px_0_rgba(14,16,19,0.04),0_12px_32px_-12px_rgba(14,16,19,0.12)] lg:hidden">
+              <div className="relative h-14 w-[72px] shrink-0 overflow-hidden rounded-xl">
+                <Image
+                  src={driverIllustration}
+                  alt=""
+                  fill
+                  sizes="72px"
+                  priority
+                  className="object-contain"
+                />
               </div>
-            ) : !user ? (
-              <div className="space-y-5">
-                <FormAlert tone="warning" title="Sign in to apply">
-                  A verified Veyro identity is required before starting a driver application.
-                </FormAlert>
-                <VeyroButton asChild className="w-full">
-                  <Link href="/auth?role=driver">Sign in as a driver</Link>
-                </VeyroButton>
+              <div className="min-w-0">
+                <p className="font-display text-sm font-black tracking-tight">
+                  Drive the finest. Keep every rupee.
+                </p>
+                <span className="mt-1 inline-block rounded-full bg-[#B8F23A] px-2 py-0.5 text-[10.5px] font-bold">
+                  0% commission
+                </span>
+              </div>
+            </div>
+
+            {/* Progress */}
+            {!submitted ? (
+              <div className="mb-9" aria-label={`Step ${step + 1} of 4: ${steps[step]}`}>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {steps.map((s, idx) => (
+                    <div key={s} className="h-1 overflow-hidden rounded-full bg-[#0E1013]/[0.08]">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ease-out ${
+                          idx < step
+                            ? 'w-full bg-[#0E1013]'
+                            : idx === step
+                            ? 'w-full bg-[#9BD41C]'
+                            : 'w-0'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs font-medium text-[#6B7080]">
+                  <span className="text-[#0E1013]">{steps[step]}</span>
+                  <span>
+                    {step + 1} of {steps.length}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Preview notice */}
+            {!user ? (
+              <div className="mb-6 flex items-center justify-between gap-3 rounded-full bg-white px-4 py-2.5 text-xs shadow-[0_1px_0_rgba(14,16,19,0.04)]">
+                <span className="text-[#6B7080]">Preview mode</span>
+                <Link
+                  href="/auth/driver?returnTo=/onboarding/driver"
+                  className="shrink-0 font-bold underline decoration-[#0E1013]/25 underline-offset-4 hover:decoration-[#0E1013]"
+                >
+                  Sign in to save
+                </Link>
+              </div>
+            ) : null}
+
+            {loading ? (
+              <div className="space-y-4 py-8">
+                <div className="h-9 w-48 animate-pulse rounded-xl bg-[#0E1013]/[0.06]" />
+                <div className="h-12 animate-pulse rounded-2xl bg-[#0E1013]/[0.04]" />
+                <div className="h-12 animate-pulse rounded-2xl bg-[#0E1013]/[0.04]" />
               </div>
             ) : submitted ? (
-              <div className="py-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-studio-lime text-studio-ink">
-                  <CheckCircle2 aria-hidden="true" className="h-7 w-7" />
+              <div className="py-10 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#B8F23A] shadow-[0_16px_40px_-8px_rgba(155,212,28,0.55)]">
+                  <CheckCircle2 aria-hidden="true" className="h-8 w-8" />
                 </div>
-                <h2 className="mt-6 font-display text-3xl font-extrabold text-studio-ink">
-                  Application submitted
+                <h2 className="mt-6 font-display text-4xl font-black tracking-[-0.035em]">
+                  You’re in.
                 </h2>
-                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-studio-muted">
-                  Your application is <span className="font-semibold text-studio-ink">PENDING_REVIEW</span>.
-                  You cannot go online until Veyro approves it.
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                  <VeyroButton asChild size="lg">
-                    <Link href="/driver/status">View application status</Link>
+                <p className="mt-2 text-sm text-studio-muted">Check your application status for review updates.</p>
+                <div className="mt-9 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+                  <VeyroButton
+                    asChild
+                    size="lg"
+                    className="h-12 rounded-full bg-[#0E1013] px-7 font-bold text-white hover:bg-black"
+                  >
+                    <Link href="/driver/status">Check status</Link>
                   </VeyroButton>
-                  <VeyroButton asChild variant="secondary" size="lg">
-                    <Link href="/">Back to home</Link>
+                  <VeyroButton
+                    asChild
+                    variant="secondary"
+                    size="lg"
+                    className="h-12 rounded-full border-[#0E1013]/10 bg-white px-7"
+                  >
+                    <Link href="/">Home</Link>
                   </VeyroButton>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} noValidate>
+              <form onSubmit={handleSubmit} noValidate className="space-y-8">
                 <AnimatePresence mode="wait">
                   {step === 0 ? (
-                    <motion.div
-                      key="step-0"
-                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-                      transition={{ duration: 0.15 }}
-                    >
+                    <motion.div key="step-0" {...stepMotion}>
                       <DriverStepOne
                         fullName={fullName}
                         phone={phone}
@@ -399,17 +517,12 @@ export default function DriverOnboarding() {
                   ) : null}
 
                   {step === 1 ? (
-                    <motion.div
-                      key="step-1"
-                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-                      transition={{ duration: 0.15 }}
-                    >
+                    <motion.div key="step-1" {...stepMotion}>
                       <DriverStepTwo
                         selectedCategories={selectedCategories}
                         selectedTransmissions={selectedTransmissions}
-                        serviceAreas={serviceAreas}
+                        serviceAreas={servicePlaces}
+                        bias={coverageCenter}
                         errors={errors}
                         onToggleCategory={(value) =>
                           toggleValue(selectedCategories, setSelectedCategories, value)
@@ -417,19 +530,57 @@ export default function DriverOnboarding() {
                         onToggleTransmission={(value) =>
                           toggleValue(selectedTransmissions, setSelectedTransmissions, value)
                         }
-                        setServiceAreas={setServiceAreas}
+                        setServiceAreas={places => {
+                          setServicePlaces(places);
+                          setErrors(current => ({ ...current, serviceAreas: '' }));
+                        }}
                       />
+                      {(
+                        <fieldset className="mt-6 space-y-3 rounded-3xl bg-white p-4 shadow-[0_1px_0_rgba(14,16,19,0.04),0_12px_32px_-16px_rgba(14,16,19,0.14)]">
+                          <legend className="px-1 text-sm font-bold">Pickup zone</legend>
+                          <ServiceAreaPicker pickupZone places={coveragePlace ? [coveragePlace] : []}
+                            onChange={places => void chooseCoverage(places[0])} />
+                          <div className="flex justify-end">
+                            {coverageCenter ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#B8F23A]/40 px-2 py-0.5 text-[11px] font-bold text-[#365314]">
+                                <MapPin aria-hidden="true" className="h-3 w-3" />
+                                Pinned
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <VeyroButton
+                            type="button"
+                            variant="secondary"
+                            loading={locatingCoverage}
+                            className="h-11 w-full rounded-full border-[#0E1013]/10 bg-[#F5F6F1] text-xs font-semibold text-[#0E1013] hover:bg-[#ECEEE6]"
+                            onClick={() => void chooseCoverage(undefined, true)}
+                          >
+                            Use current location
+                          </VeyroButton>
+
+                          <Field
+                            id="coverage-radius"
+                            label="Radius (km)"
+                            required
+                            error={errors.coverage}
+                          >
+                            <Input
+                              id="coverage-radius"
+                              type="number"
+                              min="0"
+                              placeholder="15"
+                              value={coverageRadius}
+                              onChange={(e) => setCoverageRadius(e.currentTarget.value)}
+                            />
+                          </Field>
+                        </fieldset>
+                      )}
                     </motion.div>
                   ) : null}
 
                   {step === 2 ? (
-                    <motion.div
-                      key="step-2"
-                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-                      transition={{ duration: 0.15 }}
-                    >
+                    <motion.div key="step-2" {...stepMotion}>
                       <DriverStepThree
                         hourlyRate={hourlyRate}
                         perKmRate={perKmRate}
@@ -442,13 +593,7 @@ export default function DriverOnboarding() {
                   ) : null}
 
                   {step === 3 ? (
-                    <motion.div
-                      key="step-3"
-                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-                      transition={{ duration: 0.15 }}
-                    >
+                    <motion.div key="step-3" {...stepMotion}>
                       <DriverStepFour
                         documents={documents}
                         errors={errors}
@@ -467,50 +612,106 @@ export default function DriverOnboarding() {
                 </AnimatePresence>
 
                 {submitError ? (
-                  <FormAlert tone="error" title="Could not submit application" className="mt-6">
+                  <FormAlert tone="error" title="Could not submit">
                     {submitError}
                   </FormAlert>
                 ) : null}
 
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
+                {/* Navigation */}
+                <div className="flex items-center gap-3">
                   {step > 0 ? (
                     <VeyroButton
                       type="button"
                       variant="secondary"
                       size="lg"
+                      aria-label="Back"
+                      className="h-12 w-12 shrink-0 rounded-full border-[#0E1013]/10 bg-white p-0 text-[#0E1013] hover:bg-[#ECEEE6]"
                       onClick={() => {
                         setErrors({});
                         setStep((current) => current - 1);
                       }}
                     >
                       <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-                      Back
                     </VeyroButton>
                   ) : null}
+
                   {step < 3 ? (
                     <VeyroButton
                       type="button"
                       size="lg"
-                      className="flex-1"
+                      className="group flex h-12 flex-1 items-center justify-between rounded-full bg-[#0E1013] pl-7 pr-1.5 font-bold text-white transition-all hover:bg-black hover:shadow-[0_16px_32px_-12px_rgba(14,16,19,0.45)]"
                       onClick={() => {
                         if (validateStep()) setStep((current) => current + 1);
                       }}
                     >
-                      Continue
-                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      <span>Continue</span>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#B8F23A] text-[#0E1013] transition-transform group-hover:translate-x-0.5">
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </span>
                     </VeyroButton>
                   ) : (
-                    <VeyroButton type="submit" size="lg" className="flex-1" loading={submitting}>
-                      Submit application
+                    <VeyroButton
+                      type="submit"
+                      size="lg"
+                      className="group flex h-12 flex-1 items-center justify-between rounded-full bg-[#0E1013] pl-7 pr-1.5 font-bold text-white transition-all hover:bg-black hover:shadow-[0_16px_32px_-12px_rgba(14,16,19,0.45)]"
+                      loading={submitting}
+                    >
+                      <span>Submit application</span>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#B8F23A] text-[#0E1013] transition-transform group-hover:translate-x-0.5">
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </span>
                     </VeyroButton>
                   )}
                 </div>
               </form>
             )}
-          </section>
-        </div>
+          </div>
+
+          <footer className="mx-auto flex w-full max-w-[440px] items-center gap-1.5 text-[11px] text-studio-muted">
+            <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
+            Encrypted & private
+          </footer>
+        </section>
+
+        {/* ============================ STAGE ============================ */}
+        <section className="hidden flex-1 p-4 pl-0 lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-64px)]">
+          <div className="flex h-full w-full flex-col gap-4 overflow-hidden rounded-[36px] bg-[#E9EBE2] p-5 shadow-[0_30px_80px_-30px_rgba(14,16,19,0.35)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="rounded-full bg-[#B8F23A] px-3.5 py-1.5 text-xs font-bold shadow-[0_8px_20px_-6px_rgba(155,212,28,0.6)]">
+                0% commission
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/80 px-3.5 py-1.5 text-xs font-semibold backdrop-blur-xl">
+                <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />
+                Dual-OTP custody
+              </span>
+            </div>
+
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl bg-[#FCFCFC]">
+              <Image src={driverIllustration} alt="Illustration of a chauffeur driving through the city"
+                fill sizes="(min-width: 1024px) 50vw, 72px" priority className="object-contain p-3" />
+            </div>
+
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+              className="rounded-[28px] bg-white p-5 xl:p-6"
+            >
+              <h2 className="font-display text-3xl font-black leading-[1.04] tracking-[-0.035em] xl:text-[44px]">
+                Drive the finest.
+                <br />
+                Keep every rupee.
+              </h2>
+              <div className="mt-6 grid grid-cols-3 divide-x divide-[#0E1013]/[0.08] text-center">
+                <Stat value="0%" label="Commission" />
+                <Stat value="Hourly" label="Rates" />
+                <Stat value="Required" label="Review" />
+              </div>
+            </motion.div>
+          </div>
+        </section>
       </div>
-    </StudioOnboardingShell>
+    </div>
   );
 }
 
@@ -537,11 +738,8 @@ function DriverStepOne({
 }) {
   return (
     <div className="space-y-5">
-      <StepHeading
-        icon={<BadgeCheck className="h-5 w-5" />}
-        title="Your personal profile"
-        description="This is the identity customers see after approval."
-      />
+      <StepHeading title="Who’s driving?" />
+
       <Field id="driver-name" label="Full name" required error={errors.fullName}>
         <Input
           id="driver-name"
@@ -553,48 +751,44 @@ function DriverStepOne({
           onChange={(event) => setFullName(event.currentTarget.value)}
         />
       </Field>
-      <Field
-        id="driver-phone"
-        label="Contact phone"
-        required
-        error={errors.phone}
-        hint="International format, for example +919876543210."
-      >
-        <Input
-          id="driver-phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="+919876543210"
-          value={phone}
-          invalid={Boolean(errors.phone)}
-          aria-describedby={errors.phone ? 'driver-phone-error' : 'driver-phone-hint'}
-          onChange={(event) => setPhone(event.currentTarget.value)}
-        />
-      </Field>
-      <Field
-        id="driver-experience"
-        label="Years of driving experience"
-        required
-        error={errors.experienceYears}
-      >
-        <Input
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_130px]">
+        <Field id="driver-phone" label="Phone" required error={errors.phone}>
+          <Input
+            id="driver-phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="+919876543210"
+            value={phone}
+            invalid={Boolean(errors.phone)}
+            aria-describedby={errors.phone ? 'driver-phone-error' : undefined}
+            onChange={(event) => setPhone(event.currentTarget.value)}
+          />
+        </Field>
+
+        <Field
           id="driver-experience"
-          type="number"
-          min={0}
-          max={50}
-          placeholder="5"
-          value={experienceYears}
-          invalid={Boolean(errors.experienceYears)}
-          aria-describedby={errors.experienceYears ? 'driver-experience-error' : undefined}
-          onChange={(event) => setExperienceYears(event.currentTarget.value)}
-        />
-      </Field>
+          label="Years driving"
+          required
+          error={errors.experienceYears}
+        >
+          <Input
+            id="driver-experience"
+            type="number"
+            min={0}
+            max={50}
+            placeholder="5"
+            value={experienceYears}
+            invalid={Boolean(errors.experienceYears)}
+            aria-describedby={errors.experienceYears ? 'driver-experience-error' : undefined}
+            onChange={(event) => setExperienceYears(event.currentTarget.value)}
+          />
+        </Field>
+      </div>
+
       <fieldset>
-        <legend className="flex items-center gap-2 text-sm font-medium text-studio-ink">
-          <Globe2 aria-hidden="true" className="h-4 w-4" />
-          Languages you speak
-        </legend>
+        <legend className="text-xs font-semibold">Languages</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {languages.map((language) => (
             <Chip
@@ -606,7 +800,11 @@ function DriverStepOne({
           ))}
         </div>
         {errors.languages ? (
-          <p id="driver-languages-error" role="alert" className="mt-2 text-xs font-medium text-[color:var(--theme-error)]">
+          <p
+            id="driver-languages-error"
+            role="alert"
+            className="mt-2 text-xs font-medium text-[#DC2626]"
+          >
             {errors.languages}
           </p>
         ) : null}
@@ -619,6 +817,7 @@ function DriverStepTwo({
   selectedCategories,
   selectedTransmissions,
   serviceAreas,
+  bias,
   errors,
   onToggleCategory,
   onToggleTransmission,
@@ -626,21 +825,19 @@ function DriverStepTwo({
 }: {
   selectedCategories: string[];
   selectedTransmissions: string[];
-  serviceAreas: string;
+  serviceAreas: PlaceSuggestion[];
+  bias: Coordinate | null;
   errors: Errors;
   onToggleCategory: (value: string) => void;
   onToggleTransmission: (value: string) => void;
-  setServiceAreas: (value: string) => void;
+  setServiceAreas: (value: PlaceSuggestion[]) => void;
 }) {
   return (
-    <div className="space-y-5">
-      <StepHeading
-        icon={<CarFront className="h-5 w-5" />}
-        title="What you can drive"
-        description="Matching uses category and transmission only."
-      />
+    <div className="space-y-6">
+      <StepHeading title="What do you drive?" />
+
       <fieldset>
-        <legend className="text-sm font-medium text-studio-ink">Vehicle categories</legend>
+        <legend className="text-xs font-semibold">Categories</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {categories.map((category) => (
             <Chip
@@ -652,13 +849,14 @@ function DriverStepTwo({
           ))}
         </div>
         {errors.categories ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-[color:var(--theme-error)]">
+          <p role="alert" className="mt-2 text-xs font-medium text-[#DC2626]">
             {errors.categories}
           </p>
         ) : null}
       </fieldset>
+
       <fieldset>
-        <legend className="text-sm font-medium text-studio-ink">Transmissions</legend>
+        <legend className="text-xs font-semibold">Transmission</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {transmissions.map((transmission) => (
             <Chip
@@ -670,27 +868,13 @@ function DriverStepTwo({
           ))}
         </div>
         {errors.transmissions ? (
-          <p role="alert" className="mt-2 text-xs font-medium text-[color:var(--theme-error)]">
+          <p role="alert" className="mt-2 text-xs font-medium text-[#DC2626]">
             {errors.transmissions}
           </p>
         ) : null}
       </fieldset>
-      <Field
-        id="driver-areas"
-        label="Service areas"
-        required
-        error={errors.serviceAreas}
-        hint="List neighbourhoods or zones you know well."
-      >
-        <Textarea
-          id="driver-areas"
-          placeholder="Koramangala, Indiranagar, HSR Layout"
-          value={serviceAreas}
-          invalid={Boolean(errors.serviceAreas)}
-          aria-describedby={errors.serviceAreas ? 'driver-areas-error' : 'driver-areas-hint'}
-          onChange={(event) => setServiceAreas(event.currentTarget.value)}
-        />
-      </Field>
+
+      <ServiceAreaPicker places={serviceAreas} onChange={setServiceAreas} bias={bias} error={errors.serviceAreas} />
     </div>
   );
 }
@@ -711,19 +895,10 @@ function DriverStepThree({
   setPerKmRate: (value: string) => void;
 }) {
   return (
-    <div className="space-y-5">
-      <StepHeading
-        icon={<IndianRupee className="h-5 w-5" />}
-        title="Set your rates"
-        description="HOURLY is the only active pricing mode in Release 1."
-      />
-      <Field
-        id="driver-hourly"
-        label="Hourly rate (₹)"
-        required
-        error={errors.hourlyRate}
-        hint="This is what the fare estimate uses."
-      >
+    <div className="space-y-6">
+      <StepHeading title="Name your price." />
+
+      <Field id="driver-hourly" label="Hourly rate (₹)" required error={errors.hourlyRate}>
         <Input
           id="driver-hourly"
           type="number"
@@ -732,49 +907,40 @@ function DriverStepThree({
           placeholder="450"
           value={hourlyRate}
           invalid={Boolean(errors.hourlyRate)}
-          aria-describedby={errors.hourlyRate ? 'driver-hourly-error' : 'driver-hourly-hint'}
+          aria-describedby={errors.hourlyRate ? 'driver-hourly-error' : undefined}
           onChange={(event) => setHourlyRate(event.currentTarget.value)}
         />
       </Field>
-      <Field
-        id="driver-per-km"
-        label="Per-kilometre rate (stored only)"
-        error={errors.perKmRate}
-        hint="PER_KM is disabled until GPS distance tracking is approved."
-      >
+
+      <Field id="driver-per-km" label="Per-km rate" error={errors.perKmRate}>
         <div className="relative">
           <Input
             id="driver-per-km"
             type="number"
             min={0}
             inputMode="numeric"
-            placeholder="Not active"
+            placeholder="Coming soon"
             value={perKmRate}
             disabled
             invalid={Boolean(errors.perKmRate)}
             className="pr-24"
             onChange={(event) => setPerKmRate(event.currentTarget.value)}
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-control bg-studio-tint px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-muted">
-            Disabled
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-[#ECEEE6] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#6B7080]">
+            Soon
           </span>
         </div>
       </Field>
-      <div className="rounded-card border border-studio-border bg-studio-tint p-5">
-        <div className="flex items-start gap-3">
-          <Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-studio-ink" />
-          <div>
-            <p className="font-display text-base font-bold text-studio-ink">Sample estimate</p>
-            <p className="mt-1 text-xs leading-relaxed text-studio-muted">
-              Demo estimate for a 2.5-hour trip — not a booking quote.
-            </p>
-          </div>
-        </div>
-        <p className="mt-4 font-display text-4xl font-extrabold text-studio-ink">
-          ₹{estimate || '—'}
+
+      {/* The one bold moment */}
+      <div className="relative overflow-hidden rounded-[28px] bg-[#B8F23A] p-6 shadow-[0_24px_48px_-24px_rgba(155,212,28,0.7)]">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/40 blur-2xl" />
+        <p className="relative text-xs font-semibold text-[#0E1013]/70">2.5 hr trip</p>
+        <p className="relative mt-1 font-display text-5xl font-black tracking-[-0.04em]">
+          ₹{estimate ? estimate.toLocaleString('en-IN') : '—'}
         </p>
-        <p className="mt-2 text-xs text-studio-muted">
-          Excludes {publicPolicy.excludedExpenses.join(', ').toLowerCase()}.
+        <p className="relative mt-2 text-[11px] font-medium text-[#0E1013]/65">
+          All yours · excludes {publicPolicy.excludedExpenses.join(', ').toLowerCase()}
         </p>
       </div>
     </div>
@@ -799,14 +965,13 @@ function DriverStepFour({
     hourlyRate: string;
   };
 }) {
+  const initial = summary.name.trim().charAt(0).toUpperCase();
+
   return (
-    <div className="space-y-5">
-      <StepHeading
-        icon={<FileCheck2 className="h-5 w-5" />}
-        title="Private documents"
-        description="Review the summary, then submit for manual approval."
-      />
-      <div className="space-y-4">
+    <div className="space-y-6">
+      <StepHeading title="Prove it’s you." />
+
+      <div className="space-y-3.5">
         {documentKinds.map((kind) => (
           <FileDropzone
             key={kind}
@@ -821,41 +986,42 @@ function DriverStepFour({
           />
         ))}
       </div>
-      <div className="rounded-card border border-studio-border bg-studio-tint p-5 text-xs leading-relaxed text-studio-muted">
-        <p className="font-display text-sm font-bold text-studio-ink">Review before submitting</p>
-        <p className="mt-2">{summary.name || '—'} · {summary.phone || '—'}</p>
-        <p className="mt-1">
-          Categories: {summary.categories.join(', ') || '—'} · Transmissions:{' '}
-          {summary.transmissions.join(', ') || '—'}
-        </p>
-        <p className="mt-1">Areas: {summary.serviceAreas || '—'}</p>
-        <p className="mt-1">Hourly rate: ₹{summary.hourlyRate || '—'}</p>
+
+      <div className="flex items-center gap-3.5 rounded-3xl bg-white p-4 shadow-[0_1px_0_rgba(14,16,19,0.04),0_12px_32px_-16px_rgba(14,16,19,0.14)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0E1013] font-display text-base font-black text-[#B8F23A]">
+          {initial || '—'}
+        </div>
+        <div className="min-w-0 flex-1 text-xs">
+          <p className="truncate text-sm font-bold">
+            {summary.name || '—'}
+            <span className="font-medium text-[#6B7080]"> · {summary.phone || '—'}</span>
+          </p>
+          <p className="mt-0.5 truncate text-[#6B7080]">
+            {summary.categories.join(', ') || '—'} · {summary.transmissions.join(', ') || '—'}
+          </p>
+        </div>
+        <span className="shrink-0 font-display text-base font-black">
+          ₹{summary.hourlyRate || '—'}
+          <span className="text-xs font-medium text-[#6B7080]">/hr</span>
+        </span>
       </div>
-      <FormAlert tone="info" title="What happens next">
-        Your application becomes PENDING_REVIEW. You cannot go online until an Admin approves it.
-      </FormAlert>
     </div>
   );
 }
 
-function StepHeading({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+function StepHeading({ title }: { title: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-studio-tint text-studio-ink">
-        {icon}
-      </span>
-      <div>
-        <h2 className="font-display text-2xl font-extrabold text-studio-ink">{title}</h2>
-        <p className="mt-1 text-sm text-studio-muted">{description}</p>
-      </div>
+    <h1 className="pb-1 font-display text-4xl font-black leading-[1.02] tracking-[-0.04em] sm:text-[44px]">
+      {title}
+    </h1>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="font-display text-xl font-black tracking-tight">{value}</p>
+      <p className="mt-0.5 text-[11px] font-medium text-[#6B7080]">{label}</p>
     </div>
   );
 }
@@ -874,12 +1040,13 @@ function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-control border px-3 py-2 text-xs font-semibold transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1013]/30 active:scale-[0.97] ${
         active
-          ? 'border-studio-ink bg-studio-ink text-white'
-          : 'border-studio-border bg-studio-surface text-studio-muted hover:text-studio-ink'
+          ? 'border-[#0E1013] bg-[#0E1013] text-white shadow-[0_8px_20px_-8px_rgba(14,16,19,0.5)]'
+          : 'border-[#0E1013]/10 bg-white text-[#4B5160] hover:border-[#0E1013]/30 hover:text-[#0E1013]'
       }`}
     >
+      {active ? <Check aria-hidden="true" className="h-3.5 w-3.5 text-[#B8F23A]" /> : null}
       {label}
     </button>
   );

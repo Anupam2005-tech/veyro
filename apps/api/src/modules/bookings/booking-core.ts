@@ -1,14 +1,16 @@
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
+import { enqueueNotification } from '../notifications/notifications.js';
+import { writeCharge } from '../ledger/ledger.js';
 import { enforceBookingBalance } from '../payments/payment-service.js';
 import { AppError } from '../../shared/http/app-error.js';
-import { documentId, type BookingQuote } from '../quotes/quote-repository.js';
+import { documentId, type BookingQuote, type FareSnapshot } from '../quotes/quote-repository.js';
 import { cancellationFeeInr, minute, scheduledWindow, type CancellationFacts } from './booking-policy.js';
 
 type Kind = 'INSTANT' | 'SCHEDULED';
 type Status = 'SEARCHING' | 'SCHEDULED_QUEUED' | 'SCHEDULED_BROADCASTING' | 'NEEDS_REBOOK' |
   'EXPIRED' | 'ASSIGNED' | 'CANCELLED_BY_DRIVER' | 'CANCELLED_BY_CUSTOMER';
 
-interface Booking extends BookingQuote {
+export interface Booking extends BookingQuote {
   kind: Kind;
   status: Status;
   createdAt: number;
@@ -22,8 +24,9 @@ interface Booking extends BookingQuote {
 // These adapters must read authoritative data within the transaction. A rejection throws.
 // In particular, verifyAcceptance checks approval, availability and the driver's frozen rate.
 export interface BookingChecks {
-  verifyCreation(tx: Transaction, quote: BookingQuote): Promise<void>;
-  verifyAcceptance(tx: Transaction, booking: Booking, driverId: string): Promise<void>;
+  verifyCreation(tx: Transaction, quote: BookingQuote, pickupAt?: number | null): Promise<void>;
+  verifyAcceptance(tx: Transaction, booking: Booking, driverId: string): Promise<void | FareSnapshot>;
+  promisedArrival?(tx: Transaction, booking: Booking, driverId: string): Promise<number>;
   cancellationFacts(tx: Transaction, bookingId: string, policyVersion: string,
     role: 'CUSTOMER' | 'DRIVER', reason: string): Promise<CancellationFacts>;
 }
@@ -39,6 +42,7 @@ async function readBooking(tx: Transaction, ref: DocumentReference): Promise<Boo
 
 function event(tx: Transaction, ref: DocumentReference, state: Status, at: number, customerId: string, driverId: string | null) {
   tx.create(ref.collection('events').doc(state), { bookingId: ref.id, state, at, customerId, driverId });
+  enqueueNotification(ref.firestore, tx, customerId, 'booking-' + ref.id + '-' + state, 'BOOKING_' + state, ref.id);
 }
 
 export class BookingCore {
@@ -60,7 +64,7 @@ export class BookingCore {
         return ref.id;
       }
       await enforceBookingBalance(this.db, tx, customerId);
-      await this.checks.verifyCreation(tx, quote);
+      await this.checks.verifyCreation(tx, quote, pickupAt);
       const at = this.now();
       const scheduled = pickupAt !== null;
       if (!scheduled && !quote.selectedDriverId) throw conflict();
@@ -73,6 +77,7 @@ export class BookingCore {
         tx.create(ref.collection('offers').doc(quote.selectedDriverId), {
           driverId: quote.selectedDriverId, status: 'OPEN', ...window,
         });
+        enqueueNotification(this.db, tx, quote.selectedDriverId, 'offer-' + ref.id, 'BOOKING_OFFER', ref.id);
       }
       event(tx, ref, status, at, customerId, scheduled ? null : quote.selectedDriverId);
       return ref.id;
@@ -114,6 +119,7 @@ export class BookingCore {
       if (at < b.opensAt || at >= b.closesAt) throw conflict();
       if (!existing.exists) {
         tx.create(offer, { driverId, status: 'OPEN', opensAt: at, closesAt: b.closesAt });
+        enqueueNotification(this.db, tx, driverId, 'offer-' + ref.id, 'BOOKING_OFFER', ref.id);
       }
     });
   }
@@ -133,6 +139,19 @@ export class BookingCore {
     });
   }
 
+  async rejectOffer(id: string, driverId: string) {
+    const ref = this.booking(id);
+    if ((await ref.get()).get('kind') === 'INSTANT') return this.rejectInstant(id, driverId);
+    return this.db.runTransaction(async tx => {
+      const b = await readBooking(tx, ref), offer = ref.collection('offers').doc(documentId(driverId));
+      const record = await tx.get(offer);
+      if (!record.exists) throw unavailable();
+      if (record.get('status') === 'REJECTED') return;
+      if (b.status !== 'SCHEDULED_BROADCASTING' || record.get('status') !== 'OPEN') throw conflict();
+      tx.update(offer, { status: this.now() < b.closesAt ? 'REJECTED' : 'EXPIRED' });
+    });
+  }
+
   accept(id: string, driverId: string) {
     const ref = this.booking(id);
     const calendar = this.db.collection('driverReservations').doc(documentId(driverId));
@@ -143,7 +162,8 @@ export class BookingCore {
       if (b.status !== 'SEARCHING' && b.status !== 'SCHEDULED_BROADCASTING') throw conflict();
       const offer = ref.collection('offers').doc(driverId);
       if ((await tx.get(offer)).get('status') !== 'OPEN') throw unavailable();
-      await this.checks.verifyAcceptance(tx, b, driverId);
+      const acceptedFare = await this.checks.verifyAcceptance(tx, b, driverId);
+      const promisedArrivalAt = this.checks.promisedArrival ? await this.checks.promisedArrival(tx, b, driverId) : b.pickupAt;
       // Serialize even initially empty calendars. Only live reservations are retained.
       await tx.get(calendar);
       const reservations = await tx.get(calendar.collection('active'));
@@ -155,11 +175,16 @@ export class BookingCore {
       for (const entry of reservations.docs) {
         if (entry.get('kind') === 'INSTANT' && b.kind === 'INSTANT') throw conflict();
         if (start < entry.get('end') && entry.get('start') < end) throw conflict();
+        if (b.kind === 'INSTANT') {
+          const trip = await tx.get(this.db.collection('trips').doc(entry.id));
+          if (['ARRIVED', 'IN_PROGRESS'].includes(trip.get('status')) ||
+              trip.get('status') === 'DRIVER_EN_ROUTE' && entry.get('start') <= at) throw conflict();
+        }
       }
       tx.set(calendar, { updatedAt: at });
       tx.create(calendar.collection('active').doc(ref.id), { start, end, kind: b.kind });
       tx.update(offer, { status: 'ACCEPTED' });
-      tx.update(ref, { status: 'ASSIGNED', driverId, acceptedAt: at });
+      tx.update(ref, { status: 'ASSIGNED', driverId, acceptedAt: at, promisedArrivalAt, ...(acceptedFare ? { fare: acceptedFare } : {}) });
       event(tx, ref, 'ASSIGNED', at, b.customerId, driverId);
     });
   }
@@ -181,11 +206,22 @@ export class BookingCore {
       // Adapter rejects unknown reasons, unsupported policy versions and active/completed trips.
       const policyVersion = b.fare.cancellationPolicyVersion;
       const facts = await this.checks.cancellationFacts(tx, ref.id, policyVersion, role, reason);
+      const tripRef = this.db.collection('trips').doc(id);
+      const trip = await tx.get(tripRef);
+      if (trip.exists && !['DRIVER_EN_ROUTE', 'ARRIVED', 'DRIVER_NO_SHOW'].includes(trip.get('status'))) throw conflict();
+      await tx.get(this.db.collection('users').doc(b.customerId));
       const at = this.now();
       const feeInr = cancellationFeeInr(b.kind, role, b.acceptedAt, at, facts);
       const status = role === 'CUSTOMER' ? 'CANCELLED_BY_CUSTOMER' : 'CANCELLED_BY_DRIVER';
       tx.create(factRef, { actorId, role, reason, description, at, feeInr, policyVersion, ...facts });
       tx.update(ref, { status });
+      if (trip.exists) tx.update(tripRef, { status: 'CANCELLED', cancelledAt: at });
+      tx.delete(this.db.collection('liveLocations').doc(id));
+      tx.delete(this.db.collection('arrivalEvidence').doc(id));
+      if (feeInr > 0 && b.driverId) {
+        writeCharge(this.db, tx, 'cancel-' + id, { customerId: b.customerId, driverId: b.driverId,
+          amountPaise: feeInr * 100, source: 'CANCELLATION' });
+      }
       if (b.driverId) {
         const calendar = this.db.collection('driverReservations').doc(b.driverId);
         tx.set(calendar, { updatedAt: at });

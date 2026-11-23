@@ -1,3 +1,4 @@
+if (process.env.FIRESTORE_EMULATOR_HOST) process.env.FIRESTORE_DATABASE_ID = '(default)';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
@@ -19,12 +20,18 @@ async function serve(t, app) {
 }
 
 const enabled = process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_AUTH_EMULATOR_HOST;
-test('session bootstrap, App Check consumption and Firestore role checks', {
+test('production session bootstrap, App Check consumption and Firestore role checks', {
   skip: enabled ? false : 'Requires local Auth and Firestore emulators',
 }, async t => {
   for (const host of [process.env.FIRESTORE_EMULATOR_HOST, process.env.FIREBASE_AUTH_EMULATOR_HOST]) {
     assert.match(host, /^(127\.0\.0\.1|localhost):\d+$/);
   }
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  t.after(() => {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  });
   const admin = getFirebaseAdminApp();
   const uid = randomUUID();
   const auth = getAuth(admin);
@@ -40,7 +47,9 @@ test('session bootstrap, App Check consumption and Firestore role checks', {
     used.add(token);
     return { alreadyConsumed };
   });
-  const base = await serve(t, createApp());
+  const base = await serve(t, createApp({
+    port: 4000, apiBasePath: '/api/v1', frontendOrigin: 'https://app.example',
+  }));
   const session = (body, token) => fetch(base + '/api/v1/auth/session', { method: 'POST', headers: {
     authorization: 'Bearer verified', 'content-type': 'application/json', ...(token && { 'X-Firebase-AppCheck': token }),
   }, body: JSON.stringify(body) });
@@ -86,4 +95,5 @@ test('session bootstrap, App Check consumption and Firestore role checks', {
   await profile.update({ status: 'SUSPENDED' });
   assert.equal((await fetch(routes + '/customer')).status, 403);
   assert.equal((await session({}, randomUUID())).status, 403);
+  assert.equal((await profile.get()).get('status'), 'SUSPENDED');
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { usePolling } from '@/lib/hooks/use-polling';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -12,6 +13,7 @@ import {
   Link2Off,
   MapPin,
   ShieldCheck,
+  Star,
   Timer,
 } from 'lucide-react';
 import {
@@ -27,6 +29,7 @@ import {
 } from '@veyro/ui';
 import {
   createTripShare,
+  confirmDriverArrival,
   getTrip,
   revokeTripShare,
   triggerSos,
@@ -74,12 +77,13 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
   const { user, demoMode } = useSession();
   const activeUser = user ?? (isDemoDataMode ? DEMO_USER : null);
   const demoPreview = isDemoDataMode && searchParams.get('role') === 'customer';
-  const preview = previews.find((item) => item.state === searchParams.get('state')) ?? null;
+  const preview = isDemoDataMode ? previews.find((item) => item.state === searchParams.get('state')) ?? null : null;
   const [trip, setTrip] = React.useState<TripRecord | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [shareId, setShareId] = React.useState<string | null>(null);
   const [shareUrl, setShareUrl] = React.useState<string | null>(null);
   const [mapKey, setMapKey] = React.useState(0);
 
@@ -103,6 +107,10 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
   React.useEffect(() => {
     void load();
   }, [load]);
+
+  usePolling(activeUser && !isDemoDataMode ? activeUser.uid + ':' + tripId : null,
+    () => getTrip(activeUser!, tripId), next => { setTrip(next); setError(null); },
+    caught => setError(caught instanceof Error ? caught.message : 'Trip update unavailable.'));
 
   const shownTrip = React.useMemo(() => {
     if (!trip) return null;
@@ -146,7 +154,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
     ? Math.floor((Date.now() - new Date(shownTrip.waitingStartedAt).getTime()) / 60000)
     : 0;
   const accruedFee =
-    Math.max(0, Math.floor(waitingMinutes / publicPolicy.freeWaitingMinutes)) * publicPolicy.waitingFeeInr;
+    (waitingMinutes > publicPolicy.freeWaitingMinutes ? publicPolicy.waitingFeeInr : 0);
 
   async function handleSos() {
     if (!activeUser || preview) return;
@@ -171,6 +179,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
       const share = await createTripShare(activeUser, tripId);
       const url = `${window.location.origin}/share/${share.token}`;
       setShareUrl(url);
+      setShareId('shareId' in share ? String(share.shareId) : tripId);
       await load();
       setNotice('Share link created. It expires when the trip ends and can be revoked here.');
     } catch (caught) {
@@ -184,8 +193,9 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
     if (!activeUser || preview) return;
     setBusy(true);
     try {
-      await revokeTripShare(activeUser, tripId);
+      await revokeTripShare(activeUser, isDemoDataMode ? tripId : shareId ?? trip?.share?.shareId ?? '');
       setShareUrl(null);
+      setShareId(null);
       await load();
       setNotice('Share link revoked.');
     } catch (caught) {
@@ -276,12 +286,13 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                           {
                             id: 'trip-driver',
                             position: shownTrip.liveLocation.position,
-                            label: 'Driver location',
+                            label: shownTrip.liveLocation.stale ? 'Last known driver location' : 'Driver location',
+                            stale: shownTrip.liveLocation.stale,
                           },
                         ]
                       : []
                   }
-                  showDriverMarkers={Boolean(shownTrip.liveLocation) && !shownTrip.liveLocation?.stale}
+                  showDriverMarkers={Boolean(shownTrip.liveLocation)}
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-studio-border px-3 py-2.5 text-xs text-studio-muted">
                   <p className="flex items-center gap-2 font-semibold text-studio-ink">
@@ -347,6 +358,16 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 </section>
               ) : null}
 
+              {!isDemoDataMode && shownTrip.state === 'EN_ROUTE' ? <section className="rounded-card border border-studio-border bg-white p-4">
+                <h2 className="font-display text-xl font-bold">Has your driver arrived?</h2>
+                <p className="mt-2 text-xs text-studio-muted">Confirm only when the assigned driver is at your pickup point. This starts the waiting clock.</p>
+                <VeyroButton type="button" variant="secondary" className="mt-3" loading={busy} onClick={async () => {
+                  if (!activeUser || busy) return; setBusy(true);
+                  try { await confirmDriverArrival(activeUser, tripId); await load(); setNotice('Driver arrival confirmed.'); }
+                  catch (e) { setNotice(e instanceof Error ? e.message : 'Could not confirm arrival.'); }
+                  finally { setBusy(false); }
+                }}>Confirm driver arrival</VeyroButton>
+              </section> : null}
               {shownTrip.state === 'ARRIVED_WAITING' ? (
                 <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -418,7 +439,11 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 </h2>
                 {shownTrip.driver ? (
                   <div className="mt-4 space-y-2 text-sm text-studio-muted">
-                    <p>★ {shownTrip.driver.rating} · {shownTrip.driver.reviews} reviews</p>
+                    <p className="flex items-center gap-1.5 font-medium text-studio-ink">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                      <span>{shownTrip.driver.rating}</span>
+                      <span className="text-studio-muted font-normal">({shownTrip.driver.reviews} reviews)</span>
+                    </p>
                     <p>{shownTrip.driver.experienceYears} years · {shownTrip.driver.languages.join(', ')}</p>
                     <p>
                       {shownTrip.driver.vehicle.make} {shownTrip.driver.vehicle.model} ·{' '}
@@ -432,7 +457,10 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 )}
               </section>
 
-              {shownTrip.state === 'ARRIVED_WAITING' || shownTrip.state === 'ACTIVE' || shownTrip.state === 'COMPLETED' ? (
+              {!isDemoDataMode && ['ARRIVED_WAITING', 'ACTIVE'].includes(shownTrip.state) ? (
+                <FormAlert tone="warning" title="Trip verification setup pending">Secure customer OTP delivery is awaiting approval. Contact the project lead before starting a live trip.</FormAlert>
+              ) : null}
+              {isDemoDataMode && (shownTrip.state === 'ARRIVED_WAITING' || shownTrip.state === 'ACTIVE' || shownTrip.state === 'COMPLETED') ? (
                 <OtpVaultCard
                   title="Start OTP"
                   mode="display"
@@ -440,7 +468,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                   helper="Share this only after the driver reaches your pickup point."
                 />
               ) : null}
-              {shownTrip.state === 'ACTIVE' || shownTrip.state === 'COMPLETED' ? (
+              {isDemoDataMode && (shownTrip.state === 'ACTIVE' || shownTrip.state === 'COMPLETED') ? (
                 <OtpVaultCard
                   title="End OTP"
                   mode="display"
@@ -449,7 +477,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 />
               ) : null}
 
-              {shownTrip.state !== 'COMPLETED' ? (
+              {['EN_ROUTE', 'ARRIVED_WAITING', 'ACTIVE'].includes(shownTrip.state) ? (
                 <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>

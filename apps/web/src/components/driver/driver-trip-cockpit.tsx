@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { useDriverTracking } from '@/lib/hooks/use-driver-tracking';
+import { usePolling } from '@/lib/hooks/use-polling';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -43,10 +45,10 @@ import RouteMap from '../customer/route-map-dynamic';
 import { DriverShell } from './driver-shell';
 
 const reportCategories: Array<{ value: ReportSubmission['category']; label: string }> = [
-  { value: 'SAFETY', label: 'Safety concern' },
-  { value: 'PAYMENT', label: 'Payment issue' },
-  { value: 'VEHICLE', label: 'Vehicle condition' },
-  { value: 'BEHAVIOUR', label: 'Customer behaviour' },
+  { value: 'SAFETY_CONCERN', label: 'Safety concern' },
+  { value: 'FARE_OR_PAYMENT', label: 'Payment issue' },
+  { value: 'SERVICE_ISSUE', label: 'Vehicle condition' },
+  { value: 'CUSTOMER_CONDUCT', label: 'Customer behaviour' },
   { value: 'OTHER', label: 'Something else' },
 ];
 
@@ -84,7 +86,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
   const { user, demoMode } = useSession();
   const activeUser = user ?? (isDemoDataMode ? DEMO_USER : null);
   const demoPreview = isDemoDataMode && searchParams.get('role') === 'driver';
-  const preview = previews.find((item) => item.state === searchParams.get('state')) ?? null;
+  const preview = isDemoDataMode ? previews.find((item) => item.state === searchParams.get('state')) ?? null : null;
   const [trip, setTrip] = React.useState<TripRecord | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -93,7 +95,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
   const [startOtp, setStartOtp] = React.useState('');
   const [endOtp, setEndOtp] = React.useState('');
   const [mapKey, setMapKey] = React.useState(0);
-  const [reportCategory, setReportCategory] = React.useState<ReportSubmission['category']>('SAFETY');
+  const [reportCategory, setReportCategory] = React.useState<ReportSubmission['category']>('SAFETY_CONCERN');
   const [reportDescription, setReportDescription] = React.useState('');
 
   const load = React.useCallback(async () => {
@@ -116,6 +118,12 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
   React.useEffect(() => {
     void load();
   }, [load]);
+
+  usePolling(activeUser && !isDemoDataMode ? activeUser.uid + ':' + tripId : null,
+    () => getTrip(activeUser!, tripId), next => { setTrip(next); setError(null); },
+    caught => setError(caught instanceof Error ? caught.message : 'Trip update unavailable.'));
+
+  useDriverTracking(activeUser, tripId, Boolean(trip && ['EN_ROUTE', 'ARRIVED_WAITING', 'ACTIVE'].includes(trip.state)), setNotice);
 
   const shownTrip = React.useMemo(() => {
     if (!trip) return null;
@@ -148,8 +156,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
     ? Math.floor((Date.now() - new Date(shownTrip.waitingStartedAt).getTime()) / 60000)
     : 0;
   const accruedWaitingFee =
-    Math.max(0, Math.floor((elapsedWaitingMinutes - publicPolicy.freeWaitingMinutes) / publicPolicy.freeWaitingMinutes)) *
-    publicPolicy.waitingFeeInr;
+    (elapsedWaitingMinutes > publicPolicy.freeWaitingMinutes ? publicPolicy.waitingFeeInr : 0);
   const canRequestNoShow = Boolean(shownTrip?.waitingStartedAt) && elapsedWaitingMinutes >= publicPolicy.maximumWaitingMinutes;
 
   async function act(action: 'ARRIVED' | 'START' | 'END' | 'NO_SHOW_REQUEST', otp?: string) {
@@ -164,10 +171,10 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
         action === 'ARRIVED'
           ? 'Arrival recorded. Waiting clock is now visible to the customer.'
           : action === 'START'
-            ? 'Trip started. End OTP is now available to the customer.'
+            ? 'Trip started. A separate end verification code is required for completion.'
             : action === 'END'
               ? 'Trip completed and final fare generated.'
-              : 'Customer no-show request sent for backend validation. No fee is applied yet.'
+              : 'Customer no-show recorded after server validation. The no-show charge replaces waiting fees.'
       );
       await load();
     } catch (caught) {
@@ -289,7 +296,8 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                           {
                             id: 'driver-live',
                             position: shownTrip.liveLocation.position,
-                            label: 'Driver location',
+                            label: shownTrip.liveLocation.stale ? 'Last known driver location' : 'Driver location',
+                            stale: shownTrip.liveLocation.stale,
                           },
                         ]
                       : []
@@ -336,7 +344,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                 </p>
                 <p className="mt-3 flex items-start gap-3 font-display text-xl font-bold">
                   <ArrowRight aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-studio-lime" />
-                  Continue on {shownTrip.route.summary.replace('Demo ', '')}
+                  {shownTrip.demo ? `Continue on ${shownTrip.route.summary.replace('Demo ', '')}` : 'Use Google Maps for turn-by-turn directions'}
                 </p>
                 <p className="mt-2 text-xs text-white/60">
                   {shownTrip.driverEtaMinutes !== null

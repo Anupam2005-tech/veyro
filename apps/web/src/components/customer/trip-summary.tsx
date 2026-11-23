@@ -27,21 +27,23 @@ import {
   createTripReport,
   getTrip,
   listFavouriteDriverIds,
-  payTrip,
+  payInvoice,
   setDriverFavourite,
   submitTripRating,
 } from '@/lib/api/client';
+import { checkCheckout, paymentStatusMessage, type CheckoutStatus } from '@/lib/api/razorpay-checkout';
 import type { PaymentStatus, ReportSubmission, TripRecord } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session-provider';
 import { DEMO_USER } from '@/lib/demo-user';
 import { isDemoDataMode } from '@/lib/env';
+import { usePolling } from '@/lib/hooks/use-polling';
 import { CustomerShell } from './customer-shell';
 
 const reportCategories: Array<{ value: ReportSubmission['category']; label: string }> = [
-  { value: 'SAFETY', label: 'Safety concern' },
-  { value: 'PAYMENT', label: 'Payment issue' },
-  { value: 'VEHICLE', label: 'Vehicle condition' },
-  { value: 'BEHAVIOUR', label: 'Driver behaviour' },
+  { value: 'SAFETY_CONCERN', label: 'Safety concern' },
+  { value: 'FARE_OR_PAYMENT', label: 'Payment issue' },
+  { value: 'SERVICE_ISSUE', label: 'Vehicle condition' },
+  { value: 'DRIVER_CONDUCT', label: 'Driver behaviour' },
   { value: 'OTHER', label: 'Something else' },
 ];
 
@@ -74,10 +76,12 @@ export default function TripSummary({ tripId }: { tripId: string }) {
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [checkoutStatus, setCheckoutStatus] = React.useState<CheckoutStatus | null>(null);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
   const [rating, setRating] = React.useState(0);
   const [favouriteDriverIds, setFavouriteDriverIds] = React.useState<string[]>([]);
   const [favouriteBusy, setFavouriteBusy] = React.useState(false);
-  const [reportCategory, setReportCategory] = React.useState<ReportSubmission['category']>('SAFETY');
+  const [reportCategory, setReportCategory] = React.useState<ReportSubmission['category']>('SAFETY_CONCERN');
   const [reportDescription, setReportDescription] = React.useState('');
 
   React.useEffect(() => {
@@ -87,6 +91,8 @@ export default function TripSummary({ tripId }: { tripId: string }) {
     }
     let active = true;
     setLoading(true);
+    setCheckoutStatus(null);
+    setPaymentError(null);
     getTrip(activeUser, tripId)
       .then((next) => {
         if (!active) return;
@@ -139,16 +145,27 @@ export default function TripSummary({ tripId }: { tripId: string }) {
     }
   }
 
-  async function handlePayment() {
-    if (!activeUser || demoPreview) return;
+  usePolling(activeUser && !isDemoDataMode && !busy && checkoutStatus === 'PENDING' ? `${activeUser.uid}:${tripId}` : null,
+    () => getTrip(activeUser!, tripId),
+    next => {
+      setTrip(next);
+      if (next.finalFare?.paymentStatus === 'CAPTURED') setCheckoutStatus('CAPTURED');
+      if (next.finalFare?.paymentStatus === 'DISPUTED') setCheckoutStatus('DISPUTED');
+    }, () => {}, 10_000);
+
+  async function handlePayment(checkOnly = false) {
+    if (!activeUser || demoPreview || busy) return;
     setBusy(true);
-    setNotice(null);
+    setPaymentError(null);
     try {
-      const updated = await payTrip(activeUser, tripId);
-      setTrip(updated);
-      setNotice('Demo Razorpay test checkout started. Verification is pending.');
+      const result = checkOnly ? await checkCheckout(activeUser, tripId) : await payInvoice(activeUser, tripId);
+      setCheckoutStatus(result);
+      if (result === 'CAPTURED' || result === 'DISPUTED') {
+        try { setTrip(await getTrip(activeUser, tripId)); }
+        catch { setPaymentError('Reload this page to refresh the receipt.'); }
+      }
     } catch (caught) {
-      setNotice(caught instanceof Error ? caught.message : 'Could not start checkout.');
+      setPaymentError(caught instanceof Error ? caught.message : 'Could not check the payment. Try again.');
     } finally {
       setBusy(false);
     }
@@ -269,25 +286,27 @@ export default function TripSummary({ tripId }: { tripId: string }) {
                       </div>
                     </div>
                   </section>
-                  <FormAlert
-                    tone={paymentCopy(trip.finalFare.paymentStatus).tone}
-                    title={paymentCopy(trip.finalFare.paymentStatus).title}
-                  >
+                  <FormAlert tone={paymentCopy(
+                    checkoutStatus === 'READY' || checkoutStatus === null ? trip.finalFare.paymentStatus :
+                      checkoutStatus === 'PENDING' ? 'PENDING_VERIFICATION' : checkoutStatus
+                  ).tone} title={checkoutStatus ? 'Payment status' : paymentCopy(trip.finalFare.paymentStatus).title}>
                     {trip.finalFare.paymentReference
                       ? `Reference ${trip.finalFare.paymentReference}. `
                       : null}
-                    Razorpay is shown in test mode only in this frontend pass.
+                    {checkoutStatus ? paymentStatusMessage(checkoutStatus) : 'Razorpay Test Mode'}
                   </FormAlert>
-                  {['PENDING', 'FAILED'].includes(trip.finalFare.paymentStatus) ? (
-                    <VeyroButton
-                      size="lg"
-                      loading={busy}
-                      disabled={demoPreview}
-                      onClick={() => void handlePayment()}
-                    >
-                      <CreditCard aria-hidden="true" className="h-4 w-4" />
-                      Pay with Razorpay (test mode)
-                    </VeyroButton>
+                  {paymentError ? <FormAlert tone="error" title="Payment update">{paymentError}</FormAlert> : null}
+                  {['PENDING', 'FAILED'].includes(trip.finalFare.paymentStatus) &&
+                    !['CAPTURED', 'DISPUTED', 'REVIEW_REQUIRED'].includes(checkoutStatus ?? '') ? (
+                    <div className="flex flex-wrap gap-2">
+                      {checkoutStatus !== 'PENDING' ? <VeyroButton size="lg" loading={busy}
+                        disabled={demoPreview} onClick={() => void handlePayment()}>
+                        <CreditCard aria-hidden="true" className="h-4 w-4" />
+                        Pay with Razorpay (test mode)
+                      </VeyroButton> : null}
+                      {!isDemoDataMode ? <VeyroButton size="lg" variant="secondary" disabled={busy}
+                        onClick={() => void handlePayment(true)}>Check payment status</VeyroButton> : null}
+                    </div>
                   ) : null}
                 </>
               ) : (

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { usePolling } from '@/lib/hooks/use-polling';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Clock3, LockKeyhole, MapPin, ShieldCheck } from 'lucide-react';
@@ -57,6 +58,9 @@ export default function ShareView({ token }: { token: string }) {
       active = false;
     };
   }, [pathname, router, sessionLoading, token, user]);
+
+  usePolling(user ? user.uid + ':' + token : null, () => getSharedTrip(user!, token),
+    next => { setShare(previous => ({ ...next, liveLocation: next.liveLocation ?? (previous && previous.tripId === next.tripId && previous.liveLocation ? { ...previous.liveLocation, stale: true } : null) })); setError(null); }, caught => { setShare(null); setError(caught instanceof Error ? caught.message : 'Share unavailable.'); });
 
   const header = (
     <header className="border-b border-studio-border bg-studio-surface">
@@ -125,7 +129,7 @@ export default function ShareView({ token }: { token: string }) {
               <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
                 <div className="overflow-hidden rounded-card border border-studio-border bg-studio-surface">
                   <RouteMap
-                    points={[
+                    points={share.pickupPosition && share.destinationPosition ? [
                       {
                         id: 'share-pickup',
                         label: share.pickupLabel,
@@ -138,20 +142,21 @@ export default function ShareView({ token }: { token: string }) {
                         address: share.destinationLabel,
                         position: share.destinationPosition,
                       },
-                    ]}
+                    ] : []}
                     route={null}
                     driverMarkers={
-                      share.liveLocation && !share.liveLocation.stale
+                      share.liveLocation
                         ? [
                             {
                               id: 'shared-driver',
                               position: share.liveLocation.position,
-                              label: 'Driver location',
+                              label: share.liveLocation.stale ? 'Last known driver location' : 'Driver location',
+                              stale: share.liveLocation.stale,
                             },
                           ]
                         : []
                     }
-                    showDriverMarkers={Boolean(share.liveLocation && !share.liveLocation.stale)}
+                    showDriverMarkers={Boolean(share.liveLocation)}
                   />
                 </div>
                 <div className="space-y-4">
@@ -199,7 +204,7 @@ export default function ShareView({ token }: { token: string }) {
                           : 'Location not shared yet'}
                     </p>
                     <p className="mt-2 text-xs text-studio-muted">
-                      Link expires {new Date(share.shareExpiresAt).toLocaleString()}
+                      {share.shareExpiresAt ? `Link expires ${new Date(share.shareExpiresAt).toLocaleString()}` : 'Link expires when this trip ends or the owner revokes it.'}
                     </p>
                   </section>
                   <FormAlert tone="info" title="Privacy">

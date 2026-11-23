@@ -1,17 +1,22 @@
 import {
   GoogleAuthProvider,
   RecaptchaVerifier,
+  createUserWithEmailAndPassword,
   getAuth,
   getRedirectResult,
   isSignInWithEmailLink,
   linkWithCredential,
   onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   sendSignInLinkToEmail,
+  signInWithEmailAndPassword,
   signInWithEmailLink,
   signInWithPhoneNumber,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
+  updateProfile,
   type AuthCredential,
   type User,
   type UserCredential,
@@ -28,7 +33,13 @@ const AUTH_EVENT = 'veyro:auth-change';
 let pendingCredential: AuthCredential | null = null;
 
 function getFirebaseAuth() {
-  initializeClientAppCheck();
+  try {
+    initializeClientAppCheck();
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('App check ignored in dev:', err);
+    }
+  }
   return getAuth(getClientFirebaseApp());
 }
 
@@ -40,8 +51,10 @@ function toAuthUser(user: User): AuthUser {
   return {
     uid: user.uid,
     email: user.email,
+    emailVerified: user.emailVerified,
     phoneNumber: user.phoneNumber,
     displayName: user.displayName,
+    photoURL: user.photoURL,
     getIdToken: () => user.getIdToken(),
   };
 }
@@ -320,21 +333,126 @@ export function hasPendingLinkCredential(): boolean {
   return pendingCredential !== null;
 }
 
+export async function signInWithEmailPassword(
+  email: string,
+  password: string
+): Promise<AuthUser> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (isDemoMode) {
+    await delay(300);
+    const user = createDemoUser({
+      email: cleanEmail,
+      displayName: cleanEmail.split('@')[0],
+    });
+    publishDemoUser(user);
+    return user;
+  }
+
+  const auth = getFirebaseAuth();
+  try {
+    const credential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+    return await finalizeSignIn(credential);
+  } catch (error) {
+    throw toAuthFlowError(error);
+  }
+}
+
+export const signInWithEmail = signInWithEmailPassword;
+
+export async function signUpWithEmailPassword(
+  email: string,
+  password: string,
+  fullName?: string
+): Promise<AuthUser> {
+  const cleanEmail = email.trim().toLowerCase();
+  const trimmedName = fullName?.trim();
+  if (isDemoMode) {
+    await delay(300);
+    const user = createDemoUser({
+      email: cleanEmail,
+      displayName: trimmedName || cleanEmail.split('@')[0],
+    });
+    publishDemoUser(user);
+    return user;
+  }
+
+  const auth = getFirebaseAuth();
+  try {
+    const credential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+    // Account creation has already succeeded. Users can request a new link from the inbox.
+    void sendEmailVerification(credential.user).catch(() => {});
+    if (trimmedName && credential.user) {
+      try {
+        await updateProfile(credential.user, { displayName: trimmedName });
+      } catch {
+        // non-blocking
+      }
+    }
+    return await finalizeSignIn(credential);
+  } catch (error) {
+    throw toAuthFlowError(error);
+  }
+}
+
+export const signUpWithEmail = signUpWithEmailPassword;
+
+export async function requestEmailVerification(): Promise<boolean> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user?.email) throw new Error('Add an email address to your account first.');
+  await user.reload();
+  if (user.emailVerified) return false;
+  await sendEmailVerification(user);
+  return true;
+}
+
+export async function sendPasswordReset(email: string): Promise<void> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (isDemoMode) {
+    await delay(350);
+    return;
+  }
+
+  const auth = getFirebaseAuth();
+  try {
+    await sendPasswordResetEmail(auth, cleanEmail);
+  } catch (error) {
+    throw toAuthFlowError(error);
+  }
+}
+
 export function authErrorMessage(error: AuthFlowError): string {
   switch (error.code) {
     case 'auth/invalid-email':
       return 'Enter a valid email address.';
+    case 'auth/user-not-found':
+      return 'No account exists with this email address. Please check your spelling or create an account.';
+    case 'auth/wrong-password':
+      return 'Incorrect password. Please verify and try again, or use "Forgot password".';
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please verify your credentials or reset your password.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Please sign in instead.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters.';
+    case 'auth/missing-password':
+      return 'Please enter your password.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password sign-in is not enabled. Please use Google or Phone sign-in.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact Veyro support.';
     case 'auth/account-exists-with-different-credential':
       return 'That email already uses another sign-in method. Sign in with your existing method and we will link it safely.';
     case 'auth/too-many-requests':
       return 'Too many attempts. Wait a moment and try again.';
     case 'auth/network-request-failed':
-      return 'Check your connection and try again.';
+      return 'Network connection issue. Please check your internet and try again.';
     case 'auth/popup-closed-by-user':
       return 'Google sign-in was closed before it completed.';
+    case 'auth/popup-blocked':
+      return 'Popup was blocked by your browser. Please allow popups for Veyro.';
     case 'auth/expired-action-code':
     case 'auth/invalid-action-code':
-      return 'That sign-in link is invalid or has expired. Request a new one.';
+      return 'That link is invalid or has expired. Request a new one.';
     case 'auth/invalid-verification-code':
       return 'That OTP is incorrect. Check the code and try again.';
     case 'auth/code-expired':

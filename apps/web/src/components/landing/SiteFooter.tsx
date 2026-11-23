@@ -26,7 +26,7 @@ export function SiteFooter() {
             links: [
               { label: 'OTP verification', href: '#safety' },
               { label: 'Live trip cockpit', href: '/auth?role=customer' },
-              { label: 'Chauffeur standards', href: '/auth?role=driver' },
+              { label: 'Chauffeur standards', href: '/auth/driver' },
               { label: 'Fare breakdown', href: '#fares' },
             ],
           },

@@ -7,7 +7,11 @@ export function requireRole(first: Role, ...others: Role[]): RequestHandler {
   return async (req, _res, next) => {
     try {
       if (!req.auth) throw new AppError(401, 'UNAUTHENTICATED', 'A valid sign-in is required.');
-      const roles = activeRoles((await profileRef(req.auth.uid).get()).data());
+      const snapshot = await profileRef(req.auth.uid).get();
+      if (!snapshot.exists) {
+        throw new AppError(403, 'PROFILE_UNAVAILABLE', 'An active profile is required.');
+      }
+      const roles = activeRoles(snapshot.data());
       if (!allowed.some(role => roles.includes(role))) {
         throw new AppError(403, 'ROLE_FORBIDDEN', 'This action requires a different role.');
       }

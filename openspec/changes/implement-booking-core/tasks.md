@@ -11,3 +11,7 @@
 - [x] Build and type-check the API and exercise the booking service with the local Firestore emulator.
 - [ ] Complete integration with verified identities and authoritative upstream services.
 - [ ] Review shared transaction and event contracts with the consuming teams before merge.
+
+## Team 2 completion follow-up
+
+Booking HTTP routes, production adapter, accepted-rate/promise freezing, cancellation charge producers and expiry/broadcast Functions now exist. Partner producer fields and remaining integration gates are recorded in complete-team2-backend. [Execution register](../complete-team2-backend/tasks.md).

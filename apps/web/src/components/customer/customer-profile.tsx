@@ -2,9 +2,22 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BellRing, CarFront, ContactRound, Plus, ShieldCheck, Trash2, Wallet } from 'lucide-react';
+import {
+  BellRing,
+  Camera,
+  CarFront,
+  CheckCircle2,
+  ContactRound,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  UploadCloud,
+  User,
+  Wallet,
+} from 'lucide-react';
 import {
   CheckboxField,
+  ConfirmDialog,
   DemoBadge,
   Field,
   FormAlert,
@@ -13,7 +26,7 @@ import {
   Select,
   VeyroButton,
 } from '@veyro/ui';
-import { getCustomerDetails, saveCustomerDetails } from '@/lib/api/client';
+import { customerAvatar, getCustomerDetails, requestAccountDeletion, saveCustomerDetails } from '@/lib/api/client';
 import type {
   BookingVehicle,
   CustomerNotificationPreferences,
@@ -52,9 +65,9 @@ function emptyVehicle(): BookingVehicle {
     id: localId('vehicle'),
     make: '',
     model: '',
-    category: 'Sedan',
+    category: 'SEDAN',
     transmission: 'AUTOMATIC',
-    fuelType: 'Petrol',
+    fuelType: 'PETROL',
     registrationNumber: '',
   };
 }
@@ -71,6 +84,9 @@ function emptyContact(): EmergencyContact {
 export default function CustomerProfile() {
   const searchParams = useSearchParams();
   const { user, refreshProfile } = useSession();
+  const [deletionOpen, setDeletionOpen] = React.useState(false);
+  const [deletionPending, setDeletionPending] = React.useState(false);
+  const [deletionNotice, setDeletionNotice] = React.useState<string | null>(null);
   const [details, setDetails] = React.useState<CustomerProfileDetails | null>(null);
   const [fullName, setFullName] = React.useState('');
   const [phone, setPhone] = React.useState('');
@@ -85,8 +101,37 @@ export default function CustomerProfile() {
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = React.useState(false);
+  const [avatarProgress, setAvatarProgress] = React.useState(0);
 
-  const balancePreview = searchParams.get('balance') === '1';
+  React.useEffect(() => () => { if (avatarUrl) URL.revokeObjectURL(avatarUrl); }, [avatarUrl]);
+  React.useEffect(() => {
+    let active = true;
+    if (user && details?.hasAvatar && !isDemoDataMode) {
+      void customerAvatar(user).then(blob => { if (active && blob) setAvatarUrl(URL.createObjectURL(blob)); }).catch(e => { if (active) setError(e instanceof Error ? e.message : 'Photo unavailable.'); });
+    }
+    return () => { active = false; };
+  }, [user, details?.hasAvatar]);
+
+  async function handleAvatarUpload(file: File) {
+    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 10_000_000) { setError('Choose a JPEG or PNG photo up to 10 MB.'); return; }
+    if (isDemoDataMode) { setAvatarUrl(URL.createObjectURL(file)); return; }
+    if (!user) return;
+    setAvatarUploading(true); setAvatarProgress(0); setError(null);
+    try { const blob = await customerAvatar(user, file); if (blob) setAvatarUrl(URL.createObjectURL(blob)); setAvatarProgress(100); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not save the photo.'); }
+    finally { setAvatarUploading(false); }
+  }
+  async function removeAvatar() {
+    if (!isDemoDataMode && user) {
+      try { await customerAvatar(user, null); }
+      catch (e) { setError(e instanceof Error ? e.message : 'Could not remove the photo.'); return; }
+    }
+    setAvatarUrl(null);
+  }
+
+  const balancePreview = isDemoDataMode && searchParams.get('balance') === '1';
 
   React.useEffect(() => {
     let active = true;
@@ -172,6 +217,7 @@ export default function CustomerProfile() {
         privacy,
       });
       setDetails(updated);
+      setVehicles(updated.vehicles);
       await refreshProfile();
       setSuccess(true);
     } catch (caught) {
@@ -249,7 +295,55 @@ export default function CustomerProfile() {
           <form className="mt-6 space-y-4" onSubmit={(event) => void handleSave(event)} noValidate>
             <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
               <h2 className="font-display text-xl font-extrabold text-studio-ink">Contact details</h2>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+
+              {/* Profile Photo Upload */}
+              <div className="mt-5 mb-6 flex flex-wrap items-center gap-5 border-b border-[#EAE7DC] pb-6">
+                <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#DCD8CC] bg-[#F4F1EA] text-[#090B10] shadow-sm">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt={fullName || 'Profile'} className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-9 w-9 text-[#8E95A5]" />
+                  )}
+                  {avatarUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-mono text-xs font-bold">
+                      {avatarProgress}%
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-studio-ink">Profile Photo</h3>
+                  <p className="mt-0.5 text-xs text-studio-muted">
+                    Private account photo. JPEG or PNG up to 10 MB.
+                  </p>
+                  <div className="mt-2.5 flex items-center gap-3">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#DCD8CC] bg-white px-3 py-1.5 text-xs font-semibold text-studio-ink shadow-2xs hover:bg-[#FAF9F5] transition-colors">
+                      <Camera className="h-3.5 w-3.5" />
+                      <span>{avatarUrl ? 'Change photo' : 'Upload photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png" disabled={avatarUploading}
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void handleAvatarUpload(file);
+                        }}
+                      />
+                    </label>
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => void removeAvatar()}
+                        className="text-xs text-[#DC2626] hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="profile-name" label="Full name" required error={errors.fullName}>
                   <div className="input-glow rounded-panel">
                     <Input
@@ -365,7 +459,7 @@ export default function CustomerProfile() {
                               onChange={(event) => updateVehicle(index, { category: event.currentTarget.value })}
                             >
                               {categories.map((category) => (
-                                <option key={category} value={category}>
+                                <option key={category} value={category.toUpperCase()}>
                                   {category}
                                 </option>
                               ))}
@@ -396,7 +490,7 @@ export default function CustomerProfile() {
                               onChange={(event) => updateVehicle(index, { fuelType: event.currentTarget.value })}
                             >
                               {fuelTypes.map((fuel) => (
-                                <option key={fuel} value={fuel}>
+                                <option key={fuel} value={fuel.toUpperCase()}>
                                   {fuel}
                                 </option>
                               ))}
@@ -564,14 +658,14 @@ export default function CustomerProfile() {
                 <CheckboxField
                   id="privacy-sharing"
                   label="Allow trip sharing links"
-                  description="Let a completed booking create a signed-in, read-only share link."
+                  description="Allow a signed-in recipient to view an active trip. Turning this off revokes existing links."
                   checked={privacy.tripSharing}
                   onChange={(tripSharing) => setPrivacy((current) => ({ ...current, tripSharing }))}
                 />
                 <CheckboxField
                   id="privacy-matching"
                   label="Use profile for driver matching"
-                  description="Share vehicle category and service area with candidate drivers."
+                  description="Save your preference for future personalisation. Required vehicle compatibility is always checked."
                   checked={privacy.matchingProfile}
                   onChange={(matchingProfile) =>
                     setPrivacy((current) => ({ ...current, matchingProfile }))
@@ -580,13 +674,19 @@ export default function CustomerProfile() {
                 <CheckboxField
                   id="privacy-analytics"
                   label="Anonymous product analytics"
-                  description="Optional, aggregated usage signals. Never trip or payment details."
+                  description="Save your preference. Optional analytics collection is currently disabled in Release 1."
                   checked={privacy.analytics}
                   onChange={(analytics) => setPrivacy((current) => ({ ...current, analytics }))}
                 />
               </div>
             </section>
 
+            <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
+              <h2 className="font-display text-xl font-extrabold text-studio-ink">Account deletion request</h2>
+              <p className="mt-2 text-xs text-studio-muted">Request a review of account and data deletion. Legal retention rules must be confirmed before records can be erased.</p>
+              {deletionNotice ? <p role="status" className="mt-2 text-sm">{deletionNotice}</p> : null}
+              <VeyroButton type="button" variant="secondary" className="mt-3" onClick={() => setDeletionOpen(true)}>Request deletion review</VeyroButton>
+            </section>
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-studio-border bg-studio-surface p-4">
               <p className="inline-flex items-center gap-2 text-xs text-studio-muted">
                 <Wallet aria-hidden="true" className="h-4 w-4" />
@@ -599,6 +699,13 @@ export default function CustomerProfile() {
           </form>
         )}
       </div>
+      <ConfirmDialog open={deletionOpen} onOpenChange={setDeletionOpen} title="Request account deletion review?" description="This records your request. Data is not erased immediately while retention requirements are reviewed." confirmLabel={deletionPending ? 'Submitting…' : 'Submit request'} onConfirm={async () => {
+        if (!user || deletionPending) return;
+        setDeletionPending(true);
+        try { await requestAccountDeletion(user); setDeletionNotice('Your deletion request is awaiting policy review.'); setDeletionOpen(false); }
+        catch (e) { setDeletionNotice(e instanceof Error ? e.message : 'Could not submit the request.'); }
+        finally { setDeletionPending(false); }
+      }} />
     </CustomerShell>
   );
 }

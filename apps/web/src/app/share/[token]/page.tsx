@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import ShareView from '@/components/customer/share-view';
 
 export const metadata: Metadata = {
+  referrer: 'no-referrer',
+  robots: { index: false, follow: false },
   title: 'Shared trip — Veyro',
   description: 'View a read-only shared Veyro trip after signing in.',
 };

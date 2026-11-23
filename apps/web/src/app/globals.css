@@ -54,6 +54,12 @@
   --foreground: var(--night-text);
   --muted: var(--night-surface);
   --muted-foreground: var(--night-muted);
+  --border: var(--night-border);
+  --ring: var(--night-accent);
+  --accent: var(--night-glass-strong);
+  --accent-foreground: var(--night-text);
+  --card: var(--night-surface);
+  --card-foreground: var(--night-text);
 }
 
 [data-theme='studio'] {
@@ -81,6 +87,20 @@
   --foreground: var(--studio-ink);
   --muted: var(--studio-surface);
   --muted-foreground: var(--studio-muted);
+  --border: var(--studio-border);
+  --ring: var(--studio-obsidian);
+  --accent: var(--studio-tint);
+  --accent-foreground: var(--studio-ink);
+  --card: var(--studio-surface);
+  --card-foreground: var(--studio-ink);
+}
+
+.driver-form-surface {
+  color-scheme: light;
+}
+
+.driver-form-surface :is(input, textarea, select):where(:not([type='file'], [type='checkbox'], [type='radio'], [aria-invalid='true'])) {
+  --theme-border: var(--studio-input-border);
 }
 
 @layer base {

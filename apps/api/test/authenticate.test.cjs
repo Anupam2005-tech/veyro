@@ -76,7 +76,9 @@ test('Auth emulator phone sign-in authenticates and disabling the user invalidat
   const request = await protectedRoute(t);
   const good = await request('Bearer ' + idToken);
   assert.equal(good.status, 200);
-  assert.deepEqual(await good.json(), { uid: localId });
+  const identity = await good.json();
+  assert.equal(identity.uid, localId);
+  assert.ok(Number.isSafeInteger(identity.authTime) && identity.authTime > 0);
   await getAuth(admin).updateUser(localId, { disabled: true });
   assert.equal((await request('Bearer ' + idToken)).status, 401);
 });

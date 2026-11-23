@@ -82,6 +82,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
 
     const currentUser = user;
+    setProfile(null);
     setProfileLoading(true);
     void import('../api/client')
       .then(({ bootstrapSession }) => bootstrapSession(currentUser, roleIntent))
@@ -93,6 +94,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((caught: unknown) => {
         if (active) {
+          setProfile(null);
           setError(
             caught instanceof Error ? caught.message : 'Could not load your Veyro profile.'
           );
@@ -140,12 +142,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setAuthLoading(true);
     try {
       const { signOutCurrentUser } = await import('./auth');
+      if (user) { const { disablePush } = await import('../firebase/push'); await disablePush(user).catch(() => undefined); }
       await signOutCurrentUser();
       setProfile(null);
     } finally {
       setAuthLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const value: SessionContextValue = {
     user,
@@ -160,7 +163,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     clearError: () => setError(null),
   };
 
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return <SessionContext.Provider value={value}><React.Fragment key={user?.uid ?? 'signed-out'}>{children}</React.Fragment></SessionContext.Provider>;
 }
 
 export function useSession(): SessionContextValue {

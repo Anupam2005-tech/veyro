@@ -1,3 +1,4 @@
+import { reportCategories } from '../../config/approved-policies.js';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { AppError } from '../../shared/http/app-error.js';
 import { activeRoles } from '../auth/profile.js';
@@ -25,7 +26,7 @@ export class SafetyService {
       const trip = await participant(this.db, tx, tripId, uid);
       const previous = await tx.get(ref);
       const policy = await tx.get(this.db.collection('safetyPolicies').doc('reports'));
-      const categories: unknown = policy.get('categories');
+      const categories: unknown = policy.exists ? policy.get('categories') : reportCategories;
       if (!Array.isArray(categories) || !categories.includes(category)) {
         throw new AppError(422, 'REPORT_CATEGORY_UNAVAILABLE', 'Choose an approved report category.');
       }
@@ -42,8 +43,8 @@ export class SafetyService {
     });
   }
 
-  resolveReport(adminId: string, id: string, status: 'RESOLVED' | 'DISMISSED', note: string) {
-    if (!['RESOLVED', 'DISMISSED'].includes(status) || !note.trim() || note.length > 2000) {
+  resolveReport(adminId: string, id: string, status: 'RESOLVED' | 'DISMISSED' | 'UNDER_REVIEW', note: string) {
+    if (!['RESOLVED', 'DISMISSED', 'UNDER_REVIEW'].includes(status) || !note.trim() || note.length > 2000) {
       throw new AppError(400, 'INVALID_RESOLUTION', 'A resolution note is required.');
     }
     const ref = this.db.collection('reports').doc(documentId(id));
@@ -56,10 +57,13 @@ export class SafetyService {
       if (report.get('status') === status && report.get('resolutionNote') === note) return;
       if (!['OPEN', 'UNDER_REVIEW'].includes(report.get('status'))) throw new AppError(409, 'REPORT_CLOSED', 'Report already closed.');
       tx.update(ref, { status, resolutionNote: note, resolvedAt: new Date() });
-      appendAdminAudit(this.db, tx, { uid: adminId, roles }, 'report-' + id, {
+      const eventId = status === 'UNDER_REVIEW' ? 'report-review-' + id : 'report-' + id;
+      appendAdminAudit(this.db, tx, { uid: adminId, roles }, eventId, {
         action: status, entityType: 'REPORT', entityId: id, before: report.get('status'), after: status, reason: note,
       });
-      enqueueNotification(this.db, tx, report.get('reporterId'), 'report-' + id, 'REPORT_RESOLVED', id);
+      enqueueNotification(this.db, tx, report.get('reporterId'), eventId,
+        status === 'UNDER_REVIEW' ? 'REPORT_UNDER_REVIEW' : 'REPORT_RESOLVED', id,
+        report.get('reporterRole') === 'DRIVER' ? 'DRIVER' : 'CUSTOMER');
     });
   }
 
@@ -124,7 +128,7 @@ export class SafetyService {
         tx.create(this.db.collection('safetyAuditLogs').doc('suspend-' + id), {
           actor: 'SYSTEM', uid, action: 'SUSPEND', incidentId: id, before: 'ACTIVE', after: 'SUSPENDED', at: new Date(),
         });
-        enqueueNotification(this.db, tx, uid, 'suspend-' + id, 'ACCOUNT_SUSPENDED', id);
+        enqueueNotification(this.db, tx, uid, 'suspend-' + id, 'ACCOUNT_SUSPENDED', id, kind === 'DRIVER_NO_SHOW' ? 'DRIVER' : 'CUSTOMER');
       }
     });
   }

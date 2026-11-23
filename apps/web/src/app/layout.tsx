@@ -55,6 +55,9 @@ export const metadata: Metadata = {
       'You own the ride. We bring the verified chauffeur — on demand or scheduled around your day.',
     images: ['/social/veyro-og-dark-1200x630.jpg'],
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
@@ -69,8 +72,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable} font-body antialiased`}
       >
         <ServiceWorkerRegistrar />

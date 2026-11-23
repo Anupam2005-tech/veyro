@@ -16,10 +16,15 @@ export const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').replace(/
 export const recaptchaEnterpriseSiteKey =
   process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY ?? '';
 
-export const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+export const googleMapsApiKey =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY ||
+  '';
 export const googleMapsMapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? '';
 
 export const isDemoMode =
-  process.env.NEXT_PUBLIC_VEYRO_DEMO_MODE === 'true' || !hasFirebaseConfig;
+  process.env.NEXT_PUBLIC_VEYRO_DEMO_MODE === 'true';
 
-export const isDemoDataMode = isDemoMode || apiBaseUrl.length === 0;
+export const isDemoDataMode = isDemoMode;
+
+export const firebaseVapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ?? '';

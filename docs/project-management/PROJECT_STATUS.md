@@ -1,6 +1,6 @@
 # Veyro — Project Status
 
-**Last updated:** 22 November 2026
+**Last updated:** 23 November 2026
 
 **Release:** 1.0 (College Capstone)  
 **Spec versions:** Unified Specification v3.6 / Backend Technical Specification v1.3  
@@ -11,10 +11,12 @@
 
 | Person | Current feature | Status | Next action |
 |---|---|---|---|
-| Anupam | T2-A2 — Identity and authorization | IN_PROGRESS | Review requested M4 implementation and upstream data contracts |
-| Pritam | T2-P1 — Admin approval, controls and audit | BLOCKED | Prepare Admin contract while T2-A2 and Team 1 interfaces are pending |
+| Anupam | Team 2 remaining-backend completion | REVIEW / BLOCKED | Review Team 2 completion register and remaining owner/partner inputs |
+| Pritam | Payments, Admin and safety implementation review | REVIEW / BLOCKED | Review delivered services; actual capture/webhook and owner-held policy checks remain |
 
 Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [BACKEND_PROGRESS.md](BACKEND_PROGRESS.md) for task evidence.
+
+Current cross-team progress is recorded in the [core and mobility execution register](../../openspec/changes/complete-core-mobility-backend/tasks.md).
 
 ## Current milestone
 
@@ -32,8 +34,8 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | BE-FND-010 Interactive API contract | REVIEW | Verified disabled and production routes, local assets, OpenAPI content and browser rendering. |
 | BE-001 Firebase authentication | REVIEW | Verified phone sign-in and disabled-user rejection with the Auth emulator. All 44 API tests passed. |
 | BE-002–004 Roles, session and App Check | REVIEW | All 45 API tests passed with Auth and Firestore emulation. Live App Check integration pending. |
-| BE-021–029 Payments and safety | REVIEW / BLOCKED | Local API/Functions implemented. Invoice/trip/incident producers and real Razorpay/FCM integration remain. |
-| BE-011–015 Booking core | BLOCKED | Internal services tested in Firestore. Identity, eligibility, route inputs, workers and cancellation policy adapters pending. |
+| BE-021–029 Payments and safety | REVIEW / BLOCKED | Local API/Functions, trip/payable producers and approved categories implemented. Incident qualification and real Razorpay/FCM integration remain. |
+| BE-011–015 Booking core | REVIEW | HTTP routes, transactional acceptance, eligibility/route inputs, workers and approved cancellation adapters implemented and emulator-tested; live Maps/frontend verification remains. |
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 
@@ -42,45 +44,46 @@ Use [TEAM_2_PLAN.md](TEAM_2_PLAN.md) for feature order and handoff gates. Use [B
 | M0 — Repository & Scaffold | IN_PROGRESS | Monorepo structure, root configs, trackers |
 | M1 — Design System & Auth | IN_PROGRESS | Shared tokens, components, passwordless auth |
 | M2 — Core Booking Flow | IN_PROGRESS | Vehicle pass, instant/scheduled quotes & bookings |
-| M3 — Trip Lifecycle & Maps | NOT_STARTED | Arrival, OTP verification, live GPS tracking |
+| M3 — Trip Lifecycle & Maps | IN_PROGRESS | Backend arrival, verification and GPS implemented; OTP display and device/frontend integration remain |
 | M4 — Payments & Admin | IN_PROGRESS | Razorpay Test Mode, balance gate, Admin portal |
-| M5 — Testing & Deployment | NOT_STARTED | Automated test suite, manual release checklist |
+| M5 — Testing & Deployment | IN_PROGRESS | Emulator regression suite and packaged Functions smoke pass; live release checks remain |
 
 ---
 
-## Code and OpenSpec audit — 22 November 2026
+## Backend implementation checkpoint — 23 November 2026
 
-This audit includes committed source through `23fef99` and the local BE-001–004 changes. Implementation and test evidence are recorded separately from review and release approval.
-
-| Area | Verified implementation | Remaining work |
+| Area | Implemented locally | Remaining completion condition |
 |---|---|---|
-| BE-FND-001–010 | API scaffold, configuration, Admin initialization, errors, context, responses, CORS, health, validation and Swagger | Review evidence and Functions deployment packaging |
-| BE-001–004 | Bearer verification, Firestore role checks, session bootstrap and App Check consumption middleware | Web client must send fresh limited-use tokens; live App Check/IAM verification |
-| BE-041 | Existing profile roles are preserved; multi-role profiles can select an already-held role | Provider linking/conflict recovery, controlled Admin grant workflow and approved addition of a second product role |
-| BE-011–015 | Durable hourly quote, booking transactions, offers, reservations, scheduled windows and cancellation policy facts | Production eligibility/balance/route/trip adapters, HTTP endpoints and deadline workers |
-| BE-016–018 | No trip backend implementation located | Arrival, trip transitions, waiting/no-show and OTP lifecycle |
-| Pritam modules | Audit repository, Admin decision rules, hourly fare, signatures, balance policy and dispute deadline helpers | Endpoint wiring, transactional financial records, provider integration and authorization |
-| Rules and emulators | Deny-all Firestore/Storage rules and local Auth/Firestore configuration exist | Rules tests and scoped module access; remaining emulator services |
-| Functions | Express HTTPS entry point exists | API package exports repaired during M4. Local type-check passes; deployment packaging remains pending |
+| Foundation and identity | API standards, session, Auth/App Check and roles | Independent review, live App Check, client linking/conflict flow |
+| Booking | Quote and booking routes, production eligibility adapter, rate freeze, cancellation/payables, reservation conflicts | Live provider/device configuration and deployed integration checks |
+| Trips | Initialization, arrival fallback, verification services, waiting/no-show, final fare/payable and reservation release | Owner-held OTP display/recovery; real device GPS and incident corroboration validation |
+| Admin | Manual application queue/decisions, driver controls, customer restore, atomic audits and inbox | Private document/onboarding integration implemented; independent review and deployed Storage access verification |
+| Financial records | Completed-trip earning/payable, capture journal, disputes and unpaid corrections | No-trip dispute/qualification/settlement policies and actual capture/refund integration |
+| Safety and core records | Approved categories, Demo SOS, verified incident processor, owned profiles/vehicles, private applications/uploads | Incident qualification/exclusions, legal deletion policy and deployed integration remain |
+| Mobility and background | Road/eligibility producer, GPS/RTDB, authenticated sharing, terminal/stale cleanup, booking and notification jobs | Live Maps/device validation and cloud deployment |
+| Packaging | Independently installed Functions package loads under Node22 | Actual cloud IAM, Secret Manager and deployment checks |
 
 | Verification | Result |
 |---|---|
-| API build and type-check | Passed |
-| API tests with Auth and Firestore emulators | 48 passed, 0 skipped after M4. Provider and FCM calls use test doubles. |
-| Strict OpenSpec validation | 21 changes passed after M4 |
-| Functions type-check | Passed after M4 API export repair |
-| Public business operations mounted | Health, session, payment and safety routes; Swagger is development opt-in |
+| API and Functions builds/type-checks | Passed locally, including embedded hosting config |
+| Packaged Functions HTTP smoke check | Healthy HTTP 200 under Node22 after socket PORT fix |
+| Emulator tests | 86 passed, zero failures/skips under Node22 with Auth, Firestore, Storage and RTDB; frontend follow-up adds 15 passing adapter/worker tests |
+| Provider integration | One INR1 Razorpay Test Mode order and receipt lookup verified; no payment captured |
+| Secrets/config | Local OTP secret generated privately; ADMIN_GRANTER_UID intentionally pending owner input |
+| New API contract | OpenAPI (80 paths), frontend integration contract and all three progress records updated |
 
-### Anupam execution order after this audit
+### Outstanding owner and partner dependencies
 
-| Order | Work | Dependency |
-|---|---|---|
-| 1 | Verify Functions workspace packaging for deployment under T2-A1 / INF-007 | Local import failure repaired during M4; deployment packaging pending |
-| 2 | Close T2-A2 identity handoff and BE-041 | Coordinate App Check header with Team 1; verify token verifier IAM and real consumption |
-| 3 | Integrate booking creation and offers | Teams 1/3 supply authoritative profiles, vehicles, routing and availability; Pritam supplies scoped balance facts |
-| 4 | Complete trip, OTP, cancellation and deadline workers | Agreed arrival/no-show interfaces, cancellation reasons and completed booking integration |
+| Dependency | Responsible party |
+|---|---|
+| Secure customer OTP display/delivery and recovery decision | Project owner explicitly left pending |
+| Actual lead Firebase UID | Owner will provide later |
+| Qualifying incident reasons/exclusions and no-trip disputes | Owner explicitly left pending |
+| Profile/vehicle/application producers and web adapters implemented; real credential-linking flow remains to verify | Frontend integration |
+| Route/availability/GPS/share APIs and frontend adapters implemented; real provider/device integration remains | Runtime configuration and device tests |
+| Webhook secret/configuration, real capture/FCM/App Check and cloud deployment | Runtime/provider configuration and authorized integration testing |
 
-The existing readiness reconciliation proposal still contains policy alternatives that disagree with implemented behavior. Review those unresolved items before using it to change response or state contracts. The user's confirmed immediate scheduled broadcast and NEEDS_REBOOK behavior is recorded in `implement-booking-core`.
+Use the [Team 2 execution register](../../openspec/changes/complete-team2-backend/tasks.md) and [core/mobility follow-up](../../openspec/changes/complete-core-mobility-backend/tasks.md) for per-task evidence. Source is reviewable; end-to-end release completion remains pending the dependencies above.
 
 ## Decision register status
 
@@ -109,10 +112,10 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 
 | # | Item | Status | Owner | Notes |
 |---|---|---|---|---|
-| 1 | Incident rolling window | OPEN | Project owner | Durable counter across account lifetime for demo |
+| 1 | Incident counters | AGREED | Project owner | Lifetime counters; qualifying reasons/exclusions remain pending |
 | 2 | Data retention durations | OPEN | Project owner | Approach agreed (DEC-11); exact periods needed before real data |
-| 3 | Dispute deadline / settlement | OPEN | Project owner | Basic dispute flag and report link for demo |
-| 4 | Cancellation reason categories | OPEN | Project owner | Predefined dropdown categories needed before cancellation UI |
+| 3 | Dispute deadline / settlement | PARTIAL | Project owner | Completed trips: 48h; no-trip disputes and settlement rules remain pending |
+| 4 | Report and cancellation categories | AGREED | Project owner | Approved initial lists in apps/api/src/config/approved-policies.ts |
 | 5 | PER_KM activation criteria | DEFERRED (R1) | Project owner | GPS accuracy benchmarks needed prior to future activation |
 | 6 | Firebase region benchmarking | DECIDED | Member 5 | App Hosting (Singapore), Cloud Functions (Hong Kong), Firestore (Mumbai) |
 
@@ -123,9 +126,9 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 | Blocker | Affects | Resolution |
 |---|---|---|
 | Readiness reconciliation remains pending | Policy and contract reconciliation | Review [`reconcile-project-readiness`](../../openspec/changes/reconcile-project-readiness/tasks.md) before authorized foundation repair |
-| Functions deployment packaging unverified | API deployment and background functions | Local export/import checks pass; verify packaged workspace dependencies before deployment |
-| Firebase project unprovisioned | Backend runtime, deployment | Firebase console setup and Blaze plan configuration |
-| Cancellation reason taxonomy | Cancellation UI, validation | Adopt standard preset reasons for demo |
+| Cloud deployment verification | API deployment and background functions | Standalone package dependencies and Node22 HTTP startup pass locally; deployed IAM, secrets and scheduled invocation remain |
+| Managed runtime configuration | Backend runtime, deployment | Verify configured project resources, billing, IAM and deployed endpoints |
+| Owner-held access and policy decisions | Admin grants, OTP, incident and financial edge cases | Lead UID, secure OTP display/recovery, qualifying incidents and no-trip settlement rules remain pending |
 
 ---
 
@@ -159,3 +162,17 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 - Frontend progress tracker → `docs/project-management/FRONTEND_PROGRESS.md`
 - Backend progress tracker → `docs/project-management/BACKEND_PROGRESS.md`
 
+
+## Frontend integration checkpoint — 23 November 2026
+
+| Area | Implementation result | Remaining gate |
+|---|---|---|
+| API transport and identity | Canonical calls, limited-use App Check, explicit demo mode, no silent fake data | Real provider/linking/App Check verification |
+| Core records | Owned atomic vehicle/profile saves, private uploads/photos, applications and coverage | Deployed Storage/IAM and manual review |
+| Booking | Server road geometry, current Places API, eligibility, rate caps, quote freshness and lifecycle states | Real Maps keys/restrictions/quotas |
+| Trip/driver | Polling, foreground GPS, fresh presence, initialized assignments, customer arrival fallback and active-trip offline guard | Real-device GPS/foreground calibration; owner-held OTP display/recovery |
+| Finance/Admin | Verified Test Mode checkout, real ledger/read models, reports/decisions, private document preview/download | Real capture/webhook and pending allocation/settlement policies |
+| Inbox/privacy | Owned inbox/read state, persisted opt-outs, authenticated/revocable shares and deletion-review intake | No external notification/emergency or immediate legal-erasure claim |
+| Hardening | 96 browser matrix checks passed; keyboard dialog/autocomplete and synthetic instant booking passed | Screen reader/real-device LCP and independent review |
+
+Detailed verification and exact release gates are recorded in [the frontend execution register](../../openspec/changes/complete-frontend-integration/tasks.md). Original frontend ownership remains Team 1; this cross-team integration work was explicitly authorized by the owner. No commit, push or deployment was performed.

@@ -17,3 +17,24 @@
 - [ ] Verify upstream trip, invoice, incident and category producers.
 - [ ] Verify actual Test Mode Razorpay and FCM delivery.
 - [ ] Partner review of financial/security/shared interfaces before merge.
+
+## Team 2 completion follow-up
+
+Trip completion/cancellation/no-show payables, capture ledger entries, approved category defaults, order reconciliation and Admin action integrations now exist. One live Test Mode order/receipt lookup passed. Capture/webhook/FCM and unresolved policy gates remain pending. [Execution register](../complete-team2-backend/tasks.md).
+
+## Razorpay checkout follow-up
+
+| Task | Result | Status |
+|---|---|---|
+| BE-021 | Retain one Razorpay order per invoice, reuse it across failed attempts and browsers, and recover an interrupted create with the original receipt | REVIEW |
+| BE-022–023 | Reconcile through the owned status endpoint or signed webhooks. Delayed failures, late capture and duplicate deliveries converge on a single capture and receipt | REVIEW |
+| FE-037, FE-054 | Show verified status on the receipt and outstanding-balance screens, with retry and status checking after interrupted checkout | REVIEW |
+| Provider sign-off | Configure Test Mode auto-capture and the staging webhook, then verify capture and webhook receipt using a Razorpay test payment | PENDING |
+| BE-043 | Captured-payment refunds, settlement and allocation require the approved financial rules | BLOCKED |
+
+Local verification passed 87 API tests with Firebase emulators and 16 web tests. The payment HTTP regression uses simulated Razorpay responses and signed events, including a failed attempt that later captures and multiple concurrent verification paths.
+
+| Follow-up | Status | Evidence or remaining check |
+|---|---|---|
+| BE-028 transactional email | REVIEW | Server-side outbox, verified recipients, event templates, preference checks and bounded retries. Verify real Resend delivery after configuring the sender and deploying the Functions. |
+| FE-017 service areas | REVIEW | Google Places search, keyboard selection and multiple removable areas. Reviewed pickup coverage remains a separate input. |

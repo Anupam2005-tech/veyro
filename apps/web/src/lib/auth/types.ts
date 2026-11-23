@@ -1,8 +1,10 @@
 export interface AuthUser {
   uid: string;
   email: string | null;
+  emailVerified?: boolean;
   phoneNumber: string | null;
   displayName: string | null;
+  photoURL?: string | null;
   getIdToken: () => Promise<string>;
 }
 

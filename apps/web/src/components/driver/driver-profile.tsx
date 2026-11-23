@@ -61,6 +61,8 @@ export default function DriverProfile() {
           languages: next.languages,
           categories: next.categories,
           serviceAreas: next.serviceAreas,
+          hourlyRateInr: next.hourlyRateInr,
+          transmissions: next.transmissions,
         });
         setError(null);
       })
@@ -84,6 +86,10 @@ export default function DriverProfile() {
     if (!activeUser) return;
     if (!form.fullName.trim() || !form.phone.trim()) {
       setNotice('Name and phone are required.');
+      return;
+    }
+    if (form.hourlyRateInr === undefined || !Number.isFinite(form.hourlyRateInr) || form.hourlyRateInr < 0) {
+      setNotice('A valid hourly rate is required.');
       return;
     }
     setSaving(true);
@@ -174,7 +180,7 @@ export default function DriverProfile() {
                   <div className="input-glow rounded-panel">
                     <Input
                       id="driver-languages"
-                      value={form.languages.join(', ')}
+                      defaultValue={form.languages.join(', ')}
                       onChange={(event) => setField('languages', splitList(event.currentTarget.value))}
                     />
                   </div>
@@ -183,10 +189,16 @@ export default function DriverProfile() {
                   <div className="input-glow rounded-panel">
                     <Input
                       id="driver-categories"
-                      value={form.categories.join(', ')}
+                      defaultValue={form.categories.join(', ')}
                       onChange={(event) => setField('categories', splitList(event.currentTarget.value))}
                     />
                   </div>
+                </Field>
+                <Field id="driver-edit-rate" label="Hourly rate (₹)" required hint="Applies to future accepted bookings only">
+                  <Input id="driver-edit-rate" type="number" min="0" step="0.01" required value={form.hourlyRateInr ?? ''} onChange={event => setField('hourlyRateInr', event.currentTarget.value === '' ? undefined : Number(event.currentTarget.value))} />
+                </Field>
+                <Field id="driver-edit-transmission" label="Transmissions" hint="MANUAL, AUTOMATIC; changes require review">
+                  <Input id="driver-edit-transmission" defaultValue={form.transmissions?.join(', ')} onChange={event => setField('transmissions', splitList(event.currentTarget.value))} />
                 </Field>
                 <Field id="driver-areas" label="Service areas" className="sm:col-span-2">
                   <div className="input-glow rounded-panel">
@@ -211,9 +223,9 @@ export default function DriverProfile() {
                 <VeyroButton type="submit" size="lg" loading={saving}>
                   Save profile
                 </VeyroButton>
-                <VeyroButton asChild variant="secondary" size="lg">
+                {profile.applicationStatus !== 'APPROVED' ? <VeyroButton asChild variant="secondary" size="lg">
                   <Link href="/driver/status">View application status</Link>
-                </VeyroButton>
+                </VeyroButton> : null}
               </div>
             </form>
 
@@ -228,8 +240,7 @@ export default function DriverProfile() {
                   <span className="ml-2 font-body text-sm font-normal text-studio-muted">/ hour</span>
                 </p>
                 <p className="mt-3 text-xs text-studio-muted">
-                  Rate changes affect future bookings only. Contact Veyro support to request a
-                  change; no silent rate edits are applied to frozen quotes.
+                  Rate changes affect future accepted bookings only. Existing quotes and assigned trips retain their frozen rates. Identity, capability and service-area changes require Admin review.
                 </p>
               </section>
 

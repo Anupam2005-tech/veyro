@@ -10,6 +10,7 @@ export type DriverApplicationStatus =
 export type RoleIntent = 'customer' | 'driver';
 
 export interface DriverDocumentMeta {
+  id?: string;
   kind: 'LICENCE' | 'GOVERNMENT_ID' | 'PROFILE_PHOTO';
   fileName: string;
   storagePath: string;
@@ -47,6 +48,8 @@ export interface CustomerOnboardingInput {
 }
 
 export interface DriverApplicationInput {
+  serviceAreaBounds?: { southWest: Coordinate; northEast: Coordinate };
+  serviceAreaPlaceIds?: string[];
   fullName: string;
   phone: string;
   experienceYears: string;
@@ -61,6 +64,10 @@ export interface DriverApplicationInput {
 
 export type BookingType = 'INSTANT' | 'SCHEDULED';
 export type BookingStatus =
+  | 'EXPIRED'
+  | 'NEEDS_REBOOK'
+  | 'SCHEDULED_QUEUED'
+  | 'SCHEDULED_BROADCASTING'
   | 'AWAITING_DRIVER'
   | 'ACCEPTED'
   | 'EN_ROUTE'
@@ -99,6 +106,7 @@ export interface DriverCandidate {
   responseEtaMinutes: number;
   verified: boolean;
   vehicle: Omit<BookingVehicle, 'id'>;
+  position?: Coordinate;
 }
 
 export interface DriverSearchFilters {
@@ -124,6 +132,7 @@ export interface BookingQuoteRequest {
 }
 
 export interface BookingQuote {
+  routeId?: string;
   quoteId: string;
   currency: 'INR';
   pricingMode: 'HOURLY';
@@ -180,6 +189,8 @@ export interface CustomerPrivacyPreferences {
 }
 
 export interface CustomerProfileDetails extends VeyroProfile {
+  hasAvatar?: boolean;
+  unpaidInvoiceId?: string | null;
   vehicles: BookingVehicle[];
   emergencyContacts: EmergencyContact[];
   unpaidBalance: number;
@@ -228,6 +239,7 @@ export interface SosEventRecord {
 }
 
 export interface ShareLinkDetails {
+  shareId?: string;
   token: string;
   createdAt: string;
   expiresAt: string;
@@ -302,8 +314,8 @@ export interface SharedTripView {
   state: TripState;
   pickupLabel: string;
   destinationLabel: string;
-  pickupPosition: Coordinate;
-  destinationPosition: Coordinate;
+  pickupPosition: Coordinate | null;
+  destinationPosition: Coordinate | null;
   driverName: string | null;
   driverVehicle: string | null;
   driverEtaMinutes: number | null;
@@ -320,7 +332,7 @@ export interface RatingSubmission {
 export interface ReportSubmission {
   tripId: string;
   reporterRole: 'CUSTOMER' | 'DRIVER';
-  category: 'SAFETY' | 'PAYMENT' | 'VEHICLE' | 'BEHAVIOUR' | 'OTHER';
+  category: 'SAFETY_CONCERN' | 'FARE_OR_PAYMENT' | 'SERVICE_ISSUE' | 'DRIVER_CONDUCT' | 'CUSTOMER_CONDUCT' | 'LOST_ITEM' | 'OTHER';
   description: string;
 }
 
@@ -377,6 +389,7 @@ export interface DriverIncidentEntry {
 }
 
 export interface DriverProfileDetails extends VeyroProfile {
+  activeTripState?: TripState;
   experienceYears: string;
   languages: string[];
   categories: string[];
@@ -392,6 +405,8 @@ export interface DriverProfileDetails extends VeyroProfile {
 }
 
 export interface DriverProfileUpdate {
+  hourlyRateInr?: number;
+  transmissions?: string[];
   fullName: string;
   phone: string;
   experienceYears: string;
@@ -419,6 +434,8 @@ export interface AdminAuditEntry {
 }
 
 export interface AdminApplicationRecord {
+  serviceAreaPlaceIds?: string[];
+  serviceAreaBounds?: { southWest: Coordinate; northEast: Coordinate };
   id: string;
   driverUid: string;
   driverName: string;

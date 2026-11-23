@@ -93,17 +93,28 @@ function nearestPlace(position: Coordinate): PlaceOption {
 export const demoMapsProvider: MapsProvider = {
   id: 'demo',
 
-  async searchPlaces(query: string) {
+  async searchPlaces(query: string, biasLocation?: Coordinate | null) {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) {
-      return SAMPLE_PLACES.slice(0, 5);
+    let results = [...SAMPLE_PLACES];
+
+    if (biasLocation) {
+      // Sort places closest to the person's location first
+      results.sort(
+        (a, b) => haversineKm(biasLocation, a.position) - haversineKm(biasLocation, b.position)
+      );
     }
 
-    return SAMPLE_PLACES.filter(
-      (place) =>
-        place.label.toLowerCase().includes(normalized) ||
-        place.address.toLowerCase().includes(normalized)
-    ).slice(0, 5);
+    if (!normalized) {
+      return results.slice(0, 5);
+    }
+
+    return results
+      .filter(
+        (place) =>
+          place.label.toLowerCase().includes(normalized) ||
+          place.address.toLowerCase().includes(normalized)
+      )
+      .slice(0, 5);
   },
 
   async reverseGeocode(position: Coordinate) {

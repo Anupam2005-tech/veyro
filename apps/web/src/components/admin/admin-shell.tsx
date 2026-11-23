@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { NotificationInbox } from '@/components/notifications/notification-inbox';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
 import { ClipboardList, FileSearch, LayoutDashboard, LogOut, ShieldAlert, UsersRound } from 'lucide-react';
@@ -43,7 +45,7 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
   React.useEffect(() => {
     if (loading || demoPreview) return;
     if (!user) {
-      router.replace(`/auth?role=admin&returnTo=${encodeURIComponent(pathname)}`);
+      router.replace(`/auth/admin?returnTo=${encodeURIComponent(pathname)}`);
       return;
     }
     if (profile && profile.role !== 'ADMIN') {
@@ -54,7 +56,7 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
-    router.replace('/auth');
+    router.replace('/auth/admin');
   }
 
   function isActive(item: (typeof navigation)[number]) {
@@ -69,25 +71,35 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
         scrolled ? 'header-scrolled' : ''
       }`}
     >
-      <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <Link
             href="/admin"
-            className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white transition-colors hover:bg-studio-ink"
+            className="inline-flex items-center hover:opacity-80 transition-opacity"
             aria-label="Veyro admin console"
           >
-            V
+            <Image
+              src="/brand/veyro-light-logo-trimmed.png"
+              alt="Veyro"
+              width={100}
+              height={26}
+              priority
+              className="h-6 sm:h-7 w-auto object-contain"
+            />
           </Link>
+          <div className="hidden sm:block h-4 w-px bg-[#DCD8CC]" />
           <div>
             <p className="flex items-center gap-2 font-display text-base font-extrabold leading-tight text-studio-ink">
-              Veyro Admin
-              <ShieldAlert aria-hidden="true" className="h-3.5 w-3.5 text-studio-lime" />
+              Admin Console
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#090B10] px-2 py-0.5 font-mono text-[9.5px] font-bold text-[#38BDF8]">
+                OPS
+              </span>
             </p>
             <p className="truncate text-xs text-studio-muted">{subtitle}</p>
           </div>
         </div>
 
-        <nav aria-label="Admin navigation" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Admin navigation" className="order-last hidden w-full items-center justify-center gap-1 md:flex lg:order-none lg:w-auto">
           {navigation.map((item) => {
             const active = isActive(item);
             return (
@@ -116,6 +128,7 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <NotificationInbox role="ADMIN" />
           {demoMode || demoPreview ? <DemoBadge className="hidden sm:inline-flex" /> : null}
           <VeyroButton
             type="button"

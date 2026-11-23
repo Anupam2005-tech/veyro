@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   CarFront,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 import {
   CheckboxField,
@@ -35,6 +34,17 @@ const fuelTypes = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'] as const;
 
 type Errors = Record<string, string>;
 
+function normalizePhone(value: string): string {
+  const trimmed = value.trim().replace(/[\s-]/g, '');
+  if (/^[6-9]\d{9}$/.test(trimmed)) {
+    return `+91${trimmed}`;
+  }
+  if (/^0[6-9]\d{9}$/.test(trimmed)) {
+    return `+91${trimmed.slice(1)}`;
+  }
+  return trimmed;
+}
+
 export default function CustomerOnboarding() {
   const router = useRouter();
   const { user, profile, loading, refreshProfile } = useSession();
@@ -55,18 +65,29 @@ export default function CustomerOnboarding() {
   const hydrated = React.useRef(false);
 
   React.useEffect(() => {
-    if (!profile || hydrated.current) {
+    if (hydrated.current) {
       return;
     }
-    hydrated.current = true;
-    setFullName(profile.fullName === 'Veyro Customer' ? '' : profile.fullName);
-    setPhone(profile.phone ?? '');
-  }, [profile]);
+    const initialName =
+      profile?.fullName && profile.fullName !== 'Veyro Customer'
+        ? profile.fullName
+        : user?.displayName ?? '';
+    const initialPhone = profile?.phone || user?.phoneNumber || '';
+    if (initialName || initialPhone) {
+      hydrated.current = true;
+      if (initialName) setFullName(initialName);
+      if (initialPhone) setPhone(normalizePhone(initialPhone));
+    }
+  }, [profile, user]);
 
   function validateDetails(): boolean {
     const next: Errors = {};
     const nameError = validateRequired(fullName, 'your full name');
-    const phoneError = validateE164Phone(phone);
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone !== phone) {
+      setPhone(normalizedPhone);
+    }
+    const phoneError = validateE164Phone(normalizedPhone);
 
     if (nameError) next.fullName = nameError;
     if (phoneError) next.phone = phoneError;
@@ -101,6 +122,33 @@ export default function CustomerOnboarding() {
       ok: true,
       vehicle: { make: make.trim(), model: model.trim(), category, transmission, fuelType },
     };
+  }
+
+  async function handleSkipVehicle() {
+    if (!user) {
+      router.replace('/auth?role=customer');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await saveCustomerOnboarding(user, {
+        fullName: fullName.trim(),
+        phone: normalizePhone(phone),
+        consentTerms,
+        consentPrivacy,
+        vehicle: null,
+      });
+      await refreshProfile();
+      setErrors({});
+      setStep(2);
+    } catch (caught) {
+      setSubmitError(
+        caught instanceof Error ? caught.message : 'Could not save your profile. Try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -436,8 +484,8 @@ export default function CustomerOnboarding() {
                         </div>
 
                         <div className="flex items-start gap-2 rounded-panel border border-studio-border bg-studio-tint p-4 text-xs leading-relaxed text-studio-muted">
-                          <Sparkles aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-                          Category and transmission are used for matching. Fuel is informational only.
+                          <CarFront aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-studio-ink" />
+                          Category and transmission ensure exact driver compatibility. Fuel is informational only.
                         </div>
 
                         {submitError ? (
@@ -460,6 +508,14 @@ export default function CustomerOnboarding() {
                             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                             Back
                           </VeyroButton>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => void handleSkipVehicle()}
+                            className="inline-flex items-center justify-center rounded-control border border-studio-border bg-white px-4 py-3 text-xs font-semibold text-studio-muted hover:text-studio-ink hover:bg-studio-tint transition-colors"
+                          >
+                            Skip vehicle for now
+                          </button>
                           <VeyroButton type="submit" size="lg" className="flex-1" loading={submitting}>
                             Finish setup
                           </VeyroButton>

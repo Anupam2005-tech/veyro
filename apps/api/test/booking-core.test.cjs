@@ -1,3 +1,4 @@
+if (process.env.FIRESTORE_EMULATOR_HOST) process.env.FIRESTORE_DATABASE_ID = '(default)';
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { test } = require('node:test');
@@ -117,6 +118,9 @@ test('Firestore booking transactions enforce ownership, deadlines, reservations 
   assert.equal(fact.description, 'test description');
   await core.accept(overlap, assigned.driverId);
   const shortLead = await quote(null);
+  await assert.rejects(core.create(customer, shortLead, at + 4 * 60 * minute), { code: 'OUTSTANDING_BALANCE' });
+  // Model separately verified settlement before exercising the next booking window.
+  await db.collection('payables').doc('cancel-' + scheduled).update({ status: 'CAPTURED' });
   await core.create(customer, shortLead, at + 4 * 60 * minute);
   assert.equal((await booking(shortLead).get()).get('status'), 'SCHEDULED_BROADCASTING');
   at += 2 * 60 * minute;
@@ -124,4 +128,32 @@ test('Firestore booking transactions enforce ownership, deadlines, reservations 
   assert.equal(await core.advance(shortLead), 'NEEDS_REBOOK');
   assert.equal(await core.advance(shortLead), 'NEEDS_REBOOK');
   assert.equal((await booking(shortLead).collection('events').get()).size, 2);
+});
+
+test('instant acceptance rejects an active scheduled trip after its estimated reservation end', {
+  skip: !process.env.FIRESTORE_EMULATOR_HOST,
+}, async t => {
+  const app = initializeApp({ projectId: 'demo-veyro-audit' }, randomUUID());
+  t.after(() => deleteApp(app));
+  const db = getFirestore(app), customer = randomUUID(), driver = randomUUID(), previous = randomUUID();
+  const now = Date.now();
+  const core = new BookingCore(db, {
+    async verifyCreation() {}, async verifyAcceptance() {},
+    async cancellationFacts() { throw Error('unused'); },
+  }, () => now);
+  const quote = await storeBookingQuote(db, {
+    customerId: customer, vehicleId: randomUUID(), routeId: randomUUID(), selectedDriverId: driver,
+  }, { hourlyRateInr: 120, estimatedRouteKm: 8, estimatedRouteMinutes: 30,
+    waitingPolicyVersion: 'DEC-06', cancellationPolicyVersion: 'DEC-05', platformFeeConfigVersion: 'DEC-04' });
+  await core.create(customer, quote);
+  const reservation = db.collection('driverReservations').doc(driver).collection('active').doc(previous);
+  await reservation.set({ kind: 'SCHEDULED', start: now - 7200000, end: now - 3600000 });
+  for (const status of ['DRIVER_EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']) {
+    await db.collection('trips').doc(previous).set({ driverId: driver, status });
+    await assert.rejects(core.accept(quote, driver), { code: 'BOOKING_CONFLICT' });
+    assert.equal((await db.collection('bookings').doc(quote).get()).get('status'), 'SEARCHING');
+  }
+  await db.collection('trips').doc(previous).update({ status: 'COMPLETED' });
+  await core.accept(quote, driver);
+  assert.equal((await db.collection('bookings').doc(quote).get()).get('status'), 'ASSIGNED');
 });

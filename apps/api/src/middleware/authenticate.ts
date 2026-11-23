@@ -6,7 +6,7 @@ import { AppError } from '../shared/http/app-error.js';
 declare global {
   namespace Express {
     interface Request {
-      auth?: { readonly uid: string };
+      auth?: { readonly uid: string; readonly authTime?: number };
     }
   }
 }
@@ -27,7 +27,7 @@ export const authenticate: RequestHandler = async (req, res, next) => {
 
   try {
     const decoded = await getAuth(getFirebaseAdminApp()).verifyIdToken(token, true);
-    req.auth = { uid: decoded.uid };
+    req.auth = { uid: decoded.uid, authTime: decoded.auth_time };
   } catch (error) {
     if (error instanceof Error && 'code' in error && typeof error.code === 'string' &&
         invalidCredentialCodes.has(error.code)) return unauthorized();

@@ -40,7 +40,7 @@ export default function EmailLinkCallback() {
     () =>
       safeReturnPath(
         searchParams.get('continue') ?? getStoredReturnPath(),
-        roleIntent === 'driver' ? '/onboarding/driver' : '/onboarding/customer'
+        roleIntent === 'driver' ? '/driver' : '/customer'
       ),
     [searchParams, roleIntent]
   );

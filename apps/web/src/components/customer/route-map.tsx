@@ -6,11 +6,12 @@ import { getMapsProvider } from '@/lib/maps';
 import type { Coordinate, MapHandle, PlaceOption, RoutePreview } from '@/lib/maps';
 
 export interface RouteMapProps {
+  className?: string;
   points: PlaceOption[];
   route: RoutePreview | null;
   loading?: boolean;
   error?: string | null;
-  driverMarkers?: Array<{ id: string; position: Coordinate; label: string }>;
+  driverMarkers?: Array<{ id: string; position: Coordinate; label: string; stale?: boolean }>;
   showDriverMarkers?: boolean;
   onPinMove?: (index: number, position: Coordinate) => void;
 }
@@ -40,6 +41,7 @@ function boundsFor(points: Coordinate[]) {
 }
 
 export default function RouteMap({
+  className,
   points,
   route,
   loading = false,
@@ -54,9 +56,16 @@ export default function RouteMap({
   const [mapFailed, setMapFailed] = React.useState(false);
   const [draggingIndex, setDraggingIndex] = React.useState<number | null>(null);
   const [dragPosition, setDragPosition] = React.useState<Coordinate | null>(null);
+  const mapHandleRef = React.useRef<MapHandle | null>(null);
+  const markerRef = React.useRef(driverMarkers); markerRef.current = showDriverMarkers ? driverMarkers : [];
+  const markerKey = JSON.stringify(markerRef.current);
+  const pointsRef = React.useRef(points); pointsRef.current = points;
+  const routeRef = React.useRef(route); routeRef.current = route;
+  const routeKey = JSON.stringify(route?.path ?? []);
+  const [svgZoom, setSvgZoom] = React.useState(1);
 
   const pointsKey = React.useMemo(
-    () => points.map((point) => `${point.position.lat},${point.position.lng}`).join('|'),
+    () => points.map((point) => `${point.position.lat},${point.position.lng}:${point.label}`).join('|'),
     [points]
   );
 
@@ -66,12 +75,12 @@ export default function RouteMap({
     }
 
     let disposed = false;
-    let handle: MapHandle | null = null;
 
     provider
       .createMap(googleContainerRef.current, {
-        points,
-        route,
+        points: pointsRef.current,
+        route: routeRef.current,
+        driverMarkers: markerRef.current,
         onDragEnd: onPinMove,
       })
       .then((nextHandle) => {
@@ -79,7 +88,7 @@ export default function RouteMap({
           nextHandle?.destroy();
           return;
         }
-        handle = nextHandle;
+        mapHandleRef.current = nextHandle;
       })
       .catch(() => {
         if (!disposed) {
@@ -89,9 +98,28 @@ export default function RouteMap({
 
     return () => {
       disposed = true;
-      handle?.destroy();
+      mapHandleRef.current?.destroy();
+      mapHandleRef.current = null;
     };
-  }, [mapFailed, onPinMove, points, pointsKey, provider, route]);
+  }, [mapFailed, onPinMove, pointsKey, provider, routeKey]);
+
+  React.useEffect(() => { mapHandleRef.current?.updateDriverMarkers?.(markerRef.current); }, [markerKey]);
+
+  const handleZoomIn = React.useCallback(() => {
+    if (mapHandleRef.current?.zoomIn) {
+      mapHandleRef.current.zoomIn();
+    } else {
+      setSvgZoom((prev) => Math.min(prev + 0.25, 2.5));
+    }
+  }, []);
+
+  const handleZoomOut = React.useCallback(() => {
+    if (mapHandleRef.current?.zoomOut) {
+      mapHandleRef.current.zoomOut();
+    } else {
+      setSvgZoom((prev) => Math.max(prev - 0.25, 0.75));
+    }
+  }, []);
 
   const allPositions = React.useMemo(() => {
     const positions = points.map((point) => point.position);
@@ -174,7 +202,7 @@ export default function RouteMap({
   const useGoogleMap = provider.id === 'google' && !mapFailed;
 
   return (
-    <section className="relative h-[420px] overflow-hidden rounded-card border border-studio-border bg-[#e9eef5] lg:h-full lg:min-h-[620px]">
+    <section className={`relative overflow-hidden bg-[#e9eef5] ${className ?? 'h-[420px] rounded-card border border-studio-border lg:h-full lg:min-h-[620px]'}`}>
       <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-studio-obsidian px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white">
           {useGoogleMap ? 'Google road map' : 'Demo map preview'}
@@ -190,13 +218,14 @@ export default function RouteMap({
       {useGoogleMap ? (
         <div ref={googleContainerRef} className="h-full w-full" aria-label="Route map" />
       ) : (
-        <div ref={svgContainerRef} className="h-full w-full">
+        <div ref={svgContainerRef} className="h-full w-full overflow-hidden">
           <p className="sr-only">
             Pickup and destination pins can be moved with the arrow keys when focused.
           </p>
           <svg
             viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
             className="h-full w-full"
+            style={{ transform: `scale(${svgZoom})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out' }}
             role="group"
             aria-label={route ? 'Preview of the selected road route' : 'Pickup and destination map'}
           >
@@ -255,7 +284,7 @@ export default function RouteMap({
                   const point = project(marker.position);
                   return (
                     <g key={marker.id} transform={`translate(${point.x} ${point.y})`}>
-                      <circle r="14" fill="#090b10" />
+                      <circle r="14" fill={marker.stale ? '#64748b' : '#090b10'} />
                       <circle r="5" fill="#ffffff" />
                       <title>{marker.label}</title>
                     </g>
@@ -323,6 +352,33 @@ export default function RouteMap({
           {error}
         </div>
       ) : null}
+
+      {/* Floating Zoom Controls: + for zoom in, - for zoom out */}
+      <div
+        className="absolute right-4 bottom-6 sm:bottom-16 z-20 flex flex-col items-center overflow-hidden rounded-2xl border border-[#DCD8CC] bg-white/95 shadow-md shadow-black/5 backdrop-blur-md"
+        role="group"
+        aria-label="Map zoom controls"
+      >
+        <button
+          type="button"
+          onClick={handleZoomIn}
+          aria-label="Zoom in"
+          title="Zoom in (+)"
+          className="flex h-10 w-10 items-center justify-center text-lg font-bold text-[#090B10] transition-colors hover:bg-[#FAF9F5] active:bg-[#F4F1EA] select-none"
+        >
+          +
+        </button>
+        <div className="h-px w-6 bg-[#EAE7DC]" />
+        <button
+          type="button"
+          onClick={handleZoomOut}
+          aria-label="Zoom out"
+          title="Zoom out (-)"
+          className="flex h-10 w-10 items-center justify-center text-xl font-bold text-[#090B10] transition-colors hover:bg-[#FAF9F5] active:bg-[#F4F1EA] select-none"
+        >
+          −
+        </button>
+      </div>
 
       <div className="pointer-events-none absolute bottom-4 right-4 z-10 hidden flex-col items-end gap-1 text-[10px] font-medium text-studio-muted sm:flex">
         <span className="inline-flex items-center gap-1 rounded-control border border-studio-border bg-white/90 px-2.5 py-1">

@@ -26,6 +26,7 @@ import {
 } from '@veyro/ui';
 import {
   driverSafetyControl,
+  downloadApplicationDocument,
   getAdminApplication,
   reviewAdminApplication,
 } from '@/lib/api/client';
@@ -33,6 +34,7 @@ import type { AdminApplicationRecord, AdminReviewAction } from '@/lib/api/types'
 import { useSession } from '@/lib/auth/session-provider';
 import { DEMO_USER } from '@/lib/demo-user';
 import { isDemoDataMode } from '@/lib/env';
+import RouteMap from '@/components/customer/route-map-dynamic';
 import { AdminShell } from './admin-shell';
 
 type DialogMode = AdminReviewAction | 'DEACTIVATE' | 'RESTORE' | null;
@@ -51,6 +53,24 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
   const [dialog, setDialog] = React.useState<DialogMode>(null);
   const [reason, setReason] = React.useState('');
   const [missingItems, setMissingItems] = React.useState('');
+  const [documentBusy, setDocumentBusy] = React.useState<string | null>(null);
+  const [documentPreview, setDocumentPreview] = React.useState<{ url: string; kind: string; type: string } | null>(null);
+  React.useEffect(() => () => { if (documentPreview) URL.revokeObjectURL(documentPreview.url); }, [documentPreview]);
+
+  async function openDocument(id: string, kind: string, type: string, preview: boolean) {
+    if (!activeUser || isDemoDataMode) return;
+    setDocumentBusy(id); setNotice(null);
+    try {
+      const blob = await downloadApplicationDocument(activeUser, applicationId, id);
+      const url = URL.createObjectURL(new Blob([blob], { type: ['image/png', 'image/jpeg', 'application/pdf'].includes(type) ? type : 'application/octet-stream' }));
+      if (preview) setDocumentPreview({ url, kind, type });
+      else {
+        const link = document.createElement('a'); link.href = url; link.download = kind.toLowerCase() + (type === 'application/pdf' ? '.pdf' : type === 'image/png' ? '.png' : '.jpg');
+        link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) { setNotice(e instanceof Error ? e.message : 'Private document unavailable.'); }
+    finally { setDocumentBusy(null); }
+  }
 
   React.useEffect(() => {
     if (!activeUser) {
@@ -226,13 +246,32 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
               </section>
 
               <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
+                <h2 className="font-display text-xl font-extrabold text-studio-ink">Pickup coverage</h2>
+                <p className="mt-2 text-sm text-studio-muted">{application.serviceAreas}</p>
+                {application.serviceAreaPlaceIds?.length ? (
+                  <ul aria-label="Selected service areas" className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                    {application.serviceAreaPlaceIds.map((placeId, index) => (
+                      <li key={placeId}>
+                        <a href={`https://www.google.com/maps/search/?api=1&query=Service+area&query_place_id=${encodeURIComponent(placeId)}`}
+                          target="_blank" rel="noopener noreferrer" className="font-semibold text-studio-ink underline">
+                          View area {index + 1} on Google Maps
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {application.serviceAreaBounds ? <RouteMap points={[
+                  { id: 'southwest', label: 'Southwest coverage corner', address: '', position: application.serviceAreaBounds.southWest },
+                  { id: 'northeast', label: 'Northeast coverage corner', address: '', position: application.serviceAreaBounds.northEast },
+                ]} route={null} /> : <p className="mt-2 text-sm text-studio-muted">Pickup coverage has not been supplied. Request updated coverage before live matching.</p>}
+              </section>
+              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl font-extrabold text-studio-ink">Private documents</h2>
                   <FileLock2 aria-hidden="true" className="h-5 w-5 text-studio-muted" />
                 </div>
                 <p className="mt-2 text-xs text-studio-muted">
-                  Demo shows document metadata only. Production uses short-lived presigned view URLs;
-                  no permanent public URL is stored.
+                  Documents are available only through your authorized Admin session. No public download URL is stored.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {application.documents.map((document) => (
@@ -248,12 +287,20 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                           {document.fileName} · {(document.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
-                      <span className="rounded-control bg-studio-tint px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-studio-ink">
-                        Presigned · 5 min
-                      </span>
+                      {!isDemoDataMode && document.id ? <div className="flex gap-2">
+                        <VeyroButton type="button" variant="secondary" size="sm" loading={documentBusy === document.id} onClick={() => void openDocument(document.id!, document.kind, document.contentType, true)}>Preview</VeyroButton>
+                        <VeyroButton type="button" variant="secondary" size="sm" disabled={documentBusy !== null} onClick={() => void openDocument(document.id!, document.kind, document.contentType, false)}>Download</VeyroButton>
+                      </div> : <span className="text-xs text-studio-muted">Demo metadata</span>}
                     </li>
                   ))}
                 </ul>
+                {documentPreview ? <section aria-label="Private document preview" className="mt-4 space-y-3">
+                  <div className="flex justify-between gap-2"><h3 className="font-semibold">{documentPreview.kind.replaceAll('_', ' ')}</h3><VeyroButton type="button" variant="secondary" size="sm" onClick={() => setDocumentPreview(null)}>Close preview</VeyroButton></div>
+                  {documentPreview.type.startsWith('image/') ?
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={documentPreview.url} alt={documentPreview.kind.replaceAll('_', ' ')} className="max-h-[600px] max-w-full object-contain" /> :
+                    <iframe title="Private verification document" sandbox="" src={documentPreview.url} className="h-[600px] w-full rounded-panel border border-studio-border" />}
+                </section> : null}
               </section>
 
               <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
@@ -325,7 +372,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                 </FormAlert>
               ) : null}
 
-              <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
+              {application.status === 'PENDING_REVIEW' ? <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <h2 className="font-display text-xl font-extrabold text-studio-ink">Application decision</h2>
                 <p className="mt-2 text-xs text-studio-muted">
                   Reject and request-changes require a reason. Approval is recorded with admin ID and
@@ -367,7 +414,7 @@ export default function AdminApplicationReview({ applicationId }: { applicationI
                     Reject application
                   </VeyroButton>
                 </div>
-              </section>
+              </section> : null}
 
               <section className="rounded-card border border-studio-border bg-studio-surface p-5 sm:p-7">
                 <div className="flex items-center justify-between gap-3">

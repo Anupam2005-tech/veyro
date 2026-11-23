@@ -1,39 +1,19 @@
-import Link from 'next/link';
-import { AppShell, PublicHeader, VeyroButton } from '@veyro/ui';
+import { AppShell } from '@veyro/ui';
 import { BookingModes } from '@/components/landing/BookingModes';
 import { Faq } from '@/components/landing/Faq';
 import { FareSafety } from '@/components/landing/FareSafety';
 import { Hero } from '@/components/landing/Hero';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { InstallAppButton } from '@/components/landing/InstallAppButton';
 import { SiteFooter } from '@/components/landing/SiteFooter';
 import { TripVerification } from '@/components/landing/TripVerification';
 import { VehicleExplainer } from '@/components/landing/VehicleExplainer';
+import { VeyroFloatingNavbar } from '@/components/landing/VeyroFloatingNavbar';
 
 export default function HomePage() {
   return (
     <AppShell
-      theme="night"
-      header={
-        <PublicHeader
-          announcement="Veyro Release 1 · Demo data where labelled"
-          links={[
-            { label: 'How it works', href: '#how-it-works' },
-            { label: 'Booking', href: '#booking-modes' },
-            { label: 'Fares', href: '#fares' },
-            { label: 'Safety', href: '#safety' },
-            { label: 'FAQ', href: '#faq' },
-          ]}
-          actions={
-            <>
-              <InstallAppButton />
-              <VeyroButton asChild size="sm" variant="secondary">
-                <Link href="/auth">Sign In</Link>
-              </VeyroButton>
-            </>
-          }
-        />
-      }
+      theme="studio"
+      header={<VeyroFloatingNavbar />}
       footer={<SiteFooter />}
     >
       <Hero />

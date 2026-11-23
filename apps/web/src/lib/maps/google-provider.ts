@@ -1,4 +1,4 @@
-import type { Coordinate, MapsProvider, PlaceOption, RoutePreview } from './types';
+import type { Coordinate, MapsProvider, PlaceOption, PlaceSuggestion, RoutePreview, MapDriverMarker } from './types';
 
 interface GoogleLatLng {
   lat: () => number;
@@ -10,6 +10,7 @@ interface GoogleBounds {
 }
 
 interface GoogleMapInstance {
+  panTo?: (position: GoogleLatLng) => void;
   fitBounds: (bounds: GoogleBounds) => void;
 }
 
@@ -21,25 +22,21 @@ interface GoogleEventListener {
   remove: () => void;
 }
 
-interface GooglePrediction {
-  description: string;
-  place_id: string;
+interface GooglePlace {
+  displayName?: string;
+  formattedAddress?: string;
+  location?: GoogleLatLng;
+  fetchFields: (request: { fields: string[] }) => Promise<unknown>;
 }
-
-interface GooglePlaceDetails {
-  name?: string;
-  formatted_address?: string;
-  geometry?: { location?: GoogleLatLng } | null;
+interface GooglePrediction {
+  placeId: string;
+  text: { toString: () => string };
+  toPlace: () => GooglePlace;
 }
 
 interface GoogleGeocodeResult {
   formatted_address: string;
   geometry: { location: GoogleLatLng };
-}
-
-interface GoogleDirectionsRoute {
-  legs: Array<{ distance: { value: number }; duration: { value: number } }>;
-  overview_polyline?: { points?: string };
 }
 
 interface GoogleMapsNamespace {
@@ -49,17 +46,6 @@ interface GoogleMapsNamespace {
     Polyline: new (options: Record<string, unknown>) => GoogleOverlay;
     LatLng: new (lat: number, lng: number) => GoogleLatLng;
     LatLngBounds: new () => GoogleBounds;
-    DirectionsService: new () => {
-      route: (
-        request: {
-          origin: GoogleLatLng;
-          destination: GoogleLatLng;
-          waypoints: Array<{ location: GoogleLatLng }>;
-          travelMode: string;
-        },
-        callback: (result: { routes: GoogleDirectionsRoute[] } | null, status: string) => void
-      ) => void;
-    };
     Geocoder: new () => {
       geocode: (
         request: { location: GoogleLatLng },
@@ -75,18 +61,8 @@ interface GoogleMapsNamespace {
       clearInstanceListeners: (instance: unknown) => void;
     };
     places: {
-      AutocompleteService: new () => {
-        getPlacePredictions: (
-          request: { input: string; componentRestrictions: { country: string } },
-          callback: (predictions: GooglePrediction[] | null, status: string) => void
-        ) => void;
-      };
-      PlacesService: new (element: HTMLElement) => {
-        getDetails: (
-          request: { placeId: string; fields: string[] },
-          callback: (place: GooglePlaceDetails | null, status: string) => void
-        ) => void;
-      };
+      AutocompleteSessionToken: new () => object;
+      AutocompleteSuggestion: { fetchAutocompleteSuggestions: (request: Record<string, unknown>) => Promise<{ suggestions: { placePrediction?: GooglePrediction }[] }> };
     };
   };
 }
@@ -131,40 +107,6 @@ function loadGoogleMaps(apiKey: string): Promise<GoogleMapsNamespace> {
   return window.__veyroGoogleMapsLoader;
 }
 
-function decodePolyline(encoded: string): Coordinate[] {
-  const path: Coordinate[] = [];
-  let index = 0;
-  let latitude = 0;
-  let longitude = 0;
-
-  while (index < encoded.length) {
-    let result = 0;
-    let shift = 0;
-    let byte = 0;
-
-    do {
-      byte = encoded.charCodeAt(index++) - 63;
-      result += (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20);
-
-    latitude += result & 1 ? ~(result >> 1) : result >> 1;
-    result = 0;
-    shift = 0;
-
-    do {
-      byte = encoded.charCodeAt(index++) - 63;
-      result += (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20);
-
-    longitude += result & 1 ? ~(result >> 1) : result >> 1;
-    path.push({ lat: latitude / 1e5, lng: longitude / 1e5 });
-  }
-
-  return path;
-}
-
 function toLatLng(maps: GoogleMapsNamespace, position: Coordinate): GoogleLatLng {
   return new maps.maps.LatLng(position.lat, position.lng);
 }
@@ -174,56 +116,34 @@ export function createGoogleMapsProvider(apiKey: string, mapId?: string): MapsPr
     return loadGoogleMaps(apiKey);
   }
 
+  let sessionToken: object | undefined;
+  const predictionsById = new Map<string, GooglePrediction>();
   return {
     id: 'google',
 
-    async searchPlaces(query: string): Promise<PlaceOption[]> {
+    async searchPlaces(query: string, biasLocation?: Coordinate | null): Promise<PlaceSuggestion[]> {
       const normalized = query.trim();
-      if (!normalized) {
-        return [];
-      }
-
+      if (normalized.length < 2) return [];
       const maps = await getMaps();
-      const service = new maps.maps.places.AutocompleteService();
-      const predictions = await new Promise<GooglePrediction[]>((resolve, reject) => {
-        service.getPlacePredictions(
-          { input: normalized, componentRestrictions: { country: 'IN' } },
-          (result, status) => {
-            if (status !== 'OK' || !result) {
-              reject(new Error('Place lookup failed.'));
-              return;
-            }
-            resolve(result);
-          }
-        );
+      sessionToken ??= new maps.maps.places.AutocompleteSessionToken();
+      const { suggestions } = await maps.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: normalized, sessionToken, includedRegionCodes: ['in'],
+        ...(biasLocation ? { locationBias: { center: biasLocation, radius: 35000 } } : {}),
       });
-
-      const detailsService = new maps.maps.places.PlacesService(document.createElement('div'));
-      const options = await Promise.all(
-        predictions.slice(0, 5).map(
-          (prediction) =>
-            new Promise<PlaceOption | null>((resolve) => {
-              detailsService.getDetails(
-                { placeId: prediction.place_id, fields: ['name', 'formatted_address', 'geometry'] },
-                (place, status) => {
-                  const position = place?.geometry?.location;
-                  if (status !== 'OK' || !position) {
-                    resolve(null);
-                    return;
-                  }
-                  resolve({
-                    id: prediction.place_id,
-                    label: place.name ?? prediction.description,
-                    address: place.formatted_address ?? prediction.description,
-                    position: { lat: position.lat(), lng: position.lng() },
-                  });
-                }
-              );
-            })
-        )
-      );
-
-      return options.filter((option): option is PlaceOption => option !== null);
+      const predictions = suggestions.flatMap(s => s.placePrediction ? [s.placePrediction] : []).slice(0, 5);
+      for (const p of predictions) predictionsById.set(p.placeId, p);
+      return predictions.map(p => ({ id: p.placeId, label: p.text.toString(), address: p.text.toString() }));
+    },
+    async resolvePlace(suggestion: PlaceSuggestion): Promise<PlaceOption> {
+      if (suggestion.position) return { ...suggestion, position: suggestion.position };
+      const prediction = predictionsById.get(suggestion.id);
+      if (!prediction) throw new Error('Search again to choose this place.');
+      const place = prediction.toPlace();
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+      if (!place.location) throw new Error('This place has no usable pickup coordinates.');
+      sessionToken = undefined; predictionsById.clear();
+      return { id: suggestion.id, label: place.displayName ?? suggestion.label, address: place.formattedAddress ?? suggestion.address,
+        position: { lat: place.location.lat(), lng: place.location.lng() } };
     },
 
     async reverseGeocode(position: Coordinate): Promise<string> {
@@ -240,44 +160,8 @@ export function createGoogleMapsProvider(apiKey: string, mapId?: string): MapsPr
       });
     },
 
-    async getRoute(points: Coordinate[]): Promise<RoutePreview> {
-      if (points.length < 2) {
-        throw new Error('Add a pickup and destination before calculating a route.');
-      }
-
-      const maps = await getMaps();
-      const service = new maps.maps.DirectionsService();
-      const result = await new Promise<GoogleDirectionsRoute>((resolve, reject) => {
-        service.route(
-          {
-            origin: toLatLng(maps, points[0]),
-            destination: toLatLng(maps, points[points.length - 1]),
-            waypoints: points.slice(1, -1).map((point) => ({ location: toLatLng(maps, point) })),
-            travelMode: 'DRIVING',
-          },
-          (directions, status) => {
-            if (status !== 'OK' || !directions?.routes.length) {
-              reject(new Error('No road route was found for these locations.'));
-              return;
-            }
-            resolve(directions.routes[0]);
-          }
-        );
-      });
-
-      const distanceMeters = result.legs.reduce((total, leg) => total + leg.distance.value, 0);
-      const durationSeconds = result.legs.reduce((total, leg) => total + leg.duration.value, 0);
-      const encodedPath = result.overview_polyline?.points;
-
-      return {
-        provider: 'google',
-        routeId: `google-route-${Date.now()}`,
-        distanceKm: Math.round((distanceMeters / 1000) * 10) / 10,
-        durationMinutes: Math.max(1, Math.round(durationSeconds / 60)),
-        path: encodedPath ? decodePolyline(encodedPath) : points,
-        summary: 'Google road route',
-        calculatedAt: new Date().toISOString(),
-      };
+    async getRoute(): Promise<RoutePreview> {
+      throw new Error('Live road previews require the authenticated backend route service.');
     },
 
     async createMap(element: HTMLElement, options) {
@@ -301,7 +185,7 @@ export function createGoogleMapsProvider(apiKey: string, mapId?: string): MapsPr
         const marker = new maps.maps.Marker({
           map,
           position,
-          draggable: true,
+          draggable: Boolean(options.onDragEnd),
           label: index === 0 ? 'A' : index === options.points.length - 1 ? 'B' : String(index),
           title: point.label,
         });
@@ -335,8 +219,29 @@ export function createGoogleMapsProvider(apiKey: string, mapId?: string): MapsPr
         map.fitBounds(bounds);
       }
 
+      let driverOverlays: GoogleOverlay[] = [], centeredOnDriver = false;
+      const updateDriverMarkers = (entries: MapDriverMarker[]) => {
+        driverOverlays.forEach(marker => marker.setMap(null));
+        driverOverlays = entries.map(entry => new maps.maps.Marker({ map, position: toLatLng(maps, entry.position),
+          draggable: false, label: 'D', title: entry.label, opacity: entry.stale ? 0.45 : 1 }));
+        if (!options.points.length && entries[0] && !centeredOnDriver) {
+          map.panTo?.(toLatLng(maps, entries[0].position)); centeredOnDriver = true;
+        }
+      };
+      updateDriverMarkers(options.driverMarkers ?? []);
+
       return {
+        updateDriverMarkers,
+        zoomIn() {
+          const currentZoom = (map as unknown as { getZoom?: () => number }).getZoom?.() ?? 13;
+          (map as unknown as { setZoom?: (z: number) => void }).setZoom?.(currentZoom + 1);
+        },
+        zoomOut() {
+          const currentZoom = (map as unknown as { getZoom?: () => number }).getZoom?.() ?? 13;
+          (map as unknown as { setZoom?: (z: number) => void }).setZoom?.(Math.max(1, currentZoom - 1));
+        },
         destroy() {
+          driverOverlays.forEach(marker => marker.setMap(null));
           listeners.forEach((listener) => listener.remove());
           markers.forEach((marker) => {
             maps.maps.event.clearInstanceListeners(marker);

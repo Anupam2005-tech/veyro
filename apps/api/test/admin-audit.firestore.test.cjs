@@ -1,3 +1,4 @@
+if (process.env.FIRESTORE_EMULATOR_HOST) process.env.FIRESTORE_DATABASE_ID = '(default)';
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { createRequire } = require('node:module');

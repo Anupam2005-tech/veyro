@@ -10,6 +10,16 @@ const config: Config = {
       colors: {
         background: 'var(--theme-canvas)',
         foreground: 'var(--theme-text)',
+        border: 'var(--border)',
+        ring: 'var(--ring)',
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
         primary: {
           DEFAULT: 'var(--theme-accent)',
           foreground: 'var(--theme-accent-ink)',
@@ -92,11 +102,16 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(14px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'veyro-dash': 'veyro-dash 1.6s linear infinite',
         'veyro-float': 'veyro-float 6s ease-in-out infinite',
         'veyro-rise': 'veyro-rise 500ms ease-out both',
+        marquee: 'marquee 35s linear infinite',
       },
     },
   },

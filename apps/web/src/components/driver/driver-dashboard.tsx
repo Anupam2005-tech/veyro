@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { usePolling } from '@/lib/hooks/use-polling';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -58,41 +59,55 @@ export default function DriverDashboard() {
   const { user, demoMode } = useSession();
   const activeUser = user ?? (isDemoDataMode ? DEMO_USER : null);
   const demoPreview = isDemoDataMode && searchParams.get('role') === 'driver';
-  const preview = previews.find((item) => item === searchParams.get('state')) ?? null;
+  const preview = isDemoDataMode ? previews.find((item) => item === searchParams.get('state')) ?? null : null;
   const [profile, setProfile] = React.useState<DriverProfileDetails | null>(null);
   const [offers, setOffers] = React.useState<DriverOffer[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [profileError, setProfileError] = React.useState<string | null>(null);
   const [busyOffer, setBusyOffer] = React.useState<string | null>(null);
   const [busyOnline, setBusyOnline] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!activeUser) {
-      setLoading(false);
+      setProfile(null);
       return;
     }
 
     let active = true;
-    setLoading(true);
-    Promise.all([getDriverProfile(activeUser), getDriverOffers(activeUser)])
-      .then(([nextProfile, nextOffers]) => {
-        if (!active) return;
-        setProfile(nextProfile);
-        setOffers(nextOffers);
-        setError(null);
-      })
-      .catch((caught: unknown) => {
-        if (active) setError(caught instanceof Error ? caught.message : 'Could not load your dashboard.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    setProfile(null);
+    getDriverProfile(activeUser)
+      .then(next => { if (active) { setProfile(next); setProfileError(null); } })
+      .catch(caught => { if (active) setProfileError(caught instanceof Error ? caught.message : 'Could not load driver availability.'); });
 
     return () => {
       active = false;
     };
   }, [activeUser]);
+
+  const offerUser = profile?.uid === activeUser?.uid && profile?.applicationStatus === 'APPROVED' ? activeUser : null;
+  React.useEffect(() => {
+    setOffers([]);
+    setError(null);
+    setLoading(Boolean(offerUser));
+    if (!offerUser) return;
+    let active = true;
+    getDriverOffers(offerUser).then(next => { if (active) setOffers(next); })
+      .catch(caught => { if (active) setError(caught instanceof Error ? caught.message : 'Could not load offers.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [offerUser]);
+
+  usePolling(activeUser && !isDemoDataMode && !busyOnline ? activeUser.uid : null,
+    () => getDriverProfile(activeUser!), next => { setProfile(next); setProfileError(null); },
+    caught => setProfileError(caught instanceof Error ? caught.message : 'Could not refresh driver availability.'), 10000);
+  usePolling(offerUser && !isDemoDataMode && !loading ? offerUser.uid : null,
+    () => getDriverOffers(offerUser!), next => { setOffers(next); setError(null); },
+    caught => setError(caught instanceof Error ? caught.message : 'Could not refresh offers.'), error ? 30000 : 5000);
+  usePolling(activeUser && profile?.online && !isDemoDataMode ? activeUser.uid + ':presence' : null,
+    () => setDriverOnline(activeUser!, true, true), setProfile,
+    caught => { setProfile(p => p ? { ...p, online: false, gpsFresh: false } : p); setNotice(caught instanceof Error ? caught.message : 'Presence renewal failed.'); }, 15000);
 
   const shownProfile = React.useMemo(() => {
     if (!profile) return null;
@@ -107,11 +122,7 @@ export default function DriverDashboard() {
   const scheduledOffers = offers.filter((offer) => offer.type === 'SCHEDULED');
   const topOffer = instantOffers.find((offer) => offer.status === 'AVAILABLE') ?? null;
   const countdown = useCountdown(topOffer?.expiresAt);
-  const eligible =
-    shownProfile?.applicationStatus === 'APPROVED' &&
-    shownProfile.gpsFresh &&
-    shownProfile.locationPermission === 'GRANTED' &&
-    !shownProfile.activeTripId;
+  const eligible = shownProfile?.applicationStatus === 'APPROVED';
 
   async function handleOnline(next: boolean) {
     if (!activeUser) return;
@@ -135,6 +146,7 @@ export default function DriverDashboard() {
     try {
       const updated = await respondToDriverOffer(activeUser, offerId, action);
       setOffers(updated);
+      setProfile(await getDriverProfile(activeUser));
       setNotice(
         action === 'ACCEPT'
           ? 'Offer accepted. Open the trip cockpit to continue.'
@@ -231,7 +243,7 @@ export default function DriverDashboard() {
                 size="lg"
                 aria-pressed={shownProfile?.online ?? false}
                 loading={busyOnline}
-                disabled={!eligible && !shownProfile?.online}
+                disabled={shownProfile?.online ? shownProfile.activeTripState === 'ACTIVE' : !eligible}
                 onClick={() => void handleOnline(!shownProfile?.online)}
                 className={`transition-colors ${
                   shownProfile?.online
@@ -284,13 +296,14 @@ export default function DriverDashboard() {
               </div>
             </div>
 
-            {shownProfile?.applicationStatus !== 'APPROVED' ? (
+            {profileError ? <FormAlert tone="error" title="Availability unavailable" className="mt-5">{profileError}</FormAlert> : null}
+            {shownProfile && shownProfile.applicationStatus !== 'APPROVED' ? (
               <FormAlert tone="warning" title="Approval required" className="mt-5">
                 Only approved, active drivers may go online. Track your application in the status
                 screen.
               </FormAlert>
             ) : null}
-            {shownProfile && !shownProfile.gpsFresh ? (
+            {shownProfile?.online && !shownProfile.gpsFresh ? (
               <FormAlert tone="warning" title="GPS is stale" className="mt-5">
                 Step outside, refresh location permission, then try again. Stale GPS never appears
                 as live.

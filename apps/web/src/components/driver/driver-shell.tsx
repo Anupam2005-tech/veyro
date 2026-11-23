@@ -1,15 +1,18 @@
 'use client';
 
 import * as React from 'react';
+import { NotificationInbox } from '@/components/notifications/notification-inbox';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
-import { LayoutDashboard, LogOut, Navigation, UserRound, Wallet } from 'lucide-react';
-import { AppShell, DemoBadge, VeyroButton } from '@veyro/ui';
-import { getDriverProfile } from '@/lib/api/client';
+import { ChevronDown, LayoutDashboard, LogOut, Navigation, Trash2, UserRound, Wallet } from 'lucide-react';
+import { AppShell, ConfirmDialog, DemoBadge, FormAlert } from '@veyro/ui';
+import { getDriverProfile, requestAccountDeletion, setDriverOnline } from '@/lib/api/client';
 import { useSession } from '@/lib/auth/session-provider';
 import { DEMO_USER } from '@/lib/demo-user';
 import { isDemoDataMode } from '@/lib/env';
+import { usePolling } from '@/lib/hooks/use-polling';
 
 type NavItem = {
   href: string;
@@ -30,6 +33,11 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
   const searchParams = useSearchParams();
   const { user, profile, loading, demoMode, signOut } = useSession();
   const [signingOut, setSigningOut] = React.useState(false);
+  const [deletionOpen, setDeletionOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [accountNotice, setAccountNotice] = React.useState<{ text: string; tone: 'success' | 'error' } | null>(null);
+  const [online, setOnline] = React.useState(false);
+  const profileMenu = React.useRef<HTMLDetailsElement>(null);
   const [activeTripId, setActiveTripId] = React.useState<string | null>(null);
   const [scrolled, setScrolled] = React.useState(false);
   const shouldReduceMotion = useReducedMotion();
@@ -55,7 +63,6 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
         disabled: !activeTripId,
       },
       { href: '/driver/earnings', label: 'Earnings', icon: Wallet },
-      { href: '/driver/profile', label: 'Profile', icon: UserRound },
     ],
     [activeTripId]
   );
@@ -71,15 +78,37 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
     }
     getDriverProfile(targetUser)
       .then((data) => {
-        if (active) setActiveTripId(data.activeTripId);
+        if (!active) return;
+        setActiveTripId(data.activeTripId);
+        setOnline(data.online && data.applicationStatus === 'APPROVED');
+        if (!isDemoDataMode && !loading && profile?.role === 'DRIVER') {
+          if (!data.onboardingComplete) router.replace('/onboarding/driver');
+          else if (data.applicationStatus !== 'APPROVED') router.replace('/driver/status');
+        }
       })
       .catch(() => {
-        if (active) setActiveTripId(null);
+        if (active) { setActiveTripId(null); setOnline(false); }
       });
     return () => {
       active = false;
     };
-  }, [demoPreview, user]);
+  }, [demoPreview, loading, pathname, profile?.role, router, user]);
+
+  // The overview owns its toggle and heartbeat. Other driver screens renew the
+  // same shift without turning an explicitly offline driver back on.
+  usePolling(user && online && !isDemoDataMode && pathname !== '/driver' && !signingOut ? user.uid + ':' + pathname : null,
+    () => setDriverOnline(user!, true, true), next => setOnline(next.online),
+    () => {}, 10000);
+
+  React.useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !profileMenu.current?.contains(event.target) && profileMenu.current) {
+        profileMenu.current.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => document.removeEventListener('pointerdown', closeOutside);
+  }, []);
 
   React.useEffect(() => {
     if (loading || demoPreview) {
@@ -87,24 +116,41 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
     }
 
     if (!user) {
-      router.replace(`/auth?role=driver&returnTo=${encodeURIComponent(pathname)}`);
+      router.replace(`/auth/driver?returnTo=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    if (profile && (profile.role !== 'DRIVER' || !profile.onboardingComplete)) {
+    if (profile && profile.role !== 'DRIVER') {
       router.replace('/onboarding/driver');
-      return;
-    }
-
-    if (profile?.applicationStatus && profile.applicationStatus !== 'APPROVED') {
-      router.replace('/driver/status');
     }
   }, [demoPreview, loading, pathname, profile, router, user]);
 
   async function handleSignOut() {
     setSigningOut(true);
-    await signOut();
-    router.replace('/auth');
+    try {
+      await signOut();
+      router.replace('/auth/driver');
+    } catch {
+      setAccountNotice({ text: 'Could not sign out. Please try again.', tone: 'error' });
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  async function handleDeletionRequest() {
+    const current = user ?? (demoPreview ? DEMO_USER : null);
+    if (!current || deleting) return;
+    setDeleting(true);
+    try {
+      await requestAccountDeletion(current, 'DRIVER');
+      setDeletionOpen(false);
+      setAccountNotice({ text: isDemoDataMode ? 'Demo deletion request recorded.' : 'Your account deletion request is awaiting review.', tone: 'success' });
+    } catch (error) {
+      setDeletionOpen(false);
+      setAccountNotice({ text: error instanceof Error ? error.message : 'Could not request account deletion.', tone: 'error' });
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function isActive(item: NavItem) {
@@ -115,28 +161,19 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
 
   const header = (
     <header
+      aria-label={subtitle}
       className={`border-b border-studio-border bg-studio-surface ${
         scrolled ? 'header-scrolled' : ''
       }`}
     >
       <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/driver"
-            className="flex h-10 w-10 items-center justify-center rounded-control bg-studio-obsidian font-display text-sm font-extrabold text-white transition-colors hover:bg-studio-ink"
-            aria-label="Veyro driver studio"
-          >
-            V
-          </Link>
-          <div>
-            <p className="font-display text-base font-extrabold leading-tight text-studio-ink">
-              Veyro Driver
-            </p>
-            <p className="truncate text-xs text-studio-muted">{subtitle}</p>
-          </div>
-        </div>
+        <Link href={demoPreview ? '/driver?role=driver' : '/driver'}
+          className="inline-flex h-10 shrink-0 items-center rounded-md focus-visible:outline focus-visible:outline-2"
+          aria-label="Veyro driver dashboard">
+          <Image src="/brand/veyro-light-logo-trimmed.png" alt="Veyro" width={104} height={28} className="h-7 w-auto object-contain" />
+        </Link>
 
-        <nav aria-label="Driver navigation" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Driver navigation" className="hidden items-center gap-1 md:flex">
           {navigation.map((item) => {
             const active = isActive(item);
             const className = `relative inline-flex h-10 items-center gap-2 rounded-control px-3 text-sm font-semibold transition-colors ${
@@ -150,7 +187,7 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
             );
             return item.disabled ? (
               <span
-                key={item.href}
+                key={item.label}
                 aria-disabled="true"
                 title="No active trip right now"
                 className={className}
@@ -159,7 +196,7 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
               </span>
             ) : (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={className}
@@ -177,26 +214,43 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationInbox role="DRIVER" />
           {demoMode ? <DemoBadge className="hidden sm:inline-flex" /> : null}
-          <VeyroButton
-            type="button"
-            variant="secondary"
-            size="sm"
-            aria-label="Sign out"
-            loading={signingOut}
-            onClick={() => void handleSignOut()}
-          >
-            <LogOut aria-hidden="true" className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Sign out</span>
-          </VeyroButton>
+          <details ref={profileMenu} className="relative" onKeyDown={event => {
+            if (event.key === 'Escape') {
+              event.currentTarget.open = false;
+              event.currentTarget.querySelector('summary')?.focus();
+            }
+          }}>
+            <summary aria-label="Profile menu" className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-control border border-studio-border px-3 text-sm font-semibold text-studio-ink hover:bg-studio-tint">
+              <UserRound aria-hidden="true" className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
+              <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 text-studio-muted" />
+            </summary>
+            <div className="absolute right-0 z-50 mt-2 w-56 rounded-panel border border-studio-border bg-studio-surface p-1.5 text-sm text-studio-ink shadow-xl">
+              <Link href={demoPreview ? '/driver/profile?role=driver' : '/driver/profile'} onClick={() => { if (profileMenu.current) profileMenu.current.open = false; }}
+                aria-current={pathname === '/driver/profile' ? 'page' : undefined} className="flex items-center gap-2 rounded-control px-3 py-2.5 hover:bg-studio-tint">
+                <UserRound aria-hidden="true" className="h-4 w-4" /> Edit profile and fare
+              </Link>
+              <Link href="/legal/privacy" className="block rounded-control px-3 py-2.5 hover:bg-studio-tint">Privacy policy</Link>
+              <button type="button" disabled={signingOut} onClick={() => { if (profileMenu.current) profileMenu.current.open = false; void handleSignOut(); }}
+                className="flex w-full items-center gap-2 rounded-control px-3 py-2.5 text-left hover:bg-studio-tint">
+                <LogOut aria-hidden="true" className="h-4 w-4" /> Sign out
+              </button>
+              <button type="button" onClick={() => { profileMenu.current?.querySelector('summary')?.focus(); if (profileMenu.current) profileMenu.current.open = false; setDeletionOpen(true); }}
+                className="flex w-full items-center gap-2 rounded-control border-t border-studio-border px-3 py-2.5 text-left text-red-700 hover:bg-red-50">
+                <Trash2 aria-hidden="true" className="h-4 w-4" /> Delete account
+              </button>
+            </div>
+          </details>
         </div>
       </div>
     </header>
   );
 
   const bottomNav = (
-    <div className="grid h-16 grid-cols-4">
+    <div className="grid h-16 grid-cols-3">
       {navigation.map((item) => {
         const active = isActive(item);
         const className = `relative flex flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold ${
@@ -209,11 +263,11 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
           </>
         );
         return item.disabled ? (
-          <span key={item.href} aria-disabled="true" title="No active trip right now" className={className}>
+          <span key={item.label} aria-disabled="true" title="No active trip right now" className={className}>
             {content}
           </span>
         ) : (
-          <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={className}>
+          <Link key={item.label} href={item.href} aria-current={active ? 'page' : undefined} className={className}>
             {content}
             {active && (
               <motion.div
@@ -230,7 +284,13 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
 
   return (
     <AppShell theme="studio" header={header} bottomNav={bottomNav}>
-      <div className="min-h-[calc(100vh-4rem)] bg-studio-bg pb-20 lg:pb-0">{children}</div>
+      <div className="driver-form-surface min-h-[calc(100vh-4rem)] bg-studio-bg pb-20 md:pb-0">
+        {accountNotice ? <FormAlert tone={accountNotice.tone} title="Driver account" className="mx-4 mt-4">{accountNotice.text}</FormAlert> : null}
+        {children}
+      </div>
+      <ConfirmDialog open={deletionOpen} onOpenChange={setDeletionOpen} title="Delete your account?" destructive
+        description="Submit an account deletion request for review. You can keep using Veyro while the request is reviewed."
+        confirmLabel={deleting ? 'Submitting…' : 'Request deletion'} onConfirm={() => void handleDeletionRequest()} />
     </AppShell>
   );
 }
