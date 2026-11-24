@@ -90,8 +90,8 @@
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
 | FE-026 | Trip cockpit — all states | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-020, BE-016 | Owned booking/trip read models, server actions, polling and customer-confirmed arrival fallback. Demo-only previews remain separate. |
-| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-019 | Latest authorized GPS, 30-second stale state, frozen last-known marker and visible timestamps; device calibration remains pending. |
-| FE-028 | OTP display (start + end) | VIEW-06 `/customer/trips/[id]` | BLOCKED | Team 1 — Sid / Nishan | FE-026 | Owner explicitly held secure OTP display/delivery/recovery. Live UI shows pending setup and no invented code; demo vaults are explicitly gated. |
+| FE-027 | Live location, stale GPS handling | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-019 | Authorized GPS, stale state, live pickup ETA and driver no-show submission after the grace period. Real device verification remains pending. |
+| FE-028 | OTP display (start + end) | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026 | The current code control appears above the map. The trip owner requests and reveals the Start or End code in one step. It clears when the phase changes or expires. |
 | FE-029 | SOS action (demo mode wording) | VIEW-06 `/customer/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-026 | Canonical idempotent Demo SOS intake; truthful no-external-dispatch notice. Live external emergency delivery remains outside Release 1. |
 | FE-030 | Trip sharing (create, revoke) | VIEW-10 `/share/[token]` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-020 | Hash-ID revoke, token only in X-Trip-Share API header, authenticated minimal read, polling and end/revocation denial; replacing links revokes previous tokens. |
 | FE-031 | Receipt, rating, report | VIEW-07 `/customer/trips/[id]/summary` | REVIEW | Team 1 — Sid / Nishan | FE-026, BE-021 | Server fare/payment mapping, completed-trip rating and approved report taxonomy. Only verified capture is displayed as paid. |
@@ -100,7 +100,7 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-032 | Driver trip cockpit — map, arrival, OTP numpads | VIEW-13 `/driver/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-024, BE-016 | Canonical arrival/start/complete/no-show actions, phase code payloads, foreground GPS relay and polling. OTP display remains owner-held. |
+| FE-032 | Driver trip cockpit — map, arrival, OTP numpads | VIEW-13 `/driver/trips/[id]` | REVIEW | Team 1 — Sid / Nishan | FE-024, BE-016 | Canonical arrival/start/complete/no-show actions, assigned-driver OTP verification, foreground GPS relay and polling. |
 | FE-033 | Driver earnings ledger | VIEW-14 `/driver/earnings` | REVIEW | Team 1 — Sid / Nishan | FE-032, BE-021 | Own ledger read model includes waiting/adjustment facts; pending allocations excluded. Live payout/settlement policy remains pending. |
 
 ### Maps integration
@@ -109,7 +109,7 @@
 |---|---|---|---|---|---|---|
 | FE-034 | Google Maps provider adapter | — | REVIEW | Team 1 — Sid / Nishan | FND-006 | Modern Places autocomplete with session tokens and selection-only details; live road previews use server Routes API instead of legacy browser Directions. |
 | FE-035 | Places autocomplete, route preview, driver markers | VIEW-05 | REVIEW | Team 1 — Sid / Nishan | FE-034, FE-018 | Keyboard-operable suggestions, canonical waypoint ordering, explicit search expansion, no synthetic live driver markers. |
-| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Team 1 — Sid / Nishan | FE-034, FE-027 | Google Map driver overlays update without rebuilding the map; stale markers are distinct. Real map/device calibration remains pending. |
+| FE-036 | Active trip map with live location | VIEW-06, VIEW-13 | REVIEW | Team 1 — Sid / Nishan | FE-034, FE-027 | Shared map keeps a route preview visible until tiles load and after tile timeout or authorization failure. Driver overlay updates keep the map instance. Real provider/device checks remain pending. |
 
 ---
 
@@ -119,7 +119,7 @@
 
 | Task ID | Description | View/Route | Status | Owner | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| FE-037 | Razorpay checkout integration | VIEW-07 | REVIEW | Team 1 — Sid / Nishan | FE-031, BE-021 | Uses the server amount and reuses the invoice's order. Receipts show confirmed, failed and pending states with a status check. Staging Test Mode capture/webhook remains pending. |
+| FE-037 | Razorpay checkout integration | VIEW-06, VIEW-07 | REVIEW | Team 1 — Sid / Nishan | FE-031, BE-021 | End OTP completion opens the customer's final-fare prompt. It uses the server invoice and existing Razorpay checkout. Staging Test Mode capture/webhook remains pending. |
 | FE-038 | Outstanding balance gate | VIEW-05 | REVIEW | Team 1 — Sid / Nishan | FE-037, BE-024 | Balance comes from confirmed, non-disputed payables; settlement uses the actual unpaid invoice. Demo balance previews cannot affect live screens. |
 
 ### Admin (PROMPT 06)
@@ -210,7 +210,7 @@ The owner authorized a complete frontend/backend integration review. This checkp
 | Work | Status | Evidence / remaining gate |
 |---|---|---|
 | FE-014–027, FE-029–042, FE-047–054 | REVIEW | Canonical requests/read models, validated mutations, polling, private files and Test Mode checkout implemented |
-| FE-028 | BLOCKED | Secure customer OTP delivery/recovery intentionally held by owner |
+| FE-028 | REVIEW | Customer-only OTP approved and implemented. Deployed verification and lockout recovery remain open. |
 | Notification inbox and deletion review | REVIEW | Added actual inbox/read controls in all shells and customer deletion-request intake; no external message or immediate erasure claim |
 | FE-043–044 | REVIEW | 96 responsive/runtime checks pass; dialog focus/Escape/trap, keyboard autocomplete and synthetic booking flow pass; full screen-reader walkthrough remains pending |
 | FE-045 | REVIEW | Existing PWA preserves public shell/static-only caching; private API data is not cached |

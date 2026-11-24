@@ -15,6 +15,7 @@ export interface OtpVaultCardProps {
   helper?: string;
   length?: number;
   className?: string;
+  initiallyRevealed?: boolean;
 }
 
 export function OtpVaultCard({
@@ -27,8 +28,9 @@ export function OtpVaultCard({
   helper,
   length = 6,
   className,
+  initiallyRevealed = false,
 }: OtpVaultCardProps) {
-  const [revealed, setRevealed] = React.useState(false);
+  const [revealed, setRevealed] = React.useState(initiallyRevealed);
   const inputId = React.useId();
   const helperId = `${inputId}-helper`;
 

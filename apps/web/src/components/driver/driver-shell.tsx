@@ -173,11 +173,11 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
           <Image src="/brand/veyro-light-logo-trimmed.png" alt="Veyro" width={104} height={28} className="h-7 w-auto object-contain" />
         </Link>
 
-        <nav aria-label="Driver navigation" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Driver navigation" className="hidden items-center gap-1 rounded-2xl border border-studio-border bg-studio-bg p-1 md:flex">
           {navigation.map((item) => {
             const active = isActive(item);
             const className = `relative inline-flex h-10 items-center gap-2 rounded-control px-3 text-sm font-semibold transition-colors ${
-              active ? 'text-studio-ink' : 'text-studio-muted hover:text-studio-ink'
+              active ? 'bg-white text-studio-ink shadow-sm' : 'text-studio-muted hover:bg-white hover:text-studio-ink'
             } ${item.disabled ? 'cursor-not-allowed opacity-45' : ''}`;
             const content = (
               <>
@@ -223,9 +223,9 @@ export function DriverShell({ subtitle, children }: DriverShellProps) {
               event.currentTarget.querySelector('summary')?.focus();
             }
           }}>
-            <summary aria-label="Profile menu" className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-control border border-studio-border px-3 text-sm font-semibold text-studio-ink hover:bg-studio-tint">
-              <UserRound aria-hidden="true" className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
+            <summary aria-label="Profile menu" className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-studio-border bg-white px-2 pr-2.5 text-sm font-semibold text-studio-ink shadow-sm hover:bg-studio-tint [&::-webkit-details-marker]:hidden">
+              <span className="grid size-7 place-items-center rounded-lg bg-studio-obsidian text-studio-lime"><UserRound aria-hidden="true" className="h-4 w-4" /></span>
+              <span className="hidden max-w-24 truncate sm:inline">{profile?.fullName?.trim().split(/\s+/)[0] || 'Profile'}</span>
               <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 text-studio-muted" />
             </summary>
             <div className="absolute right-0 z-50 mt-2 w-56 rounded-panel border border-studio-border bg-studio-surface p-1.5 text-sm text-studio-ink shadow-xl">

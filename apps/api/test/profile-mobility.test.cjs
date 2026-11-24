@@ -90,13 +90,19 @@ test('GPS writes require an assigned driver and termination fences RTDB against 
   const app = getFirebaseAdminApp();
   t.after(() => getDatabase(app).goOffline());
   const db = getFirestore(app), uid = randomUUID(), customer = randomUUID(), id = randomUUID(), route = randomUUID();
-  const now = Date.now(), position = { lat: 22, lng: 72 };
+  let now = Date.now();
+  const position = { lat: 22, lng: 72 }, promisedArrivalAt = now + 300_000;
   await db.collection('users').doc(uid).set({ roles: ['DRIVER'], status: 'ACTIVE' });
   await db.collection('users').doc(customer).set({ roles: ['CUSTOMER'], status: 'ACTIVE' });
-  await db.collection('trips').doc(id).set({ customerId: customer, driverId: uid, bookingId: id, status: 'DRIVER_EN_ROUTE' });
+  const trip = db.collection('trips').doc(id);
+  await trip.set({ customerId: customer, driverId: uid, bookingId: id, status: 'DRIVER_EN_ROUTE', promisedArrivalAt });
   await db.collection('bookings').doc(id).set({ routeId: route });
   await db.collection('routeQuotes').doc(route).set({ pickup: position });
-  const service = new MobilityService(db, { route: async () => ({ distanceKm: 1, durationMinutes: 1 }) }, () => now);
+  let roadCalls = 0;
+  const service = new MobilityService(db, { route: async () => {
+    roadCalls++;
+    return { distanceKm: 1, durationMinutes: 1 };
+  } }, () => now);
   const sample = { position, accuracy: 10, observedAt: now };
   await assert.rejects(service.location(customer, id, sample), { code: 'TRIP_NOT_ACCESSIBLE' });
   await service.location(uid, id, sample);
@@ -105,11 +111,19 @@ test('GPS writes require an assigned driver and termination fences RTDB against 
   assert.equal((await realtime.get()).val().sample.lat, 22);
   assert.equal((await db.collection('arrivalEvidence').doc(id).get()).get('withinPickup100m'), true);
   await assert.rejects(service.location(uid, id, { ...sample, position: { lat: 23, lng: 72 } }), { code: 'GPS_OUT_OF_ORDER' });
-  await db.collection('trips').doc(id).update({ status: 'COMPLETED' });
+  assert.equal((await trip.get()).get('pickupEta.arrivalAt'), now + 60_000);
+  now += 10_000;
+  await service.location(uid, id, { ...sample, observedAt: now });
+  assert.equal(roadCalls, 1);
+  now += 51_000;
+  await service.location(uid, id, { ...sample, observedAt: now });
+  assert.equal(roadCalls, 2);
+  assert.equal((await trip.get()).get('promisedArrivalAt'), promisedArrivalAt);
+  await trip.update({ status: 'COMPLETED' });
   await clearTripLocation(db, id);
   assert.equal((await realtime.get()).val().state, 'DISABLED');
   assert.equal((await db.collection('liveLocations').doc(id).get()).exists, false);
-  await assert.rejects(service.location(uid, id, sample), { code: 'TRIP_NOT_ACCESSIBLE' });
+  await assert.rejects(service.location(uid, id, { ...sample, observedAt: now }), { code: 'TRIP_NOT_ACCESSIBLE' });
 });
 
 test('private document upload records verified owner and generation in the Storage emulator', {

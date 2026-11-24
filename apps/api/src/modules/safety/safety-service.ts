@@ -5,6 +5,7 @@ import { activeRoles } from '../auth/profile.js';
 import { appendAdminAudit } from '../audit/audit.service.js';
 import { documentId } from '../quotes/quote-repository.js';
 import { enqueueNotification } from '../notifications/notifications.js';
+import { TripService } from '../trips/trip-service.js';
 
 async function participant(db: Firestore, tx: Transaction, tripId: string, uid: string) {
   const trip = await tx.get(db.collection('trips').doc(documentId(tripId)));
@@ -56,6 +57,9 @@ export class SafetyService {
       if (!report.exists) throw new AppError(404, 'REPORT_NOT_FOUND', 'Report unavailable.');
       if (report.get('status') === status && report.get('resolutionNote') === note) return;
       if (!['OPEN', 'UNDER_REVIEW'].includes(report.get('status'))) throw new AppError(409, 'REPORT_CLOSED', 'Report already closed.');
+      if (report.get('kind') === 'DRIVER_NO_SHOW') {
+        await new TripService(this.db).reviewDriverNoShow(tx, report, adminId, status, note);
+      }
       tx.update(ref, { status, resolutionNote: note, resolvedAt: new Date() });
       const eventId = status === 'UNDER_REVIEW' ? 'report-review-' + id : 'report-' + id;
       appendAdminAudit(this.db, tx, { uid: adminId, roles }, eventId, {

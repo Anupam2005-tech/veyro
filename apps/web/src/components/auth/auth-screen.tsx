@@ -26,7 +26,7 @@ import {
   signInWithGoogle,
   signUpWithEmail,
 } from '@/lib/auth/auth';
-import { safeReturnPath } from '@/lib/auth/safe-return';
+import { adminReturnPath, safeReturnPath } from '@/lib/auth/safe-return';
 import { useSession } from '@/lib/auth/session-provider';
 import { validateEmail } from '@/lib/validation';
 import { normalizeAuthError } from './auth-utils';
@@ -43,7 +43,7 @@ export default function AuthScreen({ role = 'customer' }: AuthScreenProps) {
   const { user, profile, loading, setRoleIntent, demoMode, error: sessionError, refreshProfile, signOut } = useSession();
 
   const searchRole = searchParams.get('role');
-  const effectiveRole = (searchRole === 'driver' || searchRole === 'admin' || searchRole === 'customer')
+  const effectiveRole = role === 'admin' ? 'admin' : (searchRole === 'driver' || searchRole === 'admin' || searchRole === 'customer')
     ? searchRole
     : role;
 
@@ -64,14 +64,11 @@ export default function AuthScreen({ role = 'customer' }: AuthScreenProps) {
   const fallbackRoute = isAdmin ? '/admin' : isDriver ? '/driver' : '/customer';
 
   const returnTo = React.useMemo(
-    () =>
-      safeReturnPath(
-        searchParams.get('continue') ??
-          searchParams.get('returnTo') ??
-          getStoredReturnPath(),
-        fallbackRoute
-      ),
-    [searchParams, fallbackRoute]
+    () => {
+      const explicit = searchParams.get('continue') ?? searchParams.get('returnTo');
+      return isAdmin ? adminReturnPath(explicit) : safeReturnPath(explicit ?? getStoredReturnPath(), fallbackRoute);
+    },
+    [searchParams, fallbackRoute, isAdmin]
   );
 
   React.useEffect(() => {

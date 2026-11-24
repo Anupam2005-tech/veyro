@@ -186,6 +186,7 @@ export class BookingCore {
       tx.update(offer, { status: 'ACCEPTED' });
       tx.update(ref, { status: 'ASSIGNED', driverId, acceptedAt: at, promisedArrivalAt, ...(acceptedFare ? { fare: acceptedFare } : {}) });
       event(tx, ref, 'ASSIGNED', at, b.customerId, driverId);
+      enqueueNotification(this.db, tx, driverId, 'driver-assigned-' + id, 'DRIVER_BOOKING_ASSIGNED', id, 'DRIVER');
     });
   }
 
@@ -228,6 +229,9 @@ export class BookingCore {
         tx.delete(calendar.collection('active').doc(ref.id));
       }
       event(tx, ref, status, at, b.customerId, b.driverId ?? b.selectedDriverId);
+      if (b.driverId && role === 'CUSTOMER') {
+        enqueueNotification(this.db, tx, b.driverId, 'driver-cancelled-' + id, 'DRIVER_BOOKING_CANCELLED', id, 'DRIVER');
+      }
       return feeInr;
     });
   }

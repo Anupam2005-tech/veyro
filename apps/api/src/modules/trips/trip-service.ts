@@ -8,6 +8,7 @@ import { enqueueNotification } from '../notifications/notifications.js';
 import { activeRoles } from '../auth/profile.js';
 
 const minute = 60_000;
+export const driverNoShowGraceMs = 20 * minute;
 const conflict = () => new AppError(409, 'TRIP_STATE_CONFLICT', 'This trip action is unavailable.');
 type Phase = 'START' | 'END';
 
@@ -74,7 +75,6 @@ export class TripService {
     return value;
   }
 
-  // Internal issuance only. The approved secure display/delivery flow remains pending.
   issueCode(id: string, customerId: string, phase: Phase) {
     if (phase !== 'START' && phase !== 'END') throw conflict();
     const secret = this.secret();
@@ -86,6 +86,9 @@ export class TripService {
       await this.actor(tx, customerId, 'CUSTOMER');
       if (!trip.exists || trip.get('customerId') !== customerId) throw new AppError(404, 'TRIP_NOT_ACCESSIBLE', 'Trip unavailable.');
       if (trip.get('status') !== (phase === 'START' ? 'ARRIVED' : 'IN_PROGRESS')) throw conflict();
+      const at = this.now();
+      const expiresAt = phase === 'START' ? Math.min(at + 5 * minute, trip.get('arrivedAt') + 30 * minute) : at + 5 * minute;
+      if (!Number.isSafeInteger(expiresAt) || expiresAt <= at) throw conflict();
       const otp = ref.collection('verification').doc(phase);
       const existing = await tx.get(otp);
       if (phase === 'END') {
@@ -94,12 +97,11 @@ export class TripService {
           code = String((Number(code) + 1) % 1_000_000).padStart(6, '0');
         }
       }
-      const at = this.now();
       if ((existing.get('attempts') ?? 0) >= 5) throw new AppError(409, 'OTP_LOCKED', 'Verification recovery requires authorized review.');
-      if (existing.exists && at - existing.get('issuedAt') < minute) throw new AppError(429, 'OTP_COOLDOWN', 'Wait before regenerating a code.');
-      tx.set(otp, { hash: otpHash(secret, salt, phase, id, code), salt, issuedAt: at, expiresAt: at + 5 * minute,
+      if (existing.exists && at - existing.get('issuedAt') < minute) throw new AppError(429, 'OTP_COOLDOWN', 'A code was just requested. Wait one minute before requesting another.');
+      tx.set(otp, { hash: otpHash(secret, salt, phase, id, code), salt, issuedAt: at, expiresAt,
         attempts: existing.get('attempts') ?? 0, consumed: false });
-      return code;
+      return { code, expiresAt };
     });
   }
 
@@ -146,35 +148,60 @@ export class TripService {
       return null;
     });
     // Return failure only after the attempted verification count has committed.
-    if (failure) throw new AppError(409, failure, 'Trip verification failed.');
+    if (failure === 'OTP_INVALID') throw new AppError(409, failure, 'Code incorrect. Check it with the customer.');
+    if (failure) throw new AppError(409, failure, 'This code is unavailable, expired, or locked. Ask the customer to check their trip screen.');
   }
 
-  driverNoShow(id: string, customerId: string) {
+  reportDriverNoShow(id: string, customerId: string, description: string) {
     const ref = this.trip(id);
+    const report = this.db.collection('reports').doc();
     return this.db.runTransaction(async tx => {
       const trip = await tx.get(ref);
       await this.actor(tx, customerId, 'CUSTOMER');
       if (!trip.exists || trip.get('customerId') !== customerId) throw new AppError(404, 'TRIP_NOT_ACCESSIBLE', 'Trip unavailable.');
-      if (trip.get('status') === 'DRIVER_NO_SHOW') return;
-      const evidence = await tx.get(this.db.collection('driverNoShowEvidence').doc(id));
+      const previous = trip.get('driverNoShowReportId');
+      if (typeof previous === 'string') return previous;
       const promised = trip.get('promisedArrivalAt');
-      if (trip.get('status') !== 'DRIVER_EN_ROUTE' || !Number.isSafeInteger(promised) ||
-          this.now() < promised + 20 * minute || evidence.get('verified') !== true ||
-          evidence.get('driverId') !== trip.get('driverId') || evidence.get('customerReportId') == null) throw conflict();
-      const calendar = this.db.collection('driverReservations').doc(trip.get('driverId'));
-      await tx.get(calendar);
-      tx.delete(this.db.collection('liveLocations').doc(id));
-      tx.delete(this.db.collection('arrivalEvidence').doc(id));
-      tx.update(ref, { status: 'DRIVER_NO_SHOW', noShowAt: this.now() });
-      tx.set(calendar, { updatedAt: this.now() });
-      tx.delete(calendar.collection('active').doc(id));
-      if (evidence.get('qualifies') === true) {
-        tx.create(this.db.collection('verifiedIncidents').doc('driver-no-show-' + id), {
-          uid: trip.get('driverId'), kind: 'DRIVER_NO_SHOW', verified: true, qualifies: true,
-          source: id, createdAt: this.now(),
-        });
+      const now = this.now();
+      if (trip.get('status') !== 'DRIVER_EN_ROUTE' || !Number.isSafeInteger(promised) || now < promised + driverNoShowGraceMs) {
+        throw new AppError(409, 'DRIVER_NO_SHOW_UNAVAILABLE', 'You can report a driver no-show 20 minutes after the promised arrival.');
       }
-      enqueueNotification(this.db, tx, customerId, 'driver-no-show-' + id, 'DRIVER_NO_SHOW', id);
+      tx.create(report, { kind: 'DRIVER_NO_SHOW', reporterId: customerId, reporterRole: 'CUSTOMER',
+        tripId: id, driverId: trip.get('driverId'), category: 'DRIVER_NO_SHOW', description, status: 'OPEN',
+        promisedArrivalAt: promised, createdAt: new Date(now) });
+      tx.update(ref, { driverNoShowReportId: report.id, driverNoShowReportStatus: 'OPEN' });
+      return report.id;
+    });
+  }
+
+  async reviewDriverNoShow(tx: Transaction, report: DocumentSnapshot, adminId: string, status: string, note: string) {
+    const id = documentId(report.get('tripId'));
+    const ref = this.trip(id);
+    const trip = await tx.get(ref);
+    if (!trip.exists || trip.get('driverNoShowReportId') !== report.id ||
+        trip.get('customerId') !== report.get('reporterId') || trip.get('driverId') !== report.get('driverId')) throw conflict();
+    if (status !== 'RESOLVED') {
+      tx.update(ref, { driverNoShowReportStatus: status });
+      return;
+    }
+    const promised = trip.get('promisedArrivalAt');
+    const at = this.now();
+    if (trip.get('status') !== 'DRIVER_EN_ROUTE' || !Number.isSafeInteger(promised) || at < promised + driverNoShowGraceMs) {
+      throw new AppError(409, 'DRIVER_NO_SHOW_UNAVAILABLE', 'The trip is no longer eligible for a driver no-show. Review its current state.');
+    }
+    const driverId = trip.get('driverId');
+    const calendar = this.db.collection('driverReservations').doc(driverId);
+    await tx.get(calendar);
+    tx.create(this.db.collection('driverNoShowEvidence').doc(id), {
+      driverId, customerReportId: report.id, verified: true, verifiedBy: adminId, verifiedAt: at, note,
+    });
+    tx.delete(this.db.collection('liveLocations').doc(id));
+    tx.delete(this.db.collection('arrivalEvidence').doc(id));
+    tx.update(ref, { status: 'DRIVER_NO_SHOW', noShowAt: at, driverNoShowReportStatus: status });
+    tx.set(calendar, { updatedAt: at });
+    tx.delete(calendar.collection('active').doc(id));
+    tx.create(this.db.collection('verifiedIncidents').doc('driver-no-show-' + id), {
+      uid: driverId, kind: 'DRIVER_NO_SHOW', verified: true, qualifies: true, source: id, createdAt: at,
     });
   }
 

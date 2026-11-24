@@ -22,6 +22,7 @@ export interface DriverDocumentMeta {
 export interface VeyroProfile {
   uid: string;
   role: VeyroRole;
+  roles?: VeyroRole[];
   fullName: string;
   phone: string;
   onboardingComplete: boolean;
@@ -296,6 +297,9 @@ export interface TripRecord {
   arrivalAt: string | null;
   waitingStartedAt: string | null;
   waitingFeeInr: number;
+  isTripCustomer?: boolean;
+  driverNoShowEligible?: boolean;
+  driverNoShowReportStatus?: ReportStatus | null;
   startOtp: string;
   endOtp: string;
   startOtpShownAt: string | null;
@@ -492,7 +496,8 @@ export interface ReportRecord {
   tripId: string;
   reporterRole: 'CUSTOMER' | 'DRIVER';
   reporterName: string;
-  category: ReportSubmission['category'];
+  category: ReportSubmission['category'] | 'DRIVER_NO_SHOW';
+  driverNoShowReview?: boolean;
   description: string;
   createdAt: string;
   status: ReportStatus;

@@ -1,8 +1,8 @@
 # Veyro Backend Technical Specification — Release 1
 
-**Version:** 1.3 — Google Cloud/Firebase infrastructure and passwordless authentication revision; synchronised with Unified Specification v3.6  
+**Version:** 1.3 — Google Cloud/Firebase infrastructure and email/password authentication; synchronised with Unified Specification v3.6
 **Prepared:** 9 November 2026  
-**Status:** Revised Google Cloud/Firebase implementation baseline; passwordless authentication and Firebase hosting selected  
+**Status:** Revised Google Cloud/Firebase implementation baseline; Firebase hosting and email/password selected
 **Project:** Veyro — Release 1  
 **Team context:** Five-person college project / capstone
 
@@ -19,7 +19,7 @@ Do not use this document to invent unresolved commercial policies. Values still 
 ### 1.1 Release 1 architectural principles
 
 1. One modular-monolith Express API owns authoritative business logic and is deployed as an HTTPS endpoint through Firebase Cloud Functions (2nd gen).
-2. Firebase Authentication provides passwordless email-link, phone OTP and Google Sign-In.
+2. Firebase Authentication provides email/password and Google Sign-In.
 3. Cloud Firestore is the durable source of truth.
 4. Firebase Realtime Database (RTDB) stores only ephemeral presence and current active-trip location.
 5. Cloud Storage for Firebase stores private profile images and driver verification documents.
@@ -64,7 +64,7 @@ All 14 decisions below are recorded as selected by the project owner.
 
 ## 3. Technology stack
 
-**Infrastructure lock (9 November 2026):** Next.js frontend on Firebase App Hosting; Express REST API on Firebase Cloud Functions (2nd gen) HTTPS `onRequest`; scheduled/event-driven work on separate Cloud Functions; Firebase Authentication passwordless email link + phone OTP + Google; Firestore, RTDB and Firebase Storage; Google Maps Platform; Firebase App Check with reCAPTCHA Enterprise for web; Razorpay Test Mode remains the payment provider.
+**Infrastructure lock (9 November 2026):** Next.js frontend on Firebase App Hosting; Express REST API on Firebase Cloud Functions (2nd gen) HTTPS `onRequest`; scheduled/event-driven work on separate Cloud Functions; Firebase Authentication email/password and Google; Firestore, RTDB and Firebase Storage; Google Maps Platform; Firebase App Check with reCAPTCHA Enterprise for web; Razorpay Test Mode remains the payment provider.
 
 
 | Layer | Technology | Release 1 responsibility |
@@ -72,7 +72,7 @@ All 14 decisions below are recorded as selected by the project owner.
 | Frontend | Next.js App Router, React, TypeScript | Customer, Driver, Admin and public PWA |
 | API runtime | Node.js, Express.js, TypeScript | Business logic, REST endpoints, authorisation and integrations |
 | API prefix | `/api/v1/` | Versioned backend endpoints |
-| Identity | Firebase Authentication | Passwordless email-link sign-in, phone-number OTP sign-in and Google Sign-In; link providers to one Veyro account where appropriate |
+| Identity | Firebase Authentication | Email/password and Google Sign-In; link providers to one Veyro account where appropriate |
 | Server Firebase SDK | Firebase Admin SDK | ID token verification, Firestore/RTDB privileged operations and server-side Firebase integration |
 | Durable database | Cloud Firestore | Users, vehicles, driver applications, bookings, trips, payments, reports, notifications and audit events |
 | Ephemeral realtime data | Firebase Realtime Database | Driver presence and latest active-trip location only |
@@ -424,17 +424,11 @@ Never log Firebase ID tokens, App Check tokens, refresh tokens, OTP digits, raw 
 - Do not accept a user ID or role supplied in the request body as proof of identity.
 - Do not create a separate custom JWT login/session system.
 
-### 8.1.1 Passwordless sign-in providers
+### 8.1.1 Firebase sign-in providers
 
-Release 1 supports exactly these Firebase Authentication methods:
+The owner selected email/password on 24 November 2026. Enable the Firebase Email/Password provider for account creation, sign-in and password reset. Google sign-in remains available where configured. The Release 1 form does not offer email-link or SMS OTP sign-in.
 
-1. **Email link (passwordless):** user enters an email address; Firebase sends a one-time sign-in link. Completing the link verifies control of that email address and signs the user in. Configure Firebase Email Link sign-in; the Firebase console requires the Email/Password provider switch as a prerequisite, but Veyro must not expose or use password credentials.
-2. **Phone number OTP:** user enters a phone number and verifies an SMS code through Firebase Phone Authentication. Configure authorised domains, SMS region policy, abuse controls and test numbers for development. Monitor SMS usage/costs and apply resend cooldowns.
-3. **Google Sign-In:** use Firebase's Google provider. On web, configure the authorised domains and OAuth consent/branding settings required by the project.
-
-Do not implement email/password registration, password login, forgot-password or reset-password screens. Do not send a separate email verification flow after email-link sign-in; the email link itself verifies the email. Google provider identity is verified by Firebase.
-
-Link multiple providers to one Firebase UID when a signed-in user adds another method. Handle `account-exists-with-different-credential` and provider-linking conflicts safely; do not silently create duplicate Veyro profiles for the same person. Phone numbers must be stored in E.164 format. Keep Firebase Auth as identity authority; Firestore remains the authority for Veyro role and account state.
+Use Firebase's credential APIs and link supported providers to the same UID when appropriate. Handle `account-exists-with-different-credential` safely. Keep Firebase Auth as identity authority and Firestore as the authority for roles and account state.
 
 ### 8.2 Product roles and account state
 
@@ -673,6 +667,10 @@ RAZORPAY_WEBHOOK_SECRET=
 # Google Maps server-side key (restrict to required APIs; production secret in Secret Manager)
 GOOGLE_MAPS_SERVER_KEY=
 
+# Trip voice relay (server only)
+TRIP_TURN_URL=
+TRIP_TURN_SECRET=
+
 # Web / Firebase client configuration (public client configuration)
 NEXT_PUBLIC_API_BASE_URL=
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -687,6 +685,8 @@ NEXT_PUBLIC_FIREBASE_VAPID_KEY=
 ```
 
 Firebase web configuration values and Maps browser key are not server secrets, but Maps keys must be restricted by HTTP referrer and API. Never commit `.env`, service-account JSON, private keys, Razorpay secrets, Secret Manager values, App Check debug tokens or unrestricted API keys.
+
+For reliable in-app voice across mobile and corporate networks, configure a coturn relay with REST credentials. Set `TRIP_TURN_URL` on the API runtime and make `TRIP_TURN_SECRET` available from Secret Manager. The API issues temporary relay credentials only to the assigned participants of an active trip. Without a relay, voice attempts a direct WebRTC connection. Validate both directions across separate networks using HTTPS and microphone permission.
 
 ### 13.2 Firebase App Hosting — Next.js frontend
 
@@ -741,7 +741,7 @@ Use Jest and Supertest for essential automated tests. Prioritise correctness of 
 - Cloud Function task handlers, retry-safe behaviour and idempotency keys.
 
 **HTTP integration tests**
-- Firebase Auth email-link/phone/Google identity flows, ID-token middleware and provider-linking conflict handling.
+- Firebase Auth email/password and Google identity flows, ID-token middleware and provider-linking conflict handling.
 - App Check middleware, including missing, invalid, expired and replayed limited-use token cases.
 - Firebase Storage Rules for profile-image and driver-document paths; cross-user read/write denial.
 - FCM token registration, invalid-token cleanup and notification fallback when browser permission is denied.
@@ -758,8 +758,8 @@ Use Jest and Supertest for essential automated tests. Prioritise correctness of 
 ### 14.3 Manual release journey
 
 Run and record these scenarios before demo/release:
-1. Customer passwordless email-link sign-in, phone OTP sign-in, Google Sign-In and provider linking.
-2. Driver passwordless sign-in using email link/phone OTP/Google, onboarding, private Firebase Storage document upload and pending status.
+1. Customer email/password sign-in, password reset, Google Sign-In and provider linking.
+2. Driver sign-in using email/password or Google, onboarding, private Firebase Storage document upload and pending status.
 3. Admin manual approve/reject/request-changes and audit record.
 4. Driver online eligibility and location permission.
 5. Instant booking, offer expiry and acceptance.
@@ -883,7 +883,7 @@ Build vertical slices that can be tested end to end. Do not build all controller
 
 The Release 1 backend is:
 
-**Next.js PWA on Firebase App Hosting → Node.js + Express.js + TypeScript modular monolith (`/api/v1/`) deployed as a Firebase Cloud Functions (2nd gen) HTTPS function → Firebase Admin SDK → Cloud Firestore + Firebase Realtime Database + Cloud Storage for Firebase**, with **Firebase Cloud Functions** for scheduled/event-driven work, **Firebase Authentication** for passwordless email-link, phone OTP and Google Sign-In, **Firebase App Check** for abuse protection, **Razorpay Test Mode** for payments and **Google Maps Platform** for maps/routes.
+**Next.js PWA on Firebase App Hosting → Node.js + Express.js + TypeScript modular monolith (`/api/v1/`) deployed as a Firebase Cloud Functions (2nd gen) HTTPS function → Firebase Admin SDK → Cloud Firestore + Firebase Realtime Database + Cloud Storage for Firebase**, with **Firebase Cloud Functions** for scheduled/event-driven work, **Firebase Authentication** for email/password and Google Sign-In, **Firebase App Check** for abuse protection, **Razorpay Test Mode** for payments and **Google Maps Platform** for maps/routes.
 
 The approved implementation conventions are:
 - Strict layered module structure.

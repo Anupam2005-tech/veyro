@@ -31,16 +31,21 @@ import {
   createTripShare,
   confirmDriverArrival,
   getTrip,
+  reportDriverNoShow,
   revokeTripShare,
   triggerSos,
 } from '@/lib/api/client';
 import type { TripRecord, TripState } from '@/lib/api/types';
+import { ApiClientError } from '@/lib/api/transport';
 import { useSession } from '@/lib/auth/session-provider';
 import { DEMO_USER } from '@/lib/demo-user';
 import { isDemoDataMode } from '@/lib/env';
 import { publicPolicy } from '@/lib/public-policy';
 import { useCountdown } from '@/lib/use-countdown';
 import { CustomerShell } from './customer-shell';
+import { TripVerificationCode } from './trip-verification-code';
+import { TripPaymentPrompt } from './trip-payment-prompt';
+import { TripContactPanel } from '@/components/trip/trip-contact-panel';
 import RouteMap from './route-map-dynamic';
 
 const previews = [
@@ -81,11 +86,14 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
   const [trip, setTrip] = React.useState<TripRecord | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [connectionWarning, setConnectionWarning] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [shareId, setShareId] = React.useState<string | null>(null);
   const [shareUrl, setShareUrl] = React.useState<string | null>(null);
   const [mapKey, setMapKey] = React.useState(0);
+  const [noShowDescription, setNoShowDescription] = React.useState('');
+  const [noShowError, setNoShowError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     if (!activeUser) {
@@ -109,8 +117,14 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
   }, [load]);
 
   usePolling(activeUser && !isDemoDataMode ? activeUser.uid + ':' + tripId : null,
-    () => getTrip(activeUser!, tripId), next => { setTrip(next); setError(null); },
-    caught => setError(caught instanceof Error ? caught.message : 'Trip update unavailable.'));
+    () => getTrip(activeUser!, tripId), next => { setTrip(next); setError(null); setConnectionWarning(false); },
+    caught => {
+      if (trip && caught instanceof ApiClientError && ['NETWORK_ERROR', 'REQUEST_TIMEOUT'].includes(caught.code)) {
+        setConnectionWarning(true);
+      } else {
+        setError(caught instanceof Error ? caught.message : 'Trip update unavailable.');
+      }
+    });
 
   const shownTrip = React.useMemo(() => {
     if (!trip) return null;
@@ -171,6 +185,22 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
     }
   }
 
+  async function handleDriverNoShow(event: React.FormEvent) {
+    event.preventDefault();
+    if (!user || busy || !noShowDescription.trim()) return;
+    setBusy(true);
+    setNoShowError(null);
+    try {
+      await reportDriverNoShow(user, tripId, noShowDescription.trim());
+      setNoShowDescription('');
+      await load();
+    } catch (caught) {
+      setNoShowError(caught instanceof Error ? caught.message : 'Could not submit the no-show report.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleShare() {
     if (!activeUser || preview || !shownTrip) return;
     setBusy(true);
@@ -216,6 +246,7 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
   }
 
   const latestSos = shownTrip?.sosEvents[0] ?? null;
+  const otpPhase = shownTrip?.state === 'ARRIVED_WAITING' ? 'START' : shownTrip?.state === 'ACTIVE' ? 'END' : null;
 
   return (
     <CustomerShell subtitle={`Trip ${tripId}`}>
@@ -276,15 +307,23 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
         ) : (
           <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
             <div className="space-y-4">
+              {connectionWarning ? <FormAlert tone="warning" title="Trip updates paused">Reconnecting to refresh the trip.</FormAlert> : null}
+              {!isDemoDataMode && user && shownTrip.isTripCustomer && otpPhase ? (
+                <TripVerificationCode key={`${tripId}:${otpPhase}`} user={user} tripId={tripId} phase={otpPhase} />
+              ) : null}
+              {!isDemoDataMode && user && shownTrip.isTripCustomer && ['EN_ROUTE', 'ARRIVED_WAITING', 'ACTIVE'].includes(shownTrip.state) ? (
+                <TripContactPanel key={tripId} user={user} tripId={tripId} counterpart="driver" />
+              ) : null}
               <div key={mapKey} className="overflow-hidden rounded-card border border-studio-border bg-studio-surface">
                 <RouteMap
-                  points={[shownTrip.pickup, shownTrip.destination]}
+                  points={[shownTrip.pickup, ...shownTrip.stops, shownTrip.destination]}
                   route={shownTrip.route}
                   driverMarkers={
                     shownTrip.liveLocation
                       ? [
                           {
                             id: 'trip-driver',
+                            vehicle: true,
                             position: shownTrip.liveLocation.position,
                             label: shownTrip.liveLocation.stale ? 'Last known driver location' : 'Driver location',
                             stale: shownTrip.liveLocation.stale,
@@ -360,13 +399,30 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
 
               {!isDemoDataMode && shownTrip.state === 'EN_ROUTE' ? <section className="rounded-card border border-studio-border bg-white p-4">
                 <h2 className="font-display text-xl font-bold">Has your driver arrived?</h2>
+                {shownTrip.driverEtaMinutes !== null ? (
+                  <p className="mt-2 text-sm text-studio-ink">Estimated pickup arrival in {shownTrip.driverEtaMinutes < 1 ? 'under a minute' : `${shownTrip.driverEtaMinutes} min`}</p>
+                ) : null}
                 <p className="mt-2 text-xs text-studio-muted">Confirm only when the assigned driver is at your pickup point. This starts the waiting clock.</p>
                 <VeyroButton type="button" variant="secondary" className="mt-3" loading={busy} onClick={async () => {
                   if (!activeUser || busy) return; setBusy(true);
-                  try { await confirmDriverArrival(activeUser, tripId); await load(); setNotice('Driver arrival confirmed.'); }
+                  try { setTrip(await confirmDriverArrival(activeUser, tripId)); setNotice('Driver arrival confirmed.'); }
                   catch (e) { setNotice(e instanceof Error ? e.message : 'Could not confirm arrival.'); }
                   finally { setBusy(false); }
                 }}>Confirm driver arrival</VeyroButton>
+                {shownTrip.driverNoShowReportStatus ? (
+                  <p role="status" className="mt-3 text-sm text-studio-muted">
+                    {shownTrip.driverNoShowReportStatus === 'DISMISSED' ? 'Your no-show report was dismissed.' : 'Your no-show report was sent to Admin.'}
+                  </p>
+                ) : shownTrip.driverNoShowEligible ? (
+                  <form className="mt-4 space-y-2 border-t border-studio-border pt-4" onSubmit={event => void handleDriverNoShow(event)}>
+                    <label htmlFor="no-show-description" className="block text-sm font-semibold">Driver hasn’t arrived?</label>
+                    <textarea id="no-show-description" className="w-full rounded-control border border-studio-border bg-white p-2 text-sm text-studio-ink"
+                      placeholder="Describe what happened at the pickup point" value={noShowDescription}
+                      maxLength={2000} required onChange={event => setNoShowDescription(event.target.value)} />
+                    {noShowError ? <FormAlert tone="error" title="Report unavailable">{noShowError}</FormAlert> : null}
+                    <VeyroButton type="submit" variant="secondary" loading={busy} disabled={!noShowDescription.trim()}>Report driver no-show</VeyroButton>
+                  </form>
+                ) : null}
               </section> : null}
               {shownTrip.state === 'ARRIVED_WAITING' ? (
                 <section className="rounded-card border border-studio-border bg-white p-4 sm:p-5">
@@ -408,6 +464,9 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 </section>
               ) : null}
 
+              {shownTrip.state === 'CANCELLED' && shownTrip.driverNoShowReportStatus === 'RESOLVED' ? (
+                <FormAlert tone="info" title="Driver no-show confirmed">The trip ended without a charge for the missed pickup.</FormAlert>
+              ) : null}
               {shownTrip.state === 'COMPLETED' && shownTrip.finalFare ? (
                 <>
                   <FareBreakdown
@@ -419,6 +478,11 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                     note={`Estimate ${inr(shownTrip.finalFare.estimateInr)} · payment ${shownTrip.finalFare.paymentStatus.toLowerCase()}`}
                     exclusions={shownTrip.finalFare.exclusions}
                   />
+                  {!isDemoDataMode && user && shownTrip.isTripCustomer &&
+                    shownTrip.finalFare.totalInr >= 1 &&
+                    ['PENDING', 'FAILED'].includes(shownTrip.finalFare.paymentStatus) ? (
+                    <TripPaymentPrompt key={tripId} user={user} tripId={tripId} totalInr={shownTrip.finalFare.totalInr} />
+                  ) : null}
                   <VeyroButton asChild size="lg" className="min-h-[48px] w-full text-base">
                     <Link href={`/customer/trips/${tripId}/summary`}>
                       Open receipt, rating and report
@@ -457,9 +521,6 @@ export default function CustomerTripCockpit({ tripId }: { tripId: string }) {
                 )}
               </section>
 
-              {!isDemoDataMode && ['ARRIVED_WAITING', 'ACTIVE'].includes(shownTrip.state) ? (
-                <FormAlert tone="warning" title="Trip verification setup pending">Secure customer OTP delivery is awaiting approval. Contact the project lead before starting a live trip.</FormAlert>
-              ) : null}
               {isDemoDataMode && (shownTrip.state === 'ARRIVED_WAITING' || shownTrip.state === 'ACTIVE' || shownTrip.state === 'COMPLETED') ? (
                 <OtpVaultCard
                   title="Start OTP"

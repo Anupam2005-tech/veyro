@@ -28,6 +28,131 @@ async function serverFixture(t) {
 }
 const vehicleInput = { make: 'Test', model: 'Car', category: 'SEDAN', transmission: 'MANUAL', fuelType: 'PETROL', registrationNumber: 'TEST123' };
 
+test('trip chat and voice signaling are private, retry safe, and end with the active trip', { skip: !enabled }, async t => {
+  const { db, request } = await serverFixture(t);
+  const [id, customer, driver, foreign] = Array.from({ length: 4 }, () => randomUUID());
+  await db.collection('users').doc(customer).set({ roles: ['CUSTOMER'], status: 'ACTIVE' });
+  await db.collection('users').doc(driver).set({ roles: ['DRIVER'], status: 'ACTIVE' });
+  await db.collection('users').doc(foreign).set({ roles: ['CUSTOMER'], status: 'ACTIVE' });
+  const trip = db.collection('trips').doc(id);
+  const path = '/trips/' + id + '/contact';
+  const post = (uid, body) => request(uid, path, 'POST', body);
+  await trip.set({ customerId: customer, driverId: driver, status: 'ARRIVED' });
+  assert.equal((await request(foreign, path)).status, 404);
+  const message = { action: 'message', id: randomUUID(), text: 'I am at the pickup point.' };
+  for (const response of await Promise.all([post(customer, message), post(customer, message)])) {
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).data.messages.length, 1);
+  }
+  const read = await request(driver, path);
+  assert.match(read.headers.get('cache-control'), /no-store/);
+  assert.equal((await read.json()).data.messages[0].text, message.text);
+  const offer = { action: 'offer', id: randomUUID(), sdp: 'v=0\r\nfixture offer' };
+  const answer = { ...offer, action: 'answer', sdp: 'v=0\r\nfixture answer' };
+  assert.equal((await post(customer, offer)).status, 200);
+  assert.equal((await post(driver, { ...offer, id: randomUUID() })).status, 409);
+  assert.equal((await post(customer, answer)).status, 409);
+  assert.equal((await post(driver, answer)).status, 200);
+  assert.equal((await (await request(customer, path)).json()).data.call.answer, answer.sdp);
+  assert.equal((await (await post(driver, { action: 'end', id: offer.id })).json()).data.call, null);
+  await trip.update({ status: 'COMPLETED' });
+  assert.equal((await request(customer, path)).status, 404);
+  assert.equal((await post(driver, message)).status, 404);
+});
+
+test('an overdue customer report requires Admin confirmation before ending the trip or counting an incident', { skip: !enabled }, async t => {
+  const { db, request } = await serverFixture(t);
+  const [id, customer, driver, admin] = Array.from({ length: 4 }, () => randomUUID());
+  await db.collection('users').doc(customer).set({ roles: ['CUSTOMER'], status: 'ACTIVE' });
+  const driverAccount = db.collection('users').doc(driver);
+  await driverAccount.set({ roles: ['CUSTOMER', 'DRIVER'], status: 'ACTIVE', verifiedNoShowCount: 4 });
+  await db.collection('users').doc(admin).set({ roles: ['ADMIN'], status: 'ACTIVE' });
+  const trip = db.collection('trips').doc(id);
+  const now = Date.now();
+  await trip.set({ status: 'DRIVER_EN_ROUTE', customerId: customer, driverId: driver, promisedArrivalAt: now,
+    pickupEta: { requestedAt: now, arrivalAt: now + 5 * 60_000 } });
+  await db.collection('bookings').doc(id).set({ customerId: customer, driverId: driver, routeId: id, vehicleId: id });
+  const location = db.collection('liveLocations').doc(id);
+  await location.set({ observedAt: now, lat: 22, lng: 72 });
+  const view = async () => (await (await request(customer, '/views/trips/' + id)).json()).data;
+  assert.equal((await view()).driverEtaMinutes, 5);
+  assert.equal((await view()).driverNoShowEligible, false);
+  await location.update({ observedAt: now - 31_000 });
+  assert.equal((await view()).driverEtaMinutes, null);
+  const submit = (uid) => request(uid, '/trips/' + id + '/driver-no-show', 'POST', { description: 'Driver did not reach pickup.' });
+  assert.equal((await submit(customer)).status, 409);
+  await trip.update({ promisedArrivalAt: now - 21 * 60_000 });
+  assert.equal((await submit(driver)).status, 404);
+  const [response, retry] = await Promise.all([submit(customer), submit(customer)]);
+  assert.equal(response.status, 200);
+  const { id: reportId } = (await response.json()).data;
+  assert.equal((await retry.json()).data.id, reportId);
+  assert.equal((await trip.get()).get('status'), 'DRIVER_EN_ROUTE');
+  const incident = db.collection('verifiedIncidents').doc('driver-no-show-' + id);
+  assert.equal((await incident.get()).exists, false);
+  const review = (uid) => request(uid, '/admin/reports/' + reportId + '/resolve', 'POST',
+    { status: 'RESOLVED', note: 'Confirmed missed pickup after reviewing the trip.' });
+  assert.equal((await review(customer)).status, 403);
+  assert.equal((await review(admin)).status, 200);
+  assert.equal((await review(admin)).status, 200);
+  assert.equal((await trip.get()).get('status'), 'DRIVER_NO_SHOW');
+  assert.equal((await db.collection('payables').doc(id).get()).exists, false);
+  assert.equal((await location.get()).exists, false);
+  assert.equal((await db.collection('driverNoShowEvidence').doc(id).get()).get('verifiedBy'), admin);
+  await new SafetyService(db).applyIncident(incident.id);
+  assert.equal((await driverAccount.get()).get('verifiedNoShowCount'), 5);
+  assert.equal((await driverAccount.get()).get('status'), 'SUSPENDED');
+});
+
+test('only the booking customer can request trip codes and only the assigned driver can use them', { skip: !enabled }, async t => {
+  const { db, request, base } = await serverFixture(t);
+  process.env.TRIP_OTP_SECRET = 'test-only-key-with-at-least-32-bytes';
+  const [customer, driver, stranger, id] = Array.from({ length: 4 }, () => randomUUID());
+  for (const uid of [customer, driver, stranger]) {
+    await db.collection('users').doc(uid).set({ roles: ['CUSTOMER', 'DRIVER'], status: 'ACTIVE' });
+  }
+  const trip = db.collection('trips').doc(id);
+  const fare = { pricing_mode: 'HOURLY', hourlyRateInr: 600 };
+  await db.collection('bookings').doc(id).set({ customerId: customer, driverId: driver, vehicleId: id, routeId: id, fare });
+  await trip.set({ customerId: customer, driverId: driver, status: 'DRIVER_EN_ROUTE', fare });
+  const path = '/trips/' + id;
+  const issue = (uid, phase) => request(uid, path + '/verification-code', 'POST', { phase });
+  assert.equal((await fetch(base + path + '/verification-code', { method: 'POST' })).status, 401);
+  assert.equal((await issue(customer, 'OTHER')).status, 400);
+  assert.equal((await issue(customer, 'START')).status, 409);
+  assert.equal((await request(customer, path + '/arrival/confirm', 'POST')).status, 200);
+  assert.equal((await issue(driver, 'START')).status, 404);
+  assert.equal((await issue(stranger, 'START')).status, 404);
+  assert.equal((await issue(customer, 'END')).status, 409);
+  const issued = await issue(customer, 'START');
+  assert.equal(issued.status, 200);
+  assert.match(issued.headers.get('cache-control'), /no-store/);
+  const { code, expiresAt } = (await issued.json()).data;
+  assert.match(code, /^\d{6}$/);
+  assert.ok(expiresAt > Date.now());
+  assert.equal((await issue(customer, 'START')).status, 429);
+  const driverView = (await (await request(driver, '/views' + path)).json()).data;
+  const customerView = (await (await request(customer, '/views' + path)).json()).data;
+  assert.equal(driverView.canRequestOtp, false);
+  assert.equal(customerView.canRequestOtp, true);
+  assert.deepEqual(Object.keys(customerView.trip).sort(), ['id', 'customerId', 'driverId', 'status', 'arrivedAt', 'startedAt', 'endedAt', 'waitingFeePaise', 'amountPaise'].sort());
+  assert.equal((await request(stranger, path + '/start', 'POST', { code })).status, 404);
+  assert.equal((await request(driver, path + '/start', 'POST', { code })).status, 200);
+  assert.equal((await issue(customer, 'START')).status, 409);
+  const endIssued = await issue(customer, 'END');
+  assert.equal(endIssued.status, 200);
+  const endCode = (await endIssued.json()).data.code;
+  assert.match(endCode, /^\d{6}$/);
+  assert.notEqual(endCode, code);
+  await trip.update({ startedAt: Date.now() - 60_000 });
+  assert.equal((await request(customer, path + '/complete', 'POST', { code: endCode })).status, 404);
+  assert.equal((await request(driver, path + '/complete', 'POST', { code: endCode })).status, 200);
+  assert.equal((await request(driver, path + '/complete', 'POST', { code: endCode })).status, 409);
+  assert.equal((await issue(customer, 'END')).status, 409);
+  assert.equal((await trip.get()).get('status'), 'COMPLETED');
+  assert.ok((await db.collection('payables').doc(id).get()).get('amountPaise') >= 1000);
+});
+
 test('driver fare is saved, customer visibility follows fresh presence, and renewal cannot reopen an offline shift', { skip: !enabled }, async t => {
   const { db, request } = await serverFixture(t);
   const driver = randomUUID(), customer = randomUUID();

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { AlertTriangle, LoaderCircle, MapPin, Navigation, Route as RouteIcon } from 'lucide-react';
 import { getMapsProvider } from '@/lib/maps';
 import type { Coordinate, MapHandle, PlaceOption, RoutePreview } from '@/lib/maps';
+import type { MapDriverMarker } from '@/lib/maps/types';
 
 export interface RouteMapProps {
   className?: string;
@@ -11,7 +12,7 @@ export interface RouteMapProps {
   route: RoutePreview | null;
   loading?: boolean;
   error?: string | null;
-  driverMarkers?: Array<{ id: string; position: Coordinate; label: string; stale?: boolean }>;
+  driverMarkers?: MapDriverMarker[];
   showDriverMarkers?: boolean;
   onPinMove?: (index: number, position: Coordinate) => void;
 }
@@ -53,7 +54,9 @@ export default function RouteMap({
   const provider = React.useMemo(() => getMapsProvider(), []);
   const googleContainerRef = React.useRef<HTMLDivElement | null>(null);
   const svgContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const [mapFailed, setMapFailed] = React.useState(false);
+  const [mapError, setMapError] = React.useState<string | null>(null);
+  const [mapReady, setMapReady] = React.useState(false);
+  const gridId = React.useId();
   const [draggingIndex, setDraggingIndex] = React.useState<number | null>(null);
   const [dragPosition, setDragPosition] = React.useState<Coordinate | null>(null);
   const mapHandleRef = React.useRef<MapHandle | null>(null);
@@ -70,11 +73,12 @@ export default function RouteMap({
   );
 
   React.useEffect(() => {
-    if (provider.id !== 'google' || mapFailed || !googleContainerRef.current) {
+    if (provider.id !== 'google' || mapError || !googleContainerRef.current) {
       return;
     }
 
     let disposed = false;
+    setMapReady(false);
 
     provider
       .createMap(googleContainerRef.current, {
@@ -82,17 +86,24 @@ export default function RouteMap({
         route: routeRef.current,
         driverMarkers: markerRef.current,
         onDragEnd: onPinMove,
+        onReady: () => { if (!disposed) setMapReady(true); },
+        onUnavailable: message => { if (!disposed) setMapError(message); },
       })
       .then((nextHandle) => {
         if (disposed) {
           nextHandle?.destroy();
           return;
         }
+        if (!nextHandle) {
+          setMapError('Google Maps could not start. Showing route preview.');
+          return;
+        }
         mapHandleRef.current = nextHandle;
+        nextHandle.updateDriverMarkers?.(markerRef.current);
       })
-      .catch(() => {
+      .catch((caught: unknown) => {
         if (!disposed) {
-          setMapFailed(true);
+          setMapError(caught instanceof Error ? caught.message : 'Google Maps could not be loaded.');
         }
       });
 
@@ -101,7 +112,7 @@ export default function RouteMap({
       mapHandleRef.current?.destroy();
       mapHandleRef.current = null;
     };
-  }, [mapFailed, onPinMove, pointsKey, provider, routeKey]);
+  }, [mapError, onPinMove, pointsKey, provider, routeKey]);
 
   React.useEffect(() => { mapHandleRef.current?.updateDriverMarkers?.(markerRef.current); }, [markerKey]);
 
@@ -199,14 +210,12 @@ export default function RouteMap({
     });
   }
 
-  const useGoogleMap = provider.id === 'google' && !mapFailed;
+  const useGoogleMap = provider.id === 'google' && !mapError;
+  const showPreview = !useGoogleMap || !mapReady;
 
   return (
-    <section className={`relative overflow-hidden bg-[#e9eef5] ${className ?? 'h-[420px] rounded-card border border-studio-border lg:h-full lg:min-h-[620px]'}`}>
+    <section className={`relative min-h-[300px] overflow-hidden bg-[#e9eef5] ${className ?? 'h-[420px] rounded-card border border-studio-border lg:min-h-[520px]'}`}>
       <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-studio-obsidian px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white">
-          {useGoogleMap ? 'Google road map' : 'Demo map preview'}
-        </span>
         {route ? (
           <span className="inline-flex items-center gap-1.5 rounded-control border border-studio-border bg-white px-3 py-1.5 text-xs font-semibold text-studio-ink">
             <RouteIcon aria-hidden="true" className="h-3.5 w-3.5 text-studio-ink" />
@@ -216,9 +225,11 @@ export default function RouteMap({
       </div>
 
       {useGoogleMap ? (
-        <div ref={googleContainerRef} className="h-full w-full" aria-label="Route map" />
-      ) : (
-        <div ref={svgContainerRef} className="h-full w-full overflow-hidden">
+        <div ref={googleContainerRef} className={`absolute inset-0 ${mapReady ? '' : 'pointer-events-none opacity-0'}`}
+          aria-hidden={!mapReady} aria-label="Route map" />
+      ) : null}
+      {showPreview ? (
+        <div ref={svgContainerRef} className="absolute inset-0 overflow-hidden">
           <p className="sr-only">
             Pickup and destination pins can be moved with the arrow keys when focused.
           </p>
@@ -230,12 +241,13 @@ export default function RouteMap({
             aria-label={route ? 'Preview of the selected road route' : 'Pickup and destination map'}
           >
             <defs>
-              <pattern id="veyro-map-grid" width="72" height="72" patternUnits="userSpaceOnUse">
+              <pattern id={gridId} width="72" height="72" patternUnits="userSpaceOnUse">
                 <path d="M 72 0 L 0 0 0 72" fill="none" stroke="#d8dfeb" strokeWidth="1" />
               </pattern>
             </defs>
             <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="#e9eef5" />
-            <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#veyro-map-grid)" />
+            <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill={`url(#${gridId})`} />
+            {provider.id === 'demo' ? <>
             <path
               d="M -20 430 C 180 380 260 470 430 410 S 760 330 1020 390"
               fill="none"
@@ -257,6 +269,7 @@ export default function RouteMap({
               strokeWidth="22"
               strokeLinecap="round"
             />
+            </> : null}
             {polyline ? (
               <>
                 <polyline
@@ -284,8 +297,10 @@ export default function RouteMap({
                   const point = project(marker.position);
                   return (
                     <g key={marker.id} transform={`translate(${point.x} ${point.y})`}>
-                      <circle r="14" fill={marker.stale ? '#64748b' : '#090b10'} />
-                      <circle r="5" fill="#ffffff" />
+                      {marker.vehicle ? <image href="/icons/driver-car.png" x="-20" y="-20" width="40" height="40" opacity={marker.stale ? 0.5 : 1} /> : <>
+                        <circle r="14" fill={marker.stale ? '#64748b' : '#090b10'} />
+                        <circle r="5" fill="#ffffff" />
+                      </>}
                       <title>{marker.label}</title>
                     </g>
                   );
@@ -302,6 +317,7 @@ export default function RouteMap({
                   key={point.id}
                   transform={`translate(${projected.x} ${projected.y})`}
                   onPointerDown={(event) => {
+                    if (!onPinMove) return;
                     event.currentTarget.setPointerCapture(event.pointerId);
                     setDraggingIndex(index);
                     setDragPosition(point.position);
@@ -310,10 +326,10 @@ export default function RouteMap({
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   onKeyDown={(event) => handlePinKeyDown(event, index, point.position)}
-                  role="button"
-                  tabIndex={0}
-                  style={{ cursor: 'grab', touchAction: 'none' }}
-                  aria-label={`${point.label}. Use arrow keys to adjust position.`}
+                  role={onPinMove ? 'button' : undefined}
+                  tabIndex={onPinMove ? 0 : undefined}
+                  style={onPinMove ? { cursor: 'grab', touchAction: 'none' } : undefined}
+                  aria-label={onPinMove ? `${point.label}. Use arrow keys to adjust position.` : undefined}
                 >
                   <circle r="22" fill="#090b10" fillOpacity="0.12" />
                   <circle
@@ -337,7 +353,13 @@ export default function RouteMap({
             })}
           </svg>
         </div>
-      )}
+      ) : null}
+
+      {mapError ? (
+        <p role="status" className="absolute bottom-4 left-4 right-20 z-10 w-fit rounded-panel bg-white px-3 py-2 text-xs text-studio-ink">
+          {mapError}
+        </p>
+      ) : null}
 
       {loading ? (
         <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-control border border-studio-border bg-white px-3 py-2 text-xs font-semibold text-studio-ink">
@@ -380,14 +402,14 @@ export default function RouteMap({
         </button>
       </div>
 
-      <div className="pointer-events-none absolute bottom-4 right-4 z-10 hidden flex-col items-end gap-1 text-[10px] font-medium text-studio-muted sm:flex">
+      {onPinMove && !mapError ? <div className="pointer-events-none absolute bottom-4 right-4 z-10 hidden flex-col items-end gap-1 text-[10px] font-medium text-studio-muted sm:flex">
         <span className="inline-flex items-center gap-1 rounded-control border border-studio-border bg-white/90 px-2.5 py-1">
           <MapPin aria-hidden="true" className="h-3 w-3" /> Drag pins to adjust
         </span>
         <span className="inline-flex items-center gap-1 rounded-control border border-studio-border bg-white/90 px-2.5 py-1">
           <Navigation aria-hidden="true" className="h-3 w-3" /> Route recalculates after 400ms
         </span>
-      </div>
+      </div> : null}
     </section>
   );
 }

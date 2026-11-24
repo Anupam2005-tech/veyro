@@ -197,7 +197,7 @@ export async function getTrip(user: AuthUser, tripId: string) {
     await request('/trips/' + endpoint(tripId) + '/initialize', json({}), token);
     view = await request<Wire>('/views/trips/' + endpoint(tripId), { method: 'GET' }, token);
   }
-  return tripView(view);
+  return tripView(view, user.uid);
 }
 export async function advanceTripStage(user: AuthUser, tripId: string, action: 'ARRIVED' | 'START' | 'END' | 'NO_SHOW_REQUEST', input: { otp?: string } = {}) {
   if (isDemoDataMode) return advanceTripStageDemo(user.uid, tripId, action, input);
@@ -208,6 +208,15 @@ export async function advanceTripStage(user: AuthUser, tripId: string, action: '
 export async function confirmDriverArrival(user: AuthUser, tripId: string) {
   await request('/trips/' + endpoint(tripId) + '/arrival/confirm', json({}), await user.getIdToken());
   return getTrip(user, tripId);
+}
+export async function reportDriverNoShow(user: AuthUser, tripId: string, description: string) {
+  return request<{ id: string }>('/trips/' + endpoint(tripId) + '/driver-no-show',
+    json({ description }), await user.getIdToken());
+}
+export async function requestTripVerificationCode(user: AuthUser, tripId: string, phase: 'START' | 'END') {
+  return request<{ code: string; expiresAt: number; serverTime?: number }>(
+    '/trips/' + endpoint(tripId) + '/verification-code', json({ phase }), await user.getIdToken()
+  );
 }
 export async function triggerSos(user: AuthUser, tripId: string) {
   if (isDemoDataMode) return triggerSosDemo(user.uid, tripId);
@@ -365,7 +374,8 @@ export async function customerAvatar(user: AuthUser, file?: File | null): Promis
 export async function getNotifications(user: AuthUser, role: NotificationRole) {
   if (isDemoDataMode) return [];
   const rows = await request<Wire[]>('/notifications?role=' + role, { method: 'GET' }, await user.getIdToken());
-  return rows.map(r => ({ id: r.id, title: String(r.title ?? r.type ?? 'Veyro update'), createdAt: iso(r.createdAt), read: r.read === true }));
+  return rows.map(r => ({ id: r.id, type: String(r.type ?? ''), title: String(r.title ?? r.type ?? 'Veyro update'),
+    createdAt: iso(r.createdAt), read: r.read === true }));
 }
 export type NotificationRole = 'CUSTOMER' | 'DRIVER' | 'ADMIN';
 export async function markNotificationRead(user: AuthUser, id: string, role: NotificationRole) {

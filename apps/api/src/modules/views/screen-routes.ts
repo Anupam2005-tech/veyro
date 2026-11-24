@@ -5,7 +5,7 @@ import { requireRole } from '../../middleware/require-role.js';
 import { AppError } from '../../shared/http/app-error.js';
 import { sendSuccess } from '../../shared/http/response.js';
 import { identifier } from '../profiles/profile-service.js';
-import { publicTrip } from '../trips/trip-service.js';
+import { driverNoShowGraceMs, publicTrip } from '../trips/trip-service.js';
 
 const row = (d: DocumentSnapshot) => d.exists ? { ...d.data(), id: d.id } : null;
 const live = ['DRIVER_EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'];
@@ -42,10 +42,21 @@ export async function bookingScreen(db: Firestore, booking: DocumentSnapshot, vi
   const active = live.includes(trip.get('status'));
   const shares = active && viewer === booking.get('customerId') ? await db.collection('tripShares').where('tripId', '==', booking.id).get() : null;
   const share = shares?.docs.find(s => s.get('customerId') === viewer && s.get('revoked') !== true);
+  const now = Date.now(), observedAt = location.get('observedAt'), eta = trip.get('pickupEta');
+  const enRoute = trip.get('status') === 'DRIVER_EN_ROUTE';
+  const promised = trip.get('promisedArrivalAt');
   return { booking: row(booking), route: row(route), vehicle: row(vehicle),
     driver: driver?.exists ? { id: driver.id, fullName: driver.get('fullName'), hourlyRateInr: driver.get('hourlyRateInr'),
       experienceYears: driver.get('experienceYears'), languages: driver.get('languages') ?? [] } : null,
     trip: trip.exists ? publicTrip(trip) : null, location: active ? row(location) : null,
+    canRequestOtp: !!viewer && viewer === trip.get('customerId'),
+    driverEtaMinutes: enRoute && Number.isSafeInteger(observedAt) && now >= observedAt && now - observedAt <= 30_000 &&
+      Number.isSafeInteger(eta?.requestedAt) && Number.isSafeInteger(eta?.arrivalAt) &&
+      now >= eta.requestedAt && now - eta.requestedAt <= 90_000
+      ? Math.max(0, Math.ceil((eta.arrivalAt - now) / 60_000)) : null,
+    driverNoShowEligible: enRoute && viewer === trip.get('customerId') &&
+      Number.isSafeInteger(promised) && now >= promised + driverNoShowGraceMs,
+    driverNoShowReportStatus: viewer && viewer === trip.get('customerId') ? trip.get('driverNoShowReportStatus') ?? null : null,
     payable: payable.exists ? { id: payable.id, amountPaise: payable.get('amountPaise'), currency: payable.get('currency'),
       status: payable.get('status'), source: payable.get('source'), isUnderActiveDispute: payable.get('isUnderActiveDispute') === true,
       ...(viewer === payable.get('customerId') && payable.get('status') === 'CAPTURED'

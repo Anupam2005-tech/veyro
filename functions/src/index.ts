@@ -1,9 +1,11 @@
 import { onRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
 import { createApp } from '@veyro/api/app';
 
 export { pruneStalePresence, dispatchNotifications } from './team3.js';
 
 const app = createApp();
+const tripOtpSecret = defineSecret('TRIP_OTP_SECRET');
 
 /**
  * 2nd-gen HTTPS onRequest function hosting the Express modular monolith.
@@ -14,6 +16,7 @@ export const api = onRequest(
     region: 'asia-east2', // Hong Kong (nearest supported Cloud Functions region for Mumbai resources)
     memory: '512MiB',
     timeoutSeconds: 60,
+    secrets: [tripOtpSecret],
   },
   app
 );
@@ -21,7 +24,6 @@ export const api = onRequest(
 
 import { onDocumentWritten, onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { defineSecret } from 'firebase-functions/params';
 import { getFirestore, getFirestoreDatabaseId } from '@veyro/api/firebase';
 import { deliverNotification, deliverNotificationEmail } from '@veyro/api/notifications';
 import { SafetyService } from '@veyro/api/safety';
@@ -83,7 +85,12 @@ import { clearTripLocation, cleanupLocations } from '@veyro/api/mobility';
 export const clearEndedTripLocation = onDocumentWritten({
   document: 'trips/{id}', database: getFirestoreDatabaseId(), region: 'asia-east2', retry: true,
 }, async event => {
-  await clearTripLocation(getFirestore(), event.params.id);
+  const db = getFirestore();
+  const status = event.data?.after.data()?.status;
+  if (!['DRIVER_EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(status)) {
+    await db.collection('tripContacts').doc(event.params.id).delete();
+  }
+  await clearTripLocation(db, event.params.id);
 });
 export const cleanupEphemeralLocations = onSchedule({ schedule: 'every 15 minutes', region: 'asia-east2' }, async () => {
   await cleanupLocations(getFirestore());

@@ -51,7 +51,7 @@ The Team 2 implementation is now on `main`; the `REVIEW` and `BLOCKED` rows abov
 - [ ] Re-run API, Functions and emulator tests against the PR head. Record the commands, pass counts and any skipped tests. CI must fail when a backend build or test fails.
 - [ ] Verify a real limited-use App Check token, the lead-only Admin grant and the intended Firebase UID. Keep provider-link conflict recovery with the frontend handoff.
 - [ ] Exercise instant and scheduled booking with Team 3 availability, Maps and notification delivery; verify first acceptance wins, expiry and `NEEDS_REBOOK` on live integrations.
-- [ ] Resolve secure customer OTP display/recovery, qualifying incident exclusions, no-trip dispute timing and captured-payment settlement before claiming the trip-to-payment flow complete.
+- [ ] Verify deployed customer-only OTP issuance and resolve lockout recovery, qualifying incident exclusions, no-trip dispute timing and captured-payment settlement before claiming the trip-to-payment flow complete.
 - [ ] Run actual Razorpay Test Mode capture and webhook, FCM delivery, Firebase rule access tests, deployment/IAM/Secret Manager checks and the manual release journey. Record the evidence in [Project Status](PROJECT_STATUS.md).
 
 These are review and release gates, not a claim that the open items were implemented by this documentation change.

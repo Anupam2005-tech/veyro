@@ -14,17 +14,21 @@ const messages: Record<string, readonly [string, string]> = {
   DRIVER_ACCOUNT_CONTROLLED: ['Driver account status changed', 'Sign in to Veyro Driver to check your account status.'],
   CUSTOMER_ACCOUNT_RESTORED: ['Your Veyro account was restored', 'You can sign in to use your customer account again.'],
   DRIVER_TRIP_COMPLETED: ['Trip completed', 'Open Veyro Driver to review the completed trip and earnings.'],
+  DRIVER_BOOKING_ASSIGNED: ['Your Veyro trip is confirmed', 'You accepted a booking. Open the driver dashboard to review the pickup.'],
+  DRIVER_BOOKING_CANCELLED: ['A customer cancelled your trip', 'The trip has been removed from your active bookings. Open the driver dashboard for details.'],
   BOOKING_SCHEDULED_QUEUED: ['Scheduled booking received', 'We received your scheduled request. Sign in to view its current status.'],
   BOOKING_ASSIGNED: ['Your booking has a driver', 'A driver accepted your booking. Open Veyro for trip details.'],
   BOOKING_NEEDS_REBOOK: ['Your booking needs to be rebooked', 'Please open Veyro to arrange another booking.'],
   BOOKING_EXPIRED: ['Your booking request expired', 'Open Veyro if you still need a driver.'],
   BOOKING_CANCELLED_BY_DRIVER: ['Your booking was cancelled', 'Your driver cancelled the booking. Open Veyro for details.'],
   BOOKING_CANCELLED_BY_CUSTOMER: ['Your booking was cancelled', 'Your booking was cancelled. Open Veyro for details.'],
+  DRIVER_ARRIVED: ['Your driver has arrived', 'Open the trip screen to confirm the pickup and get your start code when you are ready.'],
   TRIP_STARTED: ['Your trip has started', 'Open Veyro to check your trip status.'],
   TRIP_COMPLETED: ['Your trip is complete', 'Open Veyro to review the trip and fare.'],
   DRIVER_NO_SHOW: ['Your booking status changed', 'Open Veyro to review your driver no-show update.'],
   CUSTOMER_NO_SHOW: ['Your booking status changed', 'Open Veyro to review your no-show update.'],
   PAYMENT_CAPTURED: ['Veyro payment confirmed', 'Your payment was confirmed. Open Veyro to review your receipt.'],
+  ACCOUNT_SUSPENDED: ['Your Veyro account is suspended', 'Your account access changed. Contact Veyro support if you need help.'],
 };
 
 export function notificationTitle(type: string) {
@@ -70,10 +74,10 @@ export async function deliverNotificationEmail(db: Firestore, id: string) {
     const message = Object.hasOwn(messages, job.type) ? messages[job.type] : undefined;
     const account = await getAuth(getFirebaseAdminApp()).getUser(job.uid);
     const profile = await db.collection('users').doc(job.uid).get();
-    const preference = job.type.startsWith('BOOKING_') ? 'bookingUpdates' :
-      job.type.startsWith('TRIP_') || job.type.endsWith('_NO_SHOW') ? 'tripStatus' : null;
+    const preference = /^(DRIVER_)?BOOKING_/.test(job.type) ? 'bookingUpdates' :
+      /^(DRIVER_)?TRIP_/.test(job.type) || job.type.endsWith('_NO_SHOW') || job.type === 'DRIVER_ARRIVED' ? 'tripStatus' : null;
     if (!message || account.disabled || !account.email ||
-      !profile.exists || profile.get('status') !== 'ACTIVE' ||
+      !profile.exists || (profile.get('status') !== 'ACTIVE' && job.type !== 'ACCOUNT_SUSPENDED') ||
       (preference && profile.get('notifications.' + preference) === false)) {
       await finish('SKIPPED');
       return;

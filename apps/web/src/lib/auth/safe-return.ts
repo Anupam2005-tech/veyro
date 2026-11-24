@@ -16,3 +16,9 @@ export function safeReturnPath(value: string | null | undefined, fallback: strin
     return fallback;
   }
 }
+
+export function adminReturnPath(value: string | null | undefined): string {
+  const path = safeReturnPath(value, '/admin');
+  const pathname = path.split(/[?#]/, 1)[0];
+  return pathname === '/admin' || pathname?.startsWith('/admin/') ? path : '/admin';
+}

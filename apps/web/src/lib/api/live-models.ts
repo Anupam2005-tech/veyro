@@ -45,7 +45,7 @@ export function bookingView(v: Wire): BookingRecord {
     stops: points.slice(1, -1).map((p: Wire, i: number) => place(p, `Stop ${i + 1}`)), vehicle, driver,
     quote: quoteView(b.id, b.fare, driver ?? candidate({ id: '', firstName: 'Eligible driver after acceptance', hourlyRateInr: b.fare.hourlyRateInr }, vehicle), b.pickupAt, b.routeId) };
 }
-export function tripView(v: Wire): TripRecord {
+export function tripView(v: Wire, viewerUid?: string): TripRecord {
   const b = bookingView(v), t = v.trip, r = v.route, p = v.payable;
   const amount = p?.amountPaise ?? t?.amountPaise;
   let finalFare: FinalFare | null = null;
@@ -63,9 +63,12 @@ export function tripView(v: Wire): TripRecord {
       path: r.path ?? [], summary: 'Server-verified road route', calculatedAt: iso(r.createdAt) },
     vehicle: b.vehicle, driver: b.driver, quotedFareInr: b.quote.estimatedBaseFare, customerName: 'Customer', customerPhone: '',
     liveLocation: l ? { position: { lat: l.lat, lng: l.lng }, updatedAt: iso(l.observedAt), accuracyMeters: l.accuracy,
-      stale: Date.now() - l.observedAt > 30000 } : null, driverEtaMinutes: null,
+      stale: Date.now() - l.observedAt > 30000 } : null, driverEtaMinutes: v.driverEtaMinutes ?? null,
     arrivalAt: t?.arrivedAt ? iso(t.arrivedAt) : null, waitingStartedAt: t?.arrivedAt ? iso(t.arrivedAt) : null,
-    waitingFeeInr: (t?.waitingFeePaise ?? 0) / 100, startOtp: '', endOtp: '', startOtpShownAt: null, endOtpShownAt: null,
+    waitingFeeInr: (t?.waitingFeePaise ?? 0) / 100,
+    isTripCustomer: !!t && !!viewerUid && (t.customerId ?? v.booking.customerId) === viewerUid,
+    driverNoShowEligible: v.driverNoShowEligible === true, driverNoShowReportStatus: v.driverNoShowReportStatus ?? null,
+    startOtp: '', endOtp: '', startOtpShownAt: null, endOtpShownAt: null,
     sosEvents: [], share: v.share ? { shareId: v.share.shareId, token: '', createdAt: iso(v.share.createdAt), expiresAt: '' } : null, finalFare, rating: v.rating ?? undefined, demo: false };
 }
 export function offerView(v: Wire): DriverOffer {
@@ -108,5 +111,6 @@ export function customerAccount(v: Wire): CustomerAccountRecord {
 }
 export function reportView(v: Wire): ReportRecord {
   return { id: v.id, tripId: v.tripId, reporterRole: v.reporterRole, reporterName: 'Private reporter', category: v.category,
-    description: v.description, createdAt: iso(v.createdAt), status: v.status, resolutionNote: v.resolutionNote };
+    description: v.description, createdAt: iso(v.createdAt), status: v.status, resolutionNote: v.resolutionNote,
+    driverNoShowReview: v.kind === 'DRIVER_NO_SHOW' };
 }

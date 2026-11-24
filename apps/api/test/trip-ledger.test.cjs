@@ -24,17 +24,17 @@ test('trip OTP transitions persist failed attempts, enforce ownership and genera
   await trip.initialize(id, customer);
   await assert.rejects(trip.arrive(id, driver), { code: 'ARRIVAL_UNVERIFIED' });
   await trip.arrive(id, customer, true);
-  const code = await trip.issueCode(id, customer, 'START');
+  const { code } = await trip.issueCode(id, customer, 'START');
   const stored = await db.collection('trips').doc(id).collection('verification').doc('START').get();
   assert.notEqual(stored.get('hash'), code);
   const wrong = code === '000000' ? '111111' : '000000';
   await assert.rejects(trip.verifyCode(id, driver, 'START', wrong), { code: 'OTP_INVALID' });
   assert.equal((await stored.ref.get()).get('attempts'), 1);
   at += 61_000;
-  const replacement = await trip.issueCode(id, customer, 'START');
+  const { code: replacement } = await trip.issueCode(id, customer, 'START');
   await trip.verifyCode(id, driver, 'START', replacement);
   await assert.rejects(trip.verifyCode(id, driver, 'START', replacement), { code: 'TRIP_STATE_CONFLICT' });
-  const end = await trip.issueCode(id, customer, 'END');
+  const { code: end } = await trip.issueCode(id, customer, 'END');
   assert.notEqual(end, replacement);
   at += 60_000;
   const outcomes = await Promise.allSettled([trip.verifyCode(id, driver, 'END', end), trip.verifyCode(id, driver, 'END', end)]);
@@ -79,9 +79,12 @@ test('OTP expiry and five wrong attempts cannot be bypassed by regeneration', {
   }
   await db.collection('trips').doc(id).set({ status: 'ARRIVED', customerId: customer, driverId: driver, arrivedAt: now });
   const service = new TripService(db, () => now);
-  const code = await service.issueCode(id, customer, 'START');
-  const wrong = code === '000000' ? '111111' : '000000';
+  const { code: expired, expiresAt } = await service.issueCode(id, customer, 'START');
   await assert.rejects(service.issueCode(id, customer, 'START'), { code: 'OTP_COOLDOWN' });
+  now = expiresAt;
+  await assert.rejects(service.verifyCode(id, driver, 'START', expired), { code: 'OTP_UNAVAILABLE' });
+  const { code } = await service.issueCode(id, customer, 'START');
+  const wrong = code === '000000' ? '111111' : '000000';
   for (let i = 0; i < 5; i++) await assert.rejects(service.verifyCode(id, driver, 'START', wrong), { code: 'OTP_INVALID' });
   now += 61_000;
   await assert.rejects(service.issueCode(id, customer, 'START'), { code: 'OTP_LOCKED' });
@@ -115,9 +118,9 @@ test('waiting fee boundaries remain free through 15 minutes and cannot start at 
     await db.collection('users').doc(driver).set({ roles: ['DRIVER'], status: 'ACTIVE' });
     await db.collection('trips').doc(id).set({ status: 'ARRIVED', customerId: customer, driverId: driver, arrivedAt });
     const service = new TripService(db, () => now);
-    const code = await service.issueCode(id, customer, 'START');
-    if (expected === null) await assert.rejects(service.verifyCode(id, driver, 'START', code), { code: 'TRIP_STATE_CONFLICT' });
+    if (expected === null) await assert.rejects(service.issueCode(id, customer, 'START'), { code: 'TRIP_STATE_CONFLICT' });
     else {
+      const { code } = await service.issueCode(id, customer, 'START');
       await service.verifyCode(id, driver, 'START', code);
       assert.equal((await db.collection('trips').doc(id).get()).get('waitingFeePaise'), expected);
     }

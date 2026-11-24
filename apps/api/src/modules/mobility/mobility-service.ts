@@ -103,7 +103,7 @@ export class MobilityService {
         at - input.observedAt < 0 || at - input.observedAt > 30000) throw new AppError(400, 'INVALID_GPS_SAMPLE', 'A fresh accurate GPS sample is required.');
     const ref = this.db.collection('liveLocations').doc(identifier(id));
     const sample = { ...position, accuracy: input.accuracy, observedAt: input.observedAt };
-    await this.db.runTransaction(async tx => {
+    const pickup = await this.db.runTransaction(async tx => {
       const trip = await tx.get(this.db.collection('trips').doc(id));
       const user = await tx.get(this.db.collection('users').doc(uid));
       const previous = await tx.get(ref);
@@ -124,9 +124,16 @@ export class MobilityService {
       const route = typeof routeId === 'string' ? await tx.get(this.db.collection('routeQuotes').doc(routeId)) : null;
       tx.set(ref, { ...sample, driverId: uid, tripId: id, expiresAt: at + 24 * 60 * 60000 });
       if (route?.get('pickup')) {
-        const distance = distanceMetres(position, point(route.get('pickup')));
+        const destination = point(route.get('pickup'));
+        const distance = distanceMetres(position, destination);
         tx.set(this.db.collection('arrivalEvidence').doc(id), { driverId: uid, verified: true,
           withinPickup100m: distance + input.accuracy <= 100, accuracyAccepted: input.accuracy <= 100, observedAt: input.observedAt });
+        const lastRequest = trip.get('pickupEtaRequestedAt');
+        if (trip.get('status') === 'DRIVER_EN_ROUTE' && input.accuracy <= 100 &&
+            (lastRequest === undefined || at - lastRequest >= 60_000)) {
+          tx.update(trip.ref, { pickupEtaRequestedAt: at });
+          return destination;
+        }
       }
     });
     const app = getFirebaseAdminApp();
@@ -135,6 +142,22 @@ export class MobilityService {
       if (current?.state === 'DISABLED' || current?.sample?.observedAt >= sample.observedAt) return;
       return { state: 'ACTIVE', sample };
     });
+    if (pickup) await this.updatePickupEta(id, position, pickup, at);
+  }
+  private async updatePickupEta(id: string, position: ReturnType<typeof point>, pickup: ReturnType<typeof point>, requestedAt: number) {
+    try {
+      const { durationMinutes } = await this.roads.route([position, pickup]);
+      if (!Number.isFinite(durationMinutes) || durationMinutes < 0) return;
+      const ref = this.db.collection('trips').doc(id);
+      await this.db.runTransaction(async tx => {
+        const trip = await tx.get(ref);
+        if (trip.get('status') === 'DRIVER_EN_ROUTE' && trip.get('pickupEtaRequestedAt') === requestedAt) {
+          tx.update(ref, { pickupEta: { requestedAt, arrivalAt: requestedAt + Math.round(durationMinutes * 60_000) } });
+        }
+      });
+    } catch {
+      // GPS remains usable when the optional Routes lookup is unavailable.
+    }
   }
   async createShare(uid: string, id: string) {
     const token = randomBytes(32).toString('base64url'), hash = createHash('sha256').update(token).digest('hex');

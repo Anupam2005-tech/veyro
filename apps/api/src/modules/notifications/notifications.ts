@@ -16,7 +16,7 @@ export function notificationRole(account: DocumentSnapshot, requested?: unknown)
 }
 
 function eventAudience(type: string): Role | undefined {
-  if (['BOOKING_OFFER', 'DRIVER_TRIP_COMPLETED', 'DRIVER_APPLICATION_SUBMITTED', 'DRIVER_APPLICATION_DECISION',
+  if (['BOOKING_OFFER', 'DRIVER_BOOKING_ASSIGNED', 'DRIVER_BOOKING_CANCELLED', 'DRIVER_TRIP_COMPLETED', 'DRIVER_APPLICATION_SUBMITTED', 'DRIVER_APPLICATION_DECISION',
     'DRIVER_PROFILE_UPDATED', 'DRIVER_ACCOUNT_CONTROLLED'].includes(type)) return 'DRIVER';
   if (/^(BOOKING_|TRIP_|PAYMENT_)/.test(type) ||
     ['PROFILE_UPDATED', 'PROFILE_COMPLETED', 'DRIVER_ARRIVED', 'DRIVER_NO_SHOW', 'CUSTOMER_NO_SHOW',
@@ -85,7 +85,8 @@ export async function deliverNotification(db: Firestore, uid: string, id: string
     if (!item.exists || account.get('status') !== 'ACTIVE' ||
         ['SENT', 'EXHAUSTED'].includes(item.get('pushStatus')) || item.get('leaseUntil') > Date.now()) return [];
     const kind: string = item.get('type') ?? '';
-    const preference = kind.startsWith('BOOKING_') ? 'bookingUpdates' : kind.startsWith('TRIP_') ? 'tripStatus' :
+    const preference = /^(DRIVER_)?BOOKING_/.test(kind) ? 'bookingUpdates' :
+      /^(DRIVER_)?TRIP_/.test(kind) || kind.endsWith('_NO_SHOW') || kind === 'DRIVER_ARRIVED' ? 'tripStatus' :
       kind.startsWith('SOS_') ? 'safetyAlerts' : kind.startsWith('SERVICE_') ? 'serviceMessages' : null;
     if (preference && account.get('notifications.' + preference) === false) {
       tx.update(ref, { pushStatus: 'IN_APP_ONLY', leaseUntil: 0 });

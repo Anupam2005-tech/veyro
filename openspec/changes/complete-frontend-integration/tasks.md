@@ -5,7 +5,7 @@
 | Auth and transport | FE-014–015 | REVIEW | Canonical requests, limited-use App Check and no silent demo fallback |
 | Core records and uploads | FE-016–017, FE-022–025, FE-047–048 | REVIEW | Private upload IDs, profile ownership, approved coverage |
 | Booking | FE-018–021, FE-034–035, FE-038 | REVIEW | Server routes, eligibility, quotes, booking states and approved reasons |
-| Trip and sharing | FE-026–032, FE-036, FE-050, FE-053 | REVIEW | Polling, foreground GPS, scoped shares and held OTP display |
+| Trip and sharing | FE-026–032, FE-036, FE-050, FE-053 | REVIEW | Polling, foreground GPS, scoped shares and customer-only start/end OTP |
 | Payments and earnings | FE-033, FE-037, FE-054 | REVIEW | Test Mode checkout and verified ledger DTOs |
 | Admin | FE-039–042, FE-049, FE-051–052 | REVIEW | Scoped read models, private documents, audited decisions |
 | Verification | FE-043–046 | REVIEW | Build/lint/types, emulator and browser checks |
@@ -51,9 +51,17 @@ Actual rules/index deployment must target the configured live database. No cloud
 
 ## Remaining release gates
 
+| Follow-up | Status | Remaining check |
+|---|---|---|
+| Firebase sign-in | REVIEW | Owner selected email/password. Verify sign-up, sign-in, reset and provider linking in staging. |
+| Live pickup ETA | REVIEW | Verify server Routes key and fresh/stale GPS with two devices. |
+| Driver no-show evidence | REVIEW | Verify the customer report and Admin decision in staging, including the deployed incident worker. |
+
+OTP follow-up (24 November 2026): the local HTTP and Firestore tests passed for customer-only issuance, phase checks, rate limits, expiry, assigned-driver consumption and final payable creation. Web type-check and lint passed. The focused regression run passed 20 tests with one unrelated test skipped because the Storage emulator was outside this run.
+
 | Gate | Reason / next action |
 |---|---|
-| FE-028 secure OTP display/delivery/recovery | Explicitly left pending by owner; live UI shows a held state |
+| FE-028 deployed OTP and lockout recovery | Customer-only issuance implemented. Configure `TRIP_OTP_SECRET` in Secret Manager and verify deployed access. Recovery after the attempt limit needs an approved process. |
 | Lead UID | Owner will provide ADMIN_GRANTER_UID later |
 | Incident qualification and no-trip financial cases | Owner-held qualifying reasons/exclusions, no-trip disputes, allocation/refund/settlement policy |
 | Actual providers and devices | Verify configured Maps browser/server keys, Places New/Routes APIs, restrictions/quotas, GPS freshness/accuracy and foreground behavior |

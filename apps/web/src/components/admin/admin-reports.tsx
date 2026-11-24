@@ -327,7 +327,7 @@ export default function AdminReports() {
                       }}
                     >
                       <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                      Resolve report
+                      {selected.driverNoShowReview ? 'Confirm driver no-show' : 'Resolve report'}
                     </VeyroButton>
                     <VeyroButton
                       className="w-full"
@@ -358,14 +358,16 @@ export default function AdminReports() {
           }}
           title={
             decision === 'RESOLVE'
-              ? 'Resolve this report?'
+              ? selected?.driverNoShowReview ? 'Confirm driver no-show?' : 'Resolve this report?'
               : decision === 'DISMISS'
                 ? 'Dismiss this report?'
                 : 'Move to Under Review?'
           }
           description={
             decision === 'RESOLVE'
-              ? 'A resolution note is required. Only the reporter will be notified.'
+              ? selected?.driverNoShowReview
+                ? 'Confirm only after verifying the missed pickup. Record the evidence in the note. This ends the trip and records a qualifying incident.'
+                : 'A resolution note is required. Only the reporter will be notified.'
               : decision === 'DISMISS'
                 ? 'A dismissal reason is required and recorded.'
                 : 'The report status changes to Under Review for follow-up.'

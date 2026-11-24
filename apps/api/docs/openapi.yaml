@@ -1375,6 +1375,129 @@ paths:
         required: true
         schema:
           type: string
+  /api/v1/trips/{id}/contact:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: getTripContact
+      summary: Read recent messages and voice signaling for an active trip
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      responses:
+        '200':
+          description: Private recent messages and current call state with a revision number.
+        '404':
+          description: Active trip contact unavailable to the account.
+    post:
+      operationId: updateTripContact
+      summary: Send a chat message or manage a trip voice call
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [message, voice-config, offer, answer, end]
+                id:
+                  type: string
+                  description: Idempotent message or call ID. Required except for voice-config.
+                text:
+                  type: string
+                  maxLength: 1000
+                sdp:
+                  type: string
+                  maxLength: 24000
+      responses:
+        '200':
+          description: Updated private contact state or temporary voice connection configuration.
+        '400':
+          description: Invalid contact action.
+        '404':
+          description: Active trip contact unavailable to the account.
+        '409':
+          description: The call has already been answered or is unavailable.
+        '429':
+          description: Messages were sent too quickly.
+  /api/v1/trips/{id}/verification-code:
+    post:
+      operationId: issueTripVerificationCode
+      summary: Request a single-use Start or End OTP
+      description: Available to the active customer who booked the trip. START requires confirmed arrival. END requires an in-progress trip. A new code replaces the previous code for that phase after a one-minute cooldown.
+      security:
+      - firebaseAuth: []
+        firebaseAppCheck: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phase]
+              properties:
+                phase:
+                  type: string
+                  enum: [START, END]
+      responses:
+        '200':
+          description: Code issued in a private, non-cacheable response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message, data]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    required: [code, expiresAt, serverTime]
+                    properties:
+                      code:
+                        type: string
+                        pattern: '^[0-9]{6}$'
+                      expiresAt:
+                        type: integer
+                        format: int64
+                        description: Expiry as Unix milliseconds.
+                      serverTime:
+                        type: integer
+                        format: int64
+                        description: Server time as Unix milliseconds when the response is generated.
+        '400':
+          description: Invalid identifier or phase.
+        '401':
+          description: Authentication required.
+        '403':
+          description: Customer role or App Check required.
+        '404':
+          description: Trip unavailable to this customer.
+        '409':
+          description: The requested phase is unavailable or verification is locked.
+        '429':
+          description: A code was issued less than one minute ago.
+        '503':
+          description: The OTP signing secret is unavailable.
   /api/v1/trips/{id}/start:
     post:
       operationId: postApiV1TripsIdStart
@@ -1598,9 +1721,20 @@ paths:
   /api/v1/trips/{id}/driver-no-show:
     post:
       operationId: postApiV1TripsIdDriver-No-Show
-      summary: Record a corroborated driver no-show after the frozen promise deadline
-      description: Requires bearer authentication and a fresh limited-use App Check
-        token.
+      summary: Submit a driver no-show report for Admin review
+      description: The booking customer can submit this once after the 20-minute grace period. The trip stays open until Admin confirms the missed pickup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description]
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
       security:
       - firebaseAuth: []
         firebaseAppCheck: []

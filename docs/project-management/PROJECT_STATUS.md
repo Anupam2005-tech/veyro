@@ -39,12 +39,23 @@ Current cross-team progress is recorded in the [core and mobility execution regi
 
 [Backend task evidence](BACKEND_PROGRESS.md)
 
+## Remaining implementation follow-up — 24 November 2026
+
+| Area | Status | Evidence / remaining check |
+|---|---|---|
+| Firebase sign-in | REVIEW | Email/password, reset and existing Google sign-in are the Release 1 flow. Confirm provider configuration in staging. |
+| Driver no-show | REVIEW | Local test covers the frozen grace period, owner-only submission, Admin verification, no charge and fifth-incident suspension. Verify the deployed incident worker. |
+| Pickup ETA | REVIEW | Local tests cover stale GPS and one Routes lookup per minute. Verify real Routes responses and tracking on two devices. |
+| Admin workspace and driver UI | REVIEW | Admin access follows authoritative roles. Driver navbar, inbox bell and moving car icon updated. |
+| Trip notifications | REVIEW | Assigned driver receives confirmation and cancellation email jobs. The customer receives an arrival email job. Verify delivery with the configured Resend sender. |
+| Trip contact | REVIEW | Private active-trip chat and WebRTC signaling added. Verify two-way audio and microphone permissions across networks with a TURN relay. |
+
 | Milestone | Status | Target |
 |---|---|---|
 | M0 — Repository & Scaffold | IN_PROGRESS | Monorepo structure, root configs, trackers |
-| M1 — Design System & Auth | IN_PROGRESS | Shared tokens, components, passwordless auth |
+| M1 — Design System & Auth | IN_PROGRESS | Shared tokens, components, Firebase email/password, password reset and Google sign-in |
 | M2 — Core Booking Flow | IN_PROGRESS | Vehicle pass, instant/scheduled quotes & bookings |
-| M3 — Trip Lifecycle & Maps | IN_PROGRESS | Backend arrival, verification and GPS implemented; OTP display and device/frontend integration remain |
+| M3 — Trip Lifecycle & Maps | IN_PROGRESS | Customer-only OTP, live pickup ETA and Admin-reviewed driver no-shows implemented. Deployed and real-device checks remain. |
 | M4 — Payments & Admin | IN_PROGRESS | Razorpay Test Mode, balance gate, Admin portal |
 | M5 — Testing & Deployment | IN_PROGRESS | Emulator regression suite and packaged Functions smoke pass; live release checks remain |
 
@@ -76,7 +87,7 @@ Current cross-team progress is recorded in the [core and mobility execution regi
 
 | Dependency | Responsible party |
 |---|---|
-| Secure customer OTP display/delivery and recovery decision | Project owner explicitly left pending |
+| Trip verification lockout recovery | Project owner to approve a recovery process |
 | Actual lead Firebase UID | Owner will provide later |
 | Qualifying incident reasons/exclusions and no-trip disputes | Owner explicitly left pending |
 | Profile/vehicle/application producers and web adapters implemented; real credential-linking flow remains to verify | Frontend integration |
@@ -128,7 +139,7 @@ All 14 decisions (DEC-01 to DEC-14) are **AGREED** as of 9 November 2026. See `d
 | Readiness reconciliation remains pending | Policy and contract reconciliation | Review [`reconcile-project-readiness`](../../openspec/changes/reconcile-project-readiness/tasks.md) before authorized foundation repair |
 | Cloud deployment verification | API deployment and background functions | Standalone package dependencies and Node22 HTTP startup pass locally; deployed IAM, secrets and scheduled invocation remain |
 | Managed runtime configuration | Backend runtime, deployment | Verify configured project resources, billing, IAM and deployed endpoints |
-| Owner-held access and policy decisions | Admin grants, OTP, incident and financial edge cases | Lead UID, secure OTP display/recovery, qualifying incidents and no-trip settlement rules remain pending |
+| Owner-held access and policy decisions | Admin grants, OTP recovery, incident and financial edge cases | Lead UID, OTP lockout recovery, qualifying incidents and no-trip settlement rules remain pending |
 
 ---
 

@@ -10,6 +10,7 @@ const ROLE_KEY = 'veyro:role-intent';
 interface SessionContextValue {
   user: AuthUser | null;
   profile: VeyroProfile | null;
+  authLoading: boolean;
   loading: boolean;
   error: string | null;
   demoMode: boolean;
@@ -153,6 +154,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const value: SessionContextValue = {
     user,
     profile,
+    authLoading,
     loading: authLoading || profileLoading,
     error,
     demoMode: isDemoMode,

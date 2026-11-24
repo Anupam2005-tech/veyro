@@ -149,6 +149,7 @@ export default function ShareView({ token }: { token: string }) {
                         ? [
                             {
                               id: 'shared-driver',
+                              vehicle: true,
                               position: share.liveLocation.position,
                               label: share.liveLocation.stale ? 'Last known driver location' : 'Driver location',
                               stale: share.liveLocation.stale,

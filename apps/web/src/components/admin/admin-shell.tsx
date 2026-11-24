@@ -27,11 +27,12 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, profile, loading, demoMode, signOut } = useSession();
+  const { user, profile, loading, error, demoMode, signOut, refreshProfile } = useSession();
   const [signingOut, setSigningOut] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const shouldReduceMotion = useReducedMotion();
   const demoPreview = isDemoDataMode && searchParams.get('role') === 'admin';
+  const authorized = demoPreview || (!!user && (profile?.roles?.includes('ADMIN') ?? profile?.role === 'ADMIN'));
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -48,10 +49,7 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
       router.replace(`/auth/admin?returnTo=${encodeURIComponent(pathname)}`);
       return;
     }
-    if (profile && profile.role !== 'ADMIN') {
-      router.replace('/');
-    }
-  }, [demoPreview, loading, pathname, profile, router, user]);
+  }, [demoPreview, loading, pathname, router, user]);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -63,6 +61,19 @@ export function AdminShell({ subtitle, children }: AdminShellProps) {
     return 'match' in item && item.match
       ? pathname.startsWith(item.match)
       : pathname === item.href;
+  }
+
+  if (!authorized) {
+    return (
+      <AppShell theme="studio">
+        <main className="mx-auto max-w-lg space-y-4 px-6 py-20">
+          <h1 className="font-display text-2xl font-bold">{profile ? 'Admin access required' : 'Opening Admin'}</h1>
+          <p role="status">{profile ? 'This account needs the Admin role to open this workspace.' : error ?? 'Checking your account…'}</p>
+          {error ? <VeyroButton type="button" onClick={() => void refreshProfile()}>Retry</VeyroButton> : null}
+          {user && profile ? <VeyroButton type="button" loading={signingOut} onClick={() => void handleSignOut()}>Switch account</VeyroButton> : null}
+        </main>
+      </AppShell>
+    );
   }
 
   const header = (

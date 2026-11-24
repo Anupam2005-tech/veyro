@@ -1,10 +1,10 @@
 # Veyro Release 1 — Unified Product, UI/UX, Business Logic & Engineering Specification
 
-**Version:** 3.6 — Google Cloud/Firebase-first infrastructure and passwordless authentication revision  
+**Version:** 3.6 — Google Cloud/Firebase-first infrastructure and email/password authentication
 **Prepared:** 9 November 2026  
 **Project type:** Five-person college project / capstone  
 **Platform:** Responsive Progressive Web App (PWA)  
-**Status:** Consolidated implementation baseline — product decisions DEC-01 through DEC-14 remain recorded; Google Cloud/Firebase-first infrastructure and passwordless authentication are the revised implementation baseline, synchronised with Backend Technical Specification v1.3 on 9 November 2026  
+**Status:** Consolidated implementation baseline — product decisions DEC-01 through DEC-14 remain recorded; Google Cloud/Firebase-first infrastructure remains the baseline. The owner selected Firebase email/password on 24 November 2026
 
 ---
 
@@ -187,7 +187,7 @@ Build reusable multi-state views rather than many independent static screens.
 | ID | Route | View | Release 1 scope |
 |---|---|---|---|
 | VIEW-01 | `/` | Public Brand Landing | Hero, how-it-works, instant/scheduled comparison, safety/fare explanation, FAQ, legal footer |
-| VIEW-02 | `/auth` | Authentication | Customer/Driver role selection; passwordless email-link, phone OTP and Google sign-in; provider linking and loading/error states |
+| VIEW-02 | `/auth` | Authentication | Customer/Driver role selection; email/password sign-in, password reset and Google sign-in; provider linking and loading/error states |
 | VIEW-03 | `/onboarding/customer` | Customer Onboarding | Name, phone contact, consent, optional vehicle setup |
 | VIEW-04 | `/onboarding/driver` | Driver Onboarding | Profile/languages, capabilities/service areas, rates, document upload and submission |
 | VIEW-05 | `/customer` | Booking Studio | Pickup/destination/stops, vehicle pass, route preview, driver search/cards, quote and confirmation |
@@ -215,7 +215,7 @@ Use the prompt IDs and instructions defined in Section 6. Each prompt must be tr
 
 ## 4.1 Architecture decision
 
-**Updated infrastructure direction (approved 9 November 2026):** Veyro uses Firebase and Google Cloud as its Release 1 hosting and application platform. Deploy the Next.js PWA on Firebase App Hosting. Deploy the existing Express modular-monolith API as an HTTPS `onRequest` function on Firebase Cloud Functions (2nd gen), and keep scheduled/event-triggered handlers as separate Cloud Functions. Use Cloud Storage for Firebase for private images and driver verification documents. Firebase Authentication supports passwordless email-link, phone OTP and Google Sign-In. Firebase App Check uses reCAPTCHA Enterprise for the web app, with explicit App Check token verification on the custom Express API. Firebase Cloud Messaging (FCM) delivers web push notifications; configure the web push certificate/VAPID key and a messaging service worker. Google Maps Platform remains the maps provider (Maps JavaScript API, Places API (New), Routes API and Geocoding API as required by the implemented journeys). App Check enforcement is applied only to supported Maps services; all Maps API keys remain restricted by API and origin. Razorpay remains the payment provider.
+**Updated infrastructure direction (approved 9 November 2026):** Veyro uses Firebase and Google Cloud as its Release 1 hosting and application platform. Deploy the Next.js PWA on Firebase App Hosting. Deploy the existing Express modular-monolith API as an HTTPS `onRequest` function on Firebase Cloud Functions (2nd gen), and keep scheduled/event-triggered handlers as separate Cloud Functions. Use Cloud Storage for Firebase for private images and driver verification documents. Firebase Authentication uses email/password and supports Google Sign-In. Firebase App Check uses reCAPTCHA Enterprise for the web app, with explicit App Check token verification on the custom Express API. Firebase Cloud Messaging (FCM) delivers web push notifications; configure the web push certificate/VAPID key and a messaging service worker. Google Maps Platform remains the maps provider (Maps JavaScript API, Places API (New), Routes API and Geocoding API as required by the implemented journeys). App Check enforcement is applied only to supported Maps services; all Maps API keys remain restricted by API and origin. Razorpay remains the payment provider.
 
 
 
@@ -227,7 +227,7 @@ The core stack direction is accepted. The following concrete service split is th
 | UI | Tailwind CSS, shadcn/ui, Radix UI | Responsive accessible component system |
 | Motion/icons | Motion for React, Lucide React | Transitions and icons |
 | API | Node.js + Express.js + TypeScript | All business rules, validation, authorisation and integrations under the canonical API prefix `/api/v1/` |
-| Identity | Firebase Authentication | Passwordless email-link sign-in, phone-number OTP and Google Sign-In; provider linking to one Firebase UID |
+| Identity | Firebase Authentication | Email/password and Google Sign-In; provider linking to one Firebase UID |
 | Primary database | Cloud Firestore | Durable users, vehicles, applications, bookings, trips, payments, reports, notifications and audit logs |
 | Live state | Firebase Realtime Database | Ephemeral driver presence and active-trip location updates only |
 | File storage | Cloud Storage for Firebase | Private driver verification documents, profile images and approved uploads protected by Storage Security Rules |
@@ -744,13 +744,9 @@ Use responsive composition and real copy. Do not invent reviews, driver counts, 
 Build `/auth`, `/onboarding/customer` and `/onboarding/driver` using the Veyro shared design system.
 
 AUTH
-- Firebase Authentication supports three passwordless sign-in methods: email-link sign-in, phone-number SMS OTP and Google Sign-In. No password-based login or registration is offered.
-- Email link: user enters an email address, receives a one-time sign-in link and completes sign-in through a dedicated callback/return route. Completing the link verifies the email; do not add a separate email-verification step.
-- Phone: user enters a phone number in E.164 format, receives an SMS OTP through Firebase Phone Authentication and verifies the code. Add resend cooldown, abuse/rate controls, clear SMS-cost messaging where appropriate and test numbers for development.
-- Google: use Firebase Google provider and handle popup/redirect flows and provider errors.
-- Support linking email, phone and Google providers to one Firebase UID. Handle account-exists-with-different-credential and linking conflicts safely; prevent duplicate Veyro profiles for one person.
-- Firebase's Email Link method requires enabling the Email/Password provider switch in the Firebase console as a prerequisite, but Veyro must not expose password credentials or password login UI.
-- Do not implement Forgot Password, Reset Password or password-based registration/login.
+- Use Firebase email/password for sign-up and sign-in, and Firebase password reset for forgotten passwords.
+- Keep Firebase Google sign-in available and handle popup/redirect errors and account linking conflicts without creating duplicate Veyro profiles.
+- Phone is collected as an onboarding contact field. Do not add email-link or SMS OTP sign-in to the Release 1 form.
 - `/auth` uses Veyro Night. After successful authentication, onboarding uses Veyro Studio Light.
 
 CUSTOMER ONBOARDING
@@ -948,7 +944,7 @@ Prioritise a complete working service journey over a large number of impressive 
 **Build these first.** The project is not functionally complete until the customer-to-driver trip and payment loop works end to end.
 
 1. Shared design system, route-based themes and responsive PWA shell.
-2. Customer/Driver authentication: passwordless email link, phone OTP and Google sign-in, loading/error states.
+2. Customer/Driver authentication: email/password, password reset and Google sign-in, loading/error states.
 3. Customer onboarding, vehicle create/edit and profile.
 4. Driver onboarding, private document upload and application status.
 5. Lightweight Admin manual driver review, approve/reject/request changes and audit log.
@@ -973,7 +969,7 @@ Prioritise a complete working service journey over a large number of impressive 
 2. More refined Google vector map tilt/heading and in-app turn banner.
 3. Advanced filters, driver comparison and favourites.
 4. Emergency contact/SOS delivery integration with real provider, delivery receipts and fallback handling.
-5. In-app customer/driver chat and masked calling integration.
+5. In-app customer/driver chat and voice calls during an active trip. The app does not expose participant phone numbers.
 6. Push notification reliability and offline/reconnection improvements.
 7. Expanded report investigation notes and review workflow.
 8. Better earnings charts and configurable platform fee/commission, once approved.
@@ -1476,7 +1472,7 @@ Do not split the team into five isolated UI-only assignments. Integrate against 
 
 ## 14.1 Product flow tests
 
-- Customer passwordless email-link, phone OTP and Google sign-in; provider linking, profile bootstrap, FCM token registration and notification-permission fallback.
+- Customer email/password sign-in, password reset and Google sign-in; provider linking, profile bootstrap, FCM token registration and notification-permission fallback.
 - Driver registration, document upload, pending status, Admin request-changes, resubmission, approval and rejection.
 - Pending/rejected/deactivated driver cannot go online even by calling API directly.
 - Customer creates vehicle and receives compatible driver results only.

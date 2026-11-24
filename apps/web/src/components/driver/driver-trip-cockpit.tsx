@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { TripContactPanel } from '@/components/trip/trip-contact-panel';
 import { useDriverTracking } from '@/lib/hooks/use-driver-tracking';
 import { usePolling } from '@/lib/hooks/use-polling';
 import Link from 'next/link';
@@ -14,8 +15,6 @@ import {
   FileWarning,
   LocateFixed,
   MapPin,
-  MessageCircle,
-  Phone,
   Radio,
   ShieldCheck,
   Timer,
@@ -164,7 +163,7 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
     setBusy(true);
     setNotice(null);
     try {
-      await advanceTripStage(activeUser, tripId, action, otp ? { otp } : {});
+      setTrip(await advanceTripStage(activeUser, tripId, action, otp ? { otp } : {}));
       if (action === 'START') setStartOtp('');
       if (action === 'END') setEndOtp('');
       setNotice(
@@ -176,7 +175,6 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
               ? 'Trip completed and final fare generated.'
               : 'Customer no-show recorded after server validation. The no-show charge replaces waiting fees.'
       );
-      await load();
     } catch (caught) {
       setNotice(caught instanceof Error ? caught.message : 'Could not complete this action.');
     } finally {
@@ -288,13 +286,14 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
             <div className="space-y-5">
               <div key={mapKey} className="overflow-hidden rounded-card border border-studio-border bg-studio-surface">
                 <RouteMap
-                  points={[shownTrip.pickup, shownTrip.destination]}
+                  points={[shownTrip.pickup, ...shownTrip.stops, shownTrip.destination]}
                   route={shownTrip.route}
                   driverMarkers={
                     shownTrip.liveLocation
                       ? [
                           {
                             id: 'driver-live',
+                            vehicle: true,
                             position: shownTrip.liveLocation.position,
                             label: shownTrip.liveLocation.stale ? 'Last known driver location' : 'Driver location',
                             stale: shownTrip.liveLocation.stale,
@@ -410,24 +409,10 @@ export default function DriverTripCockpit({ tripId }: { tripId: string }) {
                     </p>
                   ) : null}
                 </div>
-                <div className="mt-5 rounded-panel border border-studio-border bg-studio-bg p-4">
-                  <p className="text-xs font-semibold text-studio-ink">Contact customer</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-studio-muted">
-                    Call and message are unavailable until a backend-approved handoff is enabled.
-                    Phone numbers are not exposed in this screen.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <VeyroButton type="button" size="sm" variant="secondary" disabled>
-                      <Phone aria-hidden="true" className="h-3.5 w-3.5" />
-                      Call — unavailable
-                    </VeyroButton>
-                    <VeyroButton type="button" size="sm" variant="secondary" disabled>
-                      <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
-                      Message — unavailable
-                    </VeyroButton>
-                  </div>
-                </div>
               </section>
+              {!isDemoDataMode && user && ['EN_ROUTE', 'ARRIVED_WAITING', 'ACTIVE'].includes(shownTrip.state) ? (
+                <TripContactPanel key={tripId} user={user} tripId={tripId} counterpart="customer" />
+              ) : null}
 
               {shownTrip.state === 'EN_ROUTE' || shownTrip.state === 'AWAITING_DRIVER' ? (
                 <section className="rounded-card border border-studio-border bg-studio-surface p-5">

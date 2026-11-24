@@ -26,6 +26,8 @@ export interface MapRenderOptions {
   points: PlaceOption[];
   route: RoutePreview | null;
   onDragEnd?: (index: number, position: Coordinate) => void;
+  onReady?: () => void;
+  onUnavailable?: (message: string) => void;
 }
 
 export interface MapHandle {
@@ -35,7 +37,7 @@ export interface MapHandle {
   zoomOut?: () => void;
 }
 
-export interface MapDriverMarker { id: string; position: Coordinate; label: string; stale?: boolean }
+export interface MapDriverMarker { id: string; position: Coordinate; label: string; stale?: boolean; vehicle?: boolean }
 
 export interface MapsProvider {
   id: 'google' | 'demo';

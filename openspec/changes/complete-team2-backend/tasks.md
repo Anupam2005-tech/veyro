@@ -3,7 +3,7 @@
 | Order | Task IDs | Work delivered | Status | Remaining dependency |
 |---|---|---|---|---|
 | 1 | BE-016 | Assigned-booking initialization, owned trip reads, customer-confirmed and trusted-GPS arrival | REVIEW | GPS verdict producer implemented in follow-up; real device validation remains |
-| 2 | BE-017–018 | Waiting/no-show transactions, separate salted OTP hashes, 5min expiry, five attempts, 60s cooldown, atomic consumption | REVIEW / BLOCKED | Owner explicitly left secure OTP display/delivery/recovery pending |
+| 2 | BE-017–018 | Waiting/no-show transactions, customer-only issuance, separate salted OTP hashes, up to 5min expiry, five attempts, 60s cooldown, atomic consumption | REVIEW | Deploy with `TRIP_OTP_SECRET`; lockout recovery still requires approval |
 | 3 | BE-042–043 | Final rounded hourly fare, payable and earnings, capture journal, 48h completed-trip disputes, audited unpaid corrections | REVIEW / BLOCKED | No-trip dispute timing, no-show allocations and captured-payment refund/settlement rules |
 | 4 | BE-030–032 | Protected manual review queue/decisions, synchronized driver approval, deactivate/restore, customer restoration, atomic audit/inbox | REVIEW | Profile/application producers implemented in follow-up; independent review remains |
 | 5 | BE-041 | Verified provider inspection, lead-only audited role grants, legacy/multi-role profiles | BLOCKED | Owner will supply lead Firebase UID later; client credential linking/conflict recovery is a Team 1 handoff |
@@ -32,7 +32,7 @@
 - [x] Keep lifetime incident counters.
 - [x] Adopt the proposed report and customer/driver cancellation lists as versioned initial defaults.
 - [x] Keep incident qualification/exclusions and no-trip dispute rules pending.
-- [x] Keep secure customer OTP display/delivery pending; generate and verify only within the backend service.
+- [x] Enable owner-approved customer-only start/end OTP display on 24 November 2026.
 - [x] Leave ADMIN_GRANTER_UID unset until the owner supplies their Firebase UID.
 - [x] Generate a private local TRIP_OTP_SECRET without printing or committing it.
 
@@ -40,7 +40,8 @@
 
 - [x] Implement profile, route, availability and GPS producers against the documented adapter fields; see the core/mobility follow-up.
 - [ ] Verify live Maps/device behavior and frontend canonical endpoint/DTO integration.
-- [ ] Implement owner-approved OTP display/recovery when that decision is supplied.
+- [x] Implement customer-only start/end OTP display.
+- [ ] Approve a recovery process for verification locked after five failed attempts.
 - [ ] Supply the real lead UID and verify controlled grants with the intended account.
 - [ ] Approve incident qualification/exclusions, no-trip disputes and unresolved settlement rules.
 - [ ] Configure and verify actual captured Test Mode payment/webhook, FCM and deployed App Check.

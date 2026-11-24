@@ -34,6 +34,15 @@ const view = () => ({ booking: { id: 'booking', kind: 'INSTANT', status: 'ASSIGN
   trip: { status: 'IN_PROGRESS', startOtp: 'SECRET', startHash: 'PRIVATE', startedAt: Date.now() - 60000 },
   driver: { id: 'driver', fullName: 'Test Driver', hourlyRateInr: 120 }, payable: null });
 
+test('Admin sign-in only accepts an Admin return path', () => {
+  const f = fixture(() => good({}));
+  const { adminReturnPath } = f.load(path.join(root, 'auth/safe-return.ts'));
+  assert.equal(adminReturnPath('/driver'), '/admin');
+  assert.equal(adminReturnPath('/admin-panel'), '/admin');
+  assert.equal(adminReturnPath('/admin/reports?filter=OPEN'), '/admin/reports?filter=OPEN');
+  assert.equal(adminReturnPath('https://other.test/admin'), '/admin');
+});
+
 test('live API errors remain errors across session, quote, booking and list; no demo records are created', async () => {
   const f = fixture(() => new Response(JSON.stringify({ success: false, message: 'Denied', error: { code: 'ROLE_FORBIDDEN' } }), { status: 403 }));
   await assert.rejects(f.client.bootstrapSession(user, 'customer'), { code: 'ROLE_FORBIDDEN' });
@@ -73,6 +82,18 @@ test('live trip mapping never exposes OTP fields and uses immutable backend amou
   assert.equal(trip.startOtp, ''); assert.equal(trip.endOtp, '');
   assert.equal(JSON.stringify(trip).includes('SECRET'), false); assert.equal(JSON.stringify(trip).includes('PRIVATE'), false);
   assert.equal(trip.finalFare.totalInr, 126); assert.equal(trip.finalFare.paymentStatus, 'DISPUTED');
+});
+
+test('only the trip customer gets the OTP control when a trip read omits the capability flag', async () => {
+  const v = view();
+  v.trip.customerId = user.uid;
+  v.trip.status = 'ARRIVED';
+  const f = fixture(() => good(v));
+  const customer = await f.client.getTrip(user, 'booking');
+  const driver = await f.client.getTrip({ ...user, uid: 'driver' }, 'booking');
+  assert.equal(customer.state, 'ARRIVED_WAITING');
+  assert.equal(customer.isTripCustomer, true);
+  assert.equal(driver.isTripCustomer, false);
 });
 
 test('share token is a header; minimal share data does not invent pickup coordinates or identity', async () => {
@@ -153,21 +174,31 @@ test('uncertain audited mutations reuse the request identity on explicit retry',
 });
 
 test('Google map handles update private driver markers and keep read-only trip pins fixed', async () => {
-  const overlays = []; let centered = 0;
+  const overlays = [], events = new Map(), windowEvents = new Map();
+  let centered = 0, ready = false, unavailable = '';
   class Marker {
     constructor(options) { this.options = options; overlays.push(this); }
     setMap(map) { this.removed = map === null; }
   }
   class LatLng { constructor(lat, lng) { this.lat = () => lat; this.lng = () => lng; } }
   const google = { maps: { Map: class { fitBounds() {} panTo() { centered++; } }, Marker, LatLng,
-    LatLngBounds: class { extend() {} }, event: { clearInstanceListeners() {}, addListener() {} } } };
-  const f = fixture(() => good({}), { window: { google } });
+    LatLngBounds: class { extend() {} }, event: { clearInstanceListeners() {}, addListener(_instance, name, fn) {
+      events.set(name, fn); return { remove() { events.delete(name); } };
+    } } } };
+  const f = fixture(() => good({}), { window: { google, setTimeout, clearTimeout,
+    addEventListener: (name, fn) => windowEvents.set(name, fn), removeEventListener: name => windowEvents.delete(name) } });
   const provider = f.load(path.join(root, 'maps/google-provider.ts')).createGoogleMapsProvider('browser-fixture');
-  const map = await provider.createMap({}, { points: [], route: null, driverMarkers: [{ id: 'driver', position: { lat: 22, lng: 72 }, label: 'Driver' }] });
+  const map = await provider.createMap({}, { points: [], route: null, driverMarkers: [{ id: 'driver', position: { lat: 22, lng: 72 }, label: 'Driver' }],
+    onReady: () => { ready = true; }, onUnavailable: message => { unavailable = message; } });
+  assert.equal(ready, false);
+  events.get('tilesloaded')();
+  assert.equal(ready, true);
+  windowEvents.get('veyro-maps-auth-failure')();
+  assert.match(unavailable, /route preview/);
   assert.equal(overlays.length, 1); assert.equal(overlays[0].options.draggable, false); assert.equal(centered, 1);
   map.updateDriverMarkers([{ id: 'driver', position: { lat: 23, lng: 73 }, label: 'Last known driver location', stale: true }]);
   assert.equal(overlays[0].removed, true); assert.equal(overlays[1].options.opacity, 0.45); assert.equal(centered, 1);
-  map.destroy(); assert.equal(overlays[1].removed, true);
+  map.destroy(); assert.equal(overlays[1].removed, true); assert.equal(windowEvents.size, 0);
 });
 
 test('new Places autocomplete shares a session and fetches details only for the selected prediction', async () => {
@@ -183,6 +214,36 @@ test('new Places autocomplete shares a session and fetches details only for the 
   const selected = await provider.resolvePlace(suggestions[0]);
   assert.equal(details, 1); assert.deepEqual(plain(selected.position), { lat: 22, lng: 72 });
   await provider.searchPlaces('Next'); assert.equal(sessions, 2);
+});
+
+test('live car moves between GPS samples without replacing its marker', async () => {
+  const overlays = [];
+  let step;
+  class LatLng { constructor(lat, lng) { this.lat = () => lat; this.lng = () => lng; } }
+  class Marker {
+    constructor(options) { this.options = options; this.position = options.position; overlays.push(this); }
+    setMap() {}
+    setPosition(next) { this.position = next; }
+    getPosition() { return this.position; }
+    setOpacity() {}
+  }
+  const google = { maps: { Map: class { fitBounds() {} }, Marker, LatLng, Size: class {}, Point: class {},
+    LatLngBounds: class {}, event: { clearInstanceListeners() {}, addListener: () => ({ remove() {} }) } } };
+  const f = fixture(() => good({}), {
+    window: { google, setTimeout, clearTimeout, addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: false }) },
+    performance: { now: () => 0 }, requestAnimationFrame: callback => { step = callback; return 1; }, cancelAnimationFrame() {},
+  });
+  const provider = f.load(path.join(root, 'maps/google-provider.ts')).createGoogleMapsProvider('fixture');
+  const entry = { id: 'vehicle', vehicle: true, label: 'Driver car', position: { lat: 22, lng: 72 } };
+  const map = await provider.createMap({}, { points: [], route: null, driverMarkers: [entry] });
+  assert.match(overlays[0].options.icon.url, /driver-car\.png$/);
+  map.updateDriverMarkers([{ ...entry, position: { lat: 24, lng: 74 } }]);
+  step(350);
+  assert.equal(overlays[0].position.lat(), 23);
+  step(700);
+  assert.equal(overlays[0].position.lat(), 24);
+  assert.equal(overlays.length, 1);
+  map.destroy();
 });
 
 test('an assigned driver can recover a legacy booking whose trip initialization was interrupted', async () => {

@@ -3,6 +3,7 @@ import { BookingModes } from '@/components/landing/BookingModes';
 import { Faq } from '@/components/landing/Faq';
 import { FareSafety } from '@/components/landing/FareSafety';
 import { Hero } from '@/components/landing/Hero';
+import { LandingSessionGate } from '@/components/landing/landing-session-gate';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { SiteFooter } from '@/components/landing/SiteFooter';
 import { TripVerification } from '@/components/landing/TripVerification';
@@ -11,6 +12,7 @@ import { VeyroFloatingNavbar } from '@/components/landing/VeyroFloatingNavbar';
 
 export default function HomePage() {
   return (
+    <LandingSessionGate>
     <AppShell
       theme="studio"
       header={<VeyroFloatingNavbar />}
@@ -24,5 +26,6 @@ export default function HomePage() {
       <TripVerification />
       <Faq />
     </AppShell>
+    </LandingSessionGate>
   );
 }

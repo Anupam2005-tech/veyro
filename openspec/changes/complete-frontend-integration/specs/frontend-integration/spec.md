@@ -1,5 +1,37 @@
 ## ADDED Requirements
 
+### Requirement: Admin workspace authorization
+Admin access SHALL use the account's active authorized roles independent of the selected driver or customer workspace. Admin sign-in SHALL accept only an Admin return path.
+
+#### Scenario: Driver also has Admin privileges
+- **WHEN** a signed-in account with Driver and Admin roles opens the Admin dashboard
+- **THEN** the Admin dashboard opens without switching to the Driver workspace
+
+### Requirement: Private trip contact
+During an active trip, the assigned customer and driver SHALL be able to exchange short messages and start, answer, or decline in-app voice calls. Contact endpoints SHALL deny other accounts and terminal trips. Phone numbers SHALL stay private. Voice signaling and recent messages SHALL be removed on trip closure.
+
+#### Scenario: A share recipient tries to contact a participant
+- **WHEN** a viewer of an authenticated share tries to access trip contact without being a participant
+- **THEN** the API rejects the request
+
+### Requirement: Firebase email and password
+The auth screen SHALL support Firebase email/password sign-up, sign-in and password reset. Google sign-in remains available. The auth form SHALL omit magic-link and SMS sign-in.
+
+#### Scenario: A customer signs in with email
+- **WHEN** the customer submits a valid email and password
+- **THEN** Firebase signs them in and the app loads their customer session
+
+### Requirement: Live pickup ETA and verified driver no-show
+The trip cockpit SHALL display an en-route pickup ETA from backend road routing while GPS and the route estimate are fresh. The service SHALL throttle estimate requests and preserve the frozen arrival promise for no-show eligibility. The trip owner may report a driver no-show after the 20-minute grace period. Admin confirmation with an evidence note SHALL end the still-eligible trip without charging the customer and record one qualifying incident.
+
+#### Scenario: An overdue pickup is reported
+- **WHEN** the booked customer reports the missed pickup and an Admin verifies the missed pickup
+- **THEN** the decision, evidence and no-show outcome are recorded together and retries do not count another incident
+
+#### Scenario: Location updates become stale
+- **WHEN** the driver GPS becomes stale during pickup
+- **THEN** the cockpit hides the live ETA and the frozen arrival promise remains available for eligibility
+
 ### Requirement: Truthful live requests
 Live frontend requests SHALL use canonical backend contracts and SHALL surface failures without creating demo records or displaying fabricated live data.
 
@@ -28,15 +60,31 @@ Checkout SHALL use server-created Test Mode order amounts and show capture only 
 - **WHEN** verification returns pending
 - **THEN** the interface retains pending payment state
 
-### Requirement: Deferred OTP delivery
-Live OTP display and recovery SHALL remain unavailable until the owner approves a secure delivery contract. Demo OTP codes SHALL remain limited to explicit demo mode.
+#### Scenario: An assigned driver verifies the end code
+- **WHEN** the customer's trip view receives completed status and a payable final fare
+- **THEN** it prompts the customer to continue to Razorpay using the final server amount or pay later from the receipt
 
-#### Scenario: Live customer views waiting trip
-- **WHEN** secure OTP delivery is unavailable
-- **THEN** the UI explains the pending verification flow and shows no invented code
+### Requirement: Customer-only trip verification codes
+The authenticated, active booking customer SHALL be able to request a start code after arrival and a separate end code during the trip. The code SHALL be returned only by the issuance request in a private, non-cacheable response and SHALL be excluded from trip views, share views and persisted browser state. The backend SHALL store a salted hash and enforce expiry, cooldown, the existing attempt limit and single use. Only the assigned driver may verify a code. Demo codes SHALL remain limited to explicit demo mode.
+
+#### Scenario: Driver and customer verify both stages
+- **WHEN** the booking customer requests the current code and the assigned driver enters it before expiry
+- **THEN** the start code starts trip timing, or the end code completes the trip and generates the final fare
+
+#### Scenario: Another user requests a code
+- **WHEN** any account other than the booking customer requests a trip code
+- **THEN** the request is rejected, including when that account is the assigned driver and also has a customer role
+
+#### Scenario: A code cannot be issued
+- **WHEN** the phase is unavailable, a recent code is still within its cooldown, or verification is locked
+- **THEN** the customer sees the server error and no replacement code is issued
 
 ### Requirement: Current route and place providers
 Live preview geometry SHALL come from the server road provider. Browser autocomplete SHALL use session-scoped suggestions and fetch details only after selection; live trip marker changes SHALL preserve the existing map instance.
+
+#### Scenario: Map tiles fail to load
+- **WHEN** Google Maps has not loaded its tiles or reports a loading or authorization failure
+- **THEN** the interface shows the available route geometry and markers as a route preview and explains a confirmed map failure
 
 #### Scenario: Place prediction is selected
 - **WHEN** the user selects one prediction after typing

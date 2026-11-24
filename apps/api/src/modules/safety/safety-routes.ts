@@ -44,7 +44,7 @@ export function createSafetyRouter(): Router {
   });
   router.get('/admin/reports', requireRole('ADMIN'), async (_req, res, next) => {
     try {
-      const records = await db().collection('reports').limit(100).get();
+      const records = await db().collection('reports').orderBy('createdAt', 'desc').limit(100).get();
       sendSuccess(res, records.docs.map(record => ({ id: record.id, ...record.data() })));
     } catch (error) { next(error); }
   });
