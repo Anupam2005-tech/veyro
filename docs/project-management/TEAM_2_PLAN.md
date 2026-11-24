@@ -1,6 +1,6 @@
 # Team 2 — Anupam and Pritam feature plan
 
-**Last updated:** 23 November 2026
+**Last updated:** 24 November 2026
 
 This plan covers [Team 2’s scope](../veyro.md) in §12.3. Record task status and evidence in [Backend Progress](BACKEND_PROGRESS.md) and shared milestones and blockers in [Project Status](PROJECT_STATUS.md).
 
@@ -42,6 +42,19 @@ When a feature starts, update this table and the corresponding rows in [Backend 
 | T2-P6 — Reports, safety and SOS | Pritam | REVIEW | BE-025–027, BE-033 | T2-P1, T2-A5, T2-A6 and T2-P4 | Privacy, suspension, restoration and SOS tests pass |
 
 Remaining Team 2 work is tracked task by task in the [completion register](../../openspec/changes/complete-team2-backend/tasks.md). Review status covers local implementation; the register identifies owner-held policies, partner data and live integration dependencies.
+
+## Pull request review list — 24 November 2026
+
+The Team 2 implementation is now on `main`; the `REVIEW` and `BLOCKED` rows above still require evidence before they can become `DONE`. Use this list when reviewing a Team 2 change or preparing the release PR:
+
+- [ ] Confirm partner and outside-pair reviewers for shared auth, financial, Firebase rule and API contract changes. Record their review and merge links in [Backend Progress](BACKEND_PROGRESS.md).
+- [ ] Re-run API, Functions and emulator tests against the PR head. Record the commands, pass counts and any skipped tests. CI must fail when a backend build or test fails.
+- [ ] Verify a real limited-use App Check token, the lead-only Admin grant and the intended Firebase UID. Keep provider-link conflict recovery with the frontend handoff.
+- [ ] Exercise instant and scheduled booking with Team 3 availability, Maps and notification delivery; verify first acceptance wins, expiry and `NEEDS_REBOOK` on live integrations.
+- [ ] Resolve secure customer OTP display/recovery, qualifying incident exclusions, no-trip dispute timing and captured-payment settlement before claiming the trip-to-payment flow complete.
+- [ ] Run actual Razorpay Test Mode capture and webhook, FCM delivery, Firebase rule access tests, deployment/IAM/Secret Manager checks and the manual release journey. Record the evidence in [Project Status](PROJECT_STATUS.md).
+
+These are review and release gates, not a claim that the open items were implemented by this documentation change.
 
 See the [22 November code audit](PROJECT_STATUS.md#code-and-openspec-audit--22-november-2026) for the historical implementation snapshot; use the 23 November checkpoint and execution registers for current gaps.
 

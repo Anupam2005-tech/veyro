@@ -2,6 +2,7 @@
   "name": "veyro",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "description": "Veyro — customer-owned vehicle, professional driver service",
   "license": "MIT",
   "author": "Anupam Bhowmik",
