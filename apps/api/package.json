@@ -52,6 +52,14 @@
     "./firebase": {
       "types": "./dist/config/firebase-admin.d.ts",
       "default": "./dist/config/firebase-admin.js"
+    },
+    "./trips/location-cleanup.service": {
+      "types": "./dist/modules/trips/location-cleanup.service.d.ts",
+      "default": "./dist/modules/trips/location-cleanup.service.js"
+    },
+    "./notifications/notification.service": {
+      "types": "./dist/modules/notifications/notification.service.d.ts",
+      "default": "./dist/modules/notifications/notification.service.js"
     }
   }
 }

@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate:
-    name: Lint & Typecheck
+    name: Backend build and tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,19 +17,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 9.15.9
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm type-check || echo "Packages scaffold pending"
+      - name: Build API and Functions
+        run: pnpm --filter @veyro/api build && pnpm --filter @veyro/functions build
 
-      - name: Lint
-        run: pnpm lint || echo "Linting rules pending"
+      - name: Test backend
+        run: pnpm --filter @veyro/api test
 
